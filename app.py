@@ -24,7 +24,7 @@ def call_deepseek(prompt, system_message="Tu es l'assistant Tazzz Bot."):
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 4000
+        "max_tokens": 8000  # augmenté pour 7 jours
     }
     resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload)
     if resp.status_code == 200:
@@ -37,49 +37,50 @@ def clean_markdown(text):
     text = text.replace('`', '')
     return text.strip()
 
-# ------------------ PROMPT EXPERTISE (structure d'origine restaurée) ------------------
+# ------------------ PROMPT EXPERTISE (7 jours, structure par dizaine) ------------------
 PROMPT_EXPERTISE = """
-Tu vas générer un CHAPELET TAZZZ BOT – MODE EXPERTISE (7 jours) pour le domaine : {domaine}.
+Tu vas générer un CHAPELET TAZZZ BOT – MODE EXPERTISE pour maîtriser le domaine : {domaine}.
 
-Structure à respecter exactement (comme dans l'exemple ci-dessous). Utilise le même format avec :
-- **Rappel** (une phrase sur l'outil et la plasticité cérébrale)
-- **Point d'entrée du problème**
-- **Règle d'or**
-- Puis **5 dizaines** numérotées (Première dizaine, Deuxième dizaine...). Pour chaque dizaine :
-   - **Méditation (lecture simple – vous pouvez consulter vos notes de cours personnelles ou d'autres sources pour une exposition générale)** : (définition, rôle, application concrète)
-   - **Notre Père** : Problème général : ... Illustratif : ...
-   - **Je vous salue Marie (10x)** : (une phrase mantra courte, spécifique au concept)
-   - **Gloire au Père** : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et cette transformation profonde."
-- **Clôture** (une phrase de synthèse)
+Ce chapelet se pratique sur **7 jours**. Chaque jour correspond à un objectif d’apprentissage différent, avec 5 dizaines (concepts clés).  
+Au total, tu produiras 35 dizaines (5 par jour).
 
-Termine par :
+Structure pour **chaque dizaine** (respecte impérativement ce format) :
+
+**DIZAINE X – Concept : [nom du concept]**
+
+**1. Méditation sur le mystère** :  
+*Grande fiche – détaillée à lire simplement (en tenant le gros grain correspondant).*  
+(Donne une explication claire, des définitions, des exemples, des points de repère – comme une mini‑fiche de cours.)
+
+**2. Notre Père (à répéter 3 fois)** :  
+(une question ou un problème général formulé comme une prière, par exemple : « Mon Dieu, aide-moi à ne pas confondre... » ou « Quelle est la bonne méthode pour... ? »)
+
+**3. Je vous salue Marie (à répéter 10 fois)** :  
+(une phrase courte, positive, qui synthétise l’essentiel du concept. Exemple : « Ma déclaration est déposée avant la date légale, sans stress ni retard. »)
+
+**4. Gloire au Père (à répéter 3 fois)** :  
+(une phrase de consolidation du type : « Le concept « X » est connu et consolidé. »)
+
+Entre les jours, sépare avec : **--- Jour X ---** et un titre (ex: **Jour 1 – Découverte des bases**).
+
+Contenu à générer :
+
+- **Jour 1** : Concepts fondamentaux (définitions, principes de base)
+- **Jour 2** : Méthodologie et outils clés
+- **Jour 3** : Application pratique et cas courants
+- **Jour 4** : Cas complexes et exceptions
+- **Jour 5** : Contrôle, audit et indicateurs
+- **Jour 6** : Synthèse et liens entre concepts
+- **Jour 7** : Auto‑évaluation et préparation à l’expertise
+
+Soigne la qualité pédagogique. Chaque méditation doit être dense mais claire. Les mantras (Je vous salue Marie) doivent être positifs, courts, spécifiques au concept. Les questions du Notre Père doivent provoquer la réflexion.
+
+Termine l’ensemble par :
 Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée.
 Copyright Dr Tazemda
-
-Exemple de structure (à suivre impérativement) :
-
-**Rappel**
-Ce chapelet est un outil de mémorisation active par répétition rythmée, basé sur la plasticité cérébrale...
-
-**Point d’entrée du problème**
-Comment garantir...
-
-**Règle d’or**
-...
-
-**Première dizaine – Concept clé : [nom du concept]**
-- **Médiation** (lecture simple...) : définition...
-- **Notre Père** : Problème général : ... Illustratif : ...
-- **Je vous salue Marie (10x)** : mantra...
-- **Gloire au Père** : (texte fixe ci-dessus)
-
-**Deuxième dizaine**... etc.
-
-**Clôture**
-...
 """
 
-# ------------------ PROMPT PERSONNEL ------------------
+# ------------------ PROMPT PERSONNEL (inchangé) ------------------
 PROMPT_PERSONNEL = f"""
 Génère un CHAPELET TAZZZ BOT – MODE DÉVELOPPEMENT PERSONNEL (21 ou 66 jours) pour ces 5 défauts :
 {{defauts}}
@@ -99,9 +100,9 @@ Structure canonique (texte brut) :
 Pour chaque défaut :
 **Mystère X – [nom du défaut]**
 **Méditation** : (passé négatif + visualisation positive)
-**Notre Père** : "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité."
-**10 × Je vous salue Marie** : (un mantra unique pour tous les mystères, résumant la correction des 5 défauts)
-**Gloire au Père** : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et cette transformation profonde."
+**Notre Père** : "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité." (à répéter 3 fois)
+**10 × Je vous salue Marie** : (un mantra unique pour tous les mystères, résumant la correction des 5 défauts) (à répéter 10 fois)
+**Gloire au Père** : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et cette transformation profonde." (à répéter 3 fois)
 
 ### FIN
 - Salve Regina, Mantra final, Signe de croix final.
@@ -111,7 +112,7 @@ Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition r
 Copyright Dr Tazemda
 """
 
-# ------------------ PROMPT CLASSIFICATION (corrigé pour éviter les erreurs JSON) ------------------
+# ------------------ PROMPT CLASSIFICATION (inchangé) ------------------
 PROMPT_CLASSIFY = """
 Tu es un classificateur. Réponds UNIQUEMENT par un objet JSON valide, sans texte avant ou après.
 
@@ -129,9 +130,7 @@ Message: "Je veux maîtriser les concepts du IT support niveau 1 et 2"
 
 Message: "Je me lève tard, je suis paresseux, je dépense trop, je suis timide, je manque de motivation"
 → {{"type": "personnel", "contenu": ["Je me lève tard", "Je suis paresseux", "Je dépense trop", "Je suis timide", "Je manque de motivation"]}}
-
-Important : Ne mets PAS de sauts de ligne dans le JSON. Utilise les guillemets doubles.
-""".strip()
+"""
 
 @app.route('/')
 def index():
@@ -172,10 +171,9 @@ def generate():
         if not message:
             return jsonify({'error': 'Message requis'}), 400
 
-        # Classification
         classify_prompt = PROMPT_CLASSIFY.format(message)
         try:
-            raw_class = call_deepseek(classify_prompt, system_message="Tu retournes uniquement du JSON valide.")
+            raw_class = call_deepseek(classify_prompt, system_message="Retourne uniquement du JSON valide.")
             raw_class = clean_markdown(raw_class)
             start = raw_class.find('{')
             end = raw_class.rfind('}') + 1
@@ -186,7 +184,6 @@ def generate():
             type_demande = classification.get('type')
             contenu = classification.get('contenu')
         except Exception as e:
-            # Fallback : détection par mots-clés
             if any(word in message.lower() for word in ['maîtriser', 'apprendre', 'comprendre', 'entretien', 'formation', 'concepts', 'niveau 1', 'niveau 2']):
                 type_demande = "expertise"
                 contenu = message
@@ -222,4 +219,3 @@ def generate():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-
