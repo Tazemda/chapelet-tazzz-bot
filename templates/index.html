@@ -3,273 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 CHAPELET TAZZZ BOT 📿</title>
+    <title>🧠 CHAPELET TAZZZ BOT</title>
     <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e2b3c 0%, #0f1a24 100%);
-            margin: 0;
-            padding: 20px;
-            color: #f0f0f0;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
-            padding: 25px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-        }
-        h1 { text-align: center; font-size: 2.2rem; margin-bottom: 5px; }
-        .subtitle { text-align: center; font-size: 1rem; opacity: 0.8; margin-bottom: 25px; }
-        .mode-selector { display: flex; gap: 15px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
-        .mode-btn {
-            background: #2c3e4e; border: none; color: white; padding: 12px 24px;
-            border-radius: 40px; cursor: pointer; font-weight: bold;
-        }
-        .mode-btn.active { background: #e67e22; box-shadow: 0 0 15px rgba(230,126,34,0.5); }
-        .mode-panel { display: none; animation: fadeIn 0.4s ease; }
-        .mode-panel.active-panel { display: block; }
-        textarea, input[type="text"] {
-            width: 100%; padding: 12px; margin: 10px 0;
-            border-radius: 12px; border: none; background: #f0f0f0; font-size: 1rem;
-        }
-        .defauts-group { display: flex; flex-direction: column; gap: 10px; margin: 15px 0; }
-        button.generate {
-            background: #e67e22; border: none; color: white; padding: 14px 28px;
-            font-size: 1.2rem; border-radius: 40px; cursor: pointer; width: 100%; margin-top: 20px;
-        }
-        .loader { display: none; text-align: center; margin: 20px 0; }
-        .loader.show { display: block; }
-        .result {
-            background: #0b1620;
-            border-radius: 20px;
-            padding: 20px;
-            margin-top: 30px;
-            white-space: pre-wrap;
-            font-family: monospace;
-            font-size: 0.9rem;
-            max-height: 500px;
-            overflow-y: auto;
-            border-left: 5px solid #e67e22;
-        }
-        .nav-buttons {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 20px;
-            gap: 10px;
-        }
-        .nav-buttons button {
-            background: #2c3e4e;
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-        }
-        .nav-buttons button:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-        .day-counter {
-            font-size: 0.9rem;
-        }
-        .info-msg { background: #2c3e4e; padding: 8px; border-radius: 12px; margin-top: 10px; text-align: center; }
-        .feedback-box {
-            margin-top: 20px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 20px;
-            padding: 15px;
-            text-align: center;
-        }
-        .stars {
-            display: inline-flex;
-            gap: 5px;
-            margin: 10px 0;
-        }
-        .star {
-            font-size: 28px;
-            cursor: pointer;
-            color: #555;
-            transition: color 0.2s;
-        }
-        .star.selected {
-            color: gold;
-        }
-        .comment-input {
-            width: 80%;
-            margin: 10px auto;
-            display: block;
-        }
-        .submit-feedback {
-            background: #e67e22;
-            border: none;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 30px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 0.8rem;
-            opacity: 0.8;
-        }
-        .copyright {
-            font-size: 0.7rem;
-            margin-top: 10px;
-        }
+        body { font-family: Arial, sans-serif; background-color: #121212; color: white; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: #1e1e2f; padding: 20px; border-radius: 20px; }
+        button, input, textarea { background: #2c3e4e; color: white; border: none; padding: 10px; border-radius: 10px; margin: 5px; }
+        button { background: #e67e22; cursor: pointer; }
+        .result { background: #0b1620; padding: 15px; border-radius: 15px; white-space: pre-wrap; font-family: monospace; margin-top: 20px; }
+        .mode-btn { background: #2c3e4e; margin: 5px; }
+        .active { background: #e67e22; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
-    <div class="subtitle">Transforme ta structure mentale</div>
-    <div class="mode-selector">
-        <button class="mode-btn" data-mode="expertise">📚 Expertise (7 jours)</button>
-        <button class="mode-btn" data-mode="personnel">🔥 Développement personnel (21/66j)</button>
-        <button class="mode-btn" data-mode="consultation">💬 Consultation guidée</button>
+    <h1>🧠 CHAPELET TAZZZ BOT</h1>
+    <div>
+        <button class="mode-btn" data-mode="expertise">📚 Expertise (7j)</button>
+        <button class="mode-btn" data-mode="personnel">🔥 Personnel (21j)</button>
+        <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
     </div>
-
-    <div id="expertise" class="mode-panel">
-        <p>🔬 Domaine à maîtriser :</p>
-        <input type="text" id="domaine" placeholder="Ex: Audit des services d'aide à domicile">
+    <div id="expertisePanel" style="display:block;">
+        <p>Domaine à maîtriser :</p>
+        <input type="text" id="domaine" placeholder="Ex: Recherche clinique" style="width:100%;">
     </div>
-    <div id="personnel" class="mode-panel">
-        <p>📝 5 défauts :</p>
-        <div class="defauts-group" id="defauts-list"></div>
+    <div id="personnelPanel" style="display:none;">
+        <p>5 défauts (un par ligne) :</p>
+        <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;..."></textarea>
     </div>
-    <div id="consultation" class="mode-panel">
-        <p>💬 Décris ta situation ou ton besoin :</p>
-        <textarea id="consult-message" rows="4" placeholder="Ex: Je veux maîtriser l'audit des services d'aide à domicile"></textarea>
+    <div id="consultationPanel" style="display:none;">
+        <p>Décrivez votre situation :</p>
+        <textarea id="consultMessage" rows="4" placeholder="Je veux maîtriser la recherche clinique..."></textarea>
     </div>
-
-    <button class="generate" id="generateBtn">✨ GÉNÉRER MON CHAPELET ✨</button>
-    <div class="loader" id="loader">⏳ Génération (20-40s)...</div>
-    <div id="result" class="result" style="display:none;"></div>
-    <div class="feedback-box" id="feedbackBox" style="display:none;">
-        <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
-        <div class="stars" id="stars">
-            <span class="star" data-value="1">☆</span>
-            <span class="star" data-value="2">☆</span>
-            <span class="star" data-value="3">☆</span>
-            <span class="star" data-value="4">☆</span>
-            <span class="star" data-value="5">☆</span>
-        </div>
-        <textarea id="feedbackComment" class="comment-input" rows="2" placeholder="Vos remarques ou suggestions (facultatif)"></textarea>
-        <button id="submitFeedback" class="submit-feedback">Envoyer mon avis</button>
-    </div>
-    <div class="footer">
-        🧠 CHAPELET TAZZZ BOT 📿<br>
-        <span class="copyright">© Dr Tazemda – Plasticité cérébrale & répétition rythmée</span>
-    </div>
+    <button id="generateBtn">✨ GÉNÉRER MON CHAPELET ✨</button>
+    <div id="result" class="result"></div>
+    <div id="loader" style="display:none;">⏳ Génération (max 90s)...</div>
 </div>
-
 <script>
-    // Gestion des modes
     const modeBtns = document.querySelectorAll('.mode-btn');
-    const panels = { expertise: document.getElementById('expertise'), personnel: document.getElementById('personnel'), consultation: document.getElementById('consultation') };
+    const panels = {
+        expertise: document.getElementById('expertisePanel'),
+        personnel: document.getElementById('personnelPanel'),
+        consultation: document.getElementById('consultationPanel')
+    };
     let currentMode = 'expertise';
-
-    // Créer 5 inputs pour le mode personnel
-    const defautsContainer = document.getElementById('defauts-list');
-    for (let i = 1; i <= 5; i++) {
-        let inp = document.createElement('input');
-        inp.type = 'text';
-        inp.placeholder = `Défaut ${i} (ex: Je me lève tard)`;
-        inp.classList.add('defaut-input');
-        defautsContainer.appendChild(inp);
-    }
 
     modeBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             modeBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentMode = btn.getAttribute('data-mode');
-            Object.keys(panels).forEach(k => panels[k].classList.remove('active-panel'));
-            panels[currentMode].classList.add('active-panel');
-        });
-    });
-    modeBtns[0].classList.add('active');
-    panels.expertise.classList.add('active-panel');
-
-    const generateBtn = document.getElementById('generateBtn');
-    const loader = document.getElementById('loader');
-    const resultDiv = document.getElementById('result');
-    const feedbackBox = document.getElementById('feedbackBox');
-    let currentChapeletText = ''; // sauvegarde pour feedback
-
-    // Gestion des étoiles
-    let currentNote = 0;
-    const stars = document.querySelectorAll('.star');
-    stars.forEach(star => {
-        star.addEventListener('click', () => {
-            currentNote = parseInt(star.getAttribute('data-value'));
-            stars.forEach(s => {
-                if (parseInt(s.getAttribute('data-value')) <= currentNote) {
-                    s.textContent = '★';
-                    s.classList.add('selected');
-                } else {
-                    s.textContent = '☆';
-                    s.classList.remove('selected');
-                }
-            });
+            Object.keys(panels).forEach(k => panels[k].style.display = 'none');
+            panels[currentMode].style.display = 'block';
         });
     });
 
-    document.getElementById('submitFeedback').addEventListener('click', async () => {
-        if (currentNote === 0) {
-            alert('Veuillez sélectionner une note (1 à 5 étoiles)');
-            return;
-        }
-        const comment = document.getElementById('feedbackComment').value.trim();
-        try {
-            const res = await fetch('/feedback', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ note: currentNote, commentaire: comment })
-            });
-            const data = await res.json();
-            if (data.status === 'ok') {
-                alert('Merci pour votre avis !');
-                feedbackBox.style.display = 'none';
-                currentNote = 0;
-                stars.forEach(s => { s.textContent = '☆'; s.classList.remove('selected'); });
-                document.getElementById('feedbackComment').value = '';
-            } else {
-                alert('Erreur lors de l\'envoi');
-            }
-        } catch (err) {
-            alert('Erreur réseau: ' + err.message);
-        }
-    });
-
-    generateBtn.addEventListener('click', async () => {
+    document.getElementById('generateBtn').addEventListener('click', async () => {
         let payload = { mode: currentMode };
         if (currentMode === 'expertise') {
             let domaine = document.getElementById('domaine').value.trim();
             if (!domaine) return alert('Domaine requis');
             payload.domaine = domaine;
         } else if (currentMode === 'personnel') {
-            let defauts = Array.from(document.querySelectorAll('.defaut-input')).map(i => i.value.trim()).filter(v => v);
-            if (defauts.length !== 5) return alert('Les 5 défauts sont requis');
+            let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
+            if (defauts.length !== 5) return alert('5 défauts requis');
             payload.defauts = defauts;
         } else {
-            let msg = document.getElementById('consult-message').value.trim();
-            if (!msg) return alert('Décrivez votre situation');
+            let msg = document.getElementById('consultMessage').value.trim();
+            if (!msg) return alert('Message requis');
             payload.message = msg;
         }
 
-        loader.classList.add('show');
-        resultDiv.style.display = 'none';
-        resultDiv.innerHTML = '';
-        feedbackBox.style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
+        document.getElementById('result').innerHTML = '';
         try {
             let res = await fetch('/generate', {
                 method: 'POST',
@@ -279,54 +84,13 @@
             let data = await res.json();
             if (data.error) alert('Erreur: ' + data.error);
             else {
-                currentChapeletText = data.chapelet;
-                if (currentMode === 'expertise' && data.chapelet.includes('--- Jour ')) {
-                    // Découpage en jours (identique à avant)
-                    const jours = data.chapelet.split(/(?=--- Jour \d+)/).filter(j => j.trim() !== '');
-                    let indexJour = 0;
-                    function afficherJour() {
-                        let jourTexte = jours[indexJour];
-                        let titreMatch = jourTexte.match(/--- Jour \d+ – [^\n]+/);
-                        let titre = titreMatch ? titreMatch[0] : `Jour ${indexJour+1}`;
-                        let contenu = jourTexte.replace(/--- Jour \d+ – [^\n]+/, '').trim();
-                        resultDiv.innerHTML = `
-                            <div style="font-weight: bold; text-align: center; margin-bottom: 10px;">${titre}</div>
-                            <div>${contenu.replace(/\n/g, '<br>')}</div>
-                            <div class="nav-buttons">
-                                <button id="prevDayBtn" ${indexJour === 0 ? 'disabled' : ''}>◀ Précédent</button>
-                                <span class="day-counter">Jour ${indexJour+1} / ${jours.length}</span>
-                                <button id="nextDayBtn" ${indexJour === jours.length-1 ? 'disabled' : ''}>Suivant ▶</button>
-                            </div>
-                        `;
-                        document.getElementById('prevDayBtn')?.addEventListener('click', () => {
-                            if (indexJour > 0) {
-                                indexJour--;
-                                afficherJour();
-                            }
-                        });
-                        document.getElementById('nextDayBtn')?.addEventListener('click', () => {
-                            if (indexJour < jours.length-1) {
-                                indexJour++;
-                                afficherJour();
-                            }
-                        });
-                    }
-                    afficherJour();
-                } else {
-                    let html = data.chapelet.replace(/\n/g, '<br>');
-                    if (data.message_info) html = `<div class="info-msg">${data.message_info}</div><br>${html}`;
-                    resultDiv.innerHTML = html;
-                }
-                resultDiv.style.display = 'block';
-                feedbackBox.style.display = 'block';
+                document.getElementById('result').innerHTML = data.chapelet.replace(/\n/g, '<br>');
+                if (data.message_info) document.getElementById('result').innerHTML = `<div>${data.message_info}</div><br>` + document.getElementById('result').innerHTML;
             }
-        } catch (err) {
-            alert('Erreur réseau ou serveur: ' + err.message);
-            console.error(err);
-        } finally {
-            loader.classList.remove('show');
-        }
+        } catch (err) { alert('Erreur réseau'); }
+        finally { document.getElementById('loader').style.display = 'none'; }
     });
 </script>
 </body>
 </html>
+
