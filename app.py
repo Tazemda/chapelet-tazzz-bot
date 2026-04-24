@@ -11,7 +11,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-def call_deepseek(prompt, system_message="Tu es un expert pédagogique."):
+def call_deepseek(prompt, system_message="Tu es un expert en pédagogie."):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API manquante")
     headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
@@ -22,9 +22,9 @@ def call_deepseek(prompt, system_message="Tu es un expert pédagogique."):
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 3500
+        "max_tokens": 3000
     }
-    resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=120)
+    resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=90)
     if resp.status_code == 200:
         return resp.json()["choices"][0]["message"]["content"]
     else:
@@ -33,7 +33,7 @@ def call_deepseek(prompt, system_message="Tu es un expert pédagogique."):
 def clean_markdown(text):
     return re.sub(r'```[\s\S]*?```', '', text).replace('`', '').strip()
 
-# --- Base de données ---
+# ------------------ BASE SQLITE ------------------
 def init_db():
     conn = sqlite3.connect('tazbot.db')
     c = conn.cursor()
@@ -46,41 +46,45 @@ def init_db():
     conn.close()
 init_db()
 
-# --- PROMPT MODIFIÉ : on ne donne PAS de plan. On laisse DeepSeek inventer son propre découpage ---
+# ------------------ PROMPT ULTRA-COURT SANS AUCUN PLAN ------------------
 PROMPT_JOUR = """
-Tu es un expert en pédagogie. L’utilisateur souhaite maîtriser le domaine suivant : « {domaine} ».
+Tu es un pédagogue. L'utilisateur veut apprendre le domaine suivant : "{domaine}".
 
-Tu vas l’aider en générant un **chapelet d’apprentissage** structuré sur **7 jours**.  
-Chaque jour doit avoir un **titre informatif** (ex: "Jour 1 – Découverte des fondamentaux") et **5 dizaines** (concepts).
+Tu dois générer le **JOUR {jour_num} sur 7** d'un chapelet d'apprentissage. Chaque jour a un objectif général. Voici les objectifs des 7 jours :
+1. Découverte des bases
+2. Approfondissement pratique
+3. Cas complexes
+4. Contrôle et indicateurs
+5. Gestion des risques
+6. Synthèse et liens
+7. Auto-évaluation
 
-Pour le **Jour {jour_num}** , dont le titre prévu est « {titre_jour} », tu dois produire exactement 5 dizaines.  
-Chaque dizaine doit respecter ce format :
+Pour le jour {jour_num} (objectif : "{titre_jour}"), génère **5 DIZAINES** (concepts). Chaque dizaine doit suivre exactement ce format :
 
-**DIZAINE X – Concept : (nom du concept)**
+**DIZAINE X – Concept : [nom du concept adapté au domaine]**
 
 **1) Méditation (grande fiche)**  
 *Instruction : Tenez le gros grain. Lisez ce paragraphe comme une fiche de cours.*  
-(Paragraphe dense : définitions, exemples concrets, points clés – adapté au domaine.)
+(Paragraphe dense avec définitions, exemples concrets, points clés – tout cela en rapport avec le domaine et le concept.)
 
 **2) Notre Père**  
 *Récitez cette question 3 fois.*  
-« (Question problématique sur le concept) »
+« Une question problématique sur le concept »
 
 **3) Je vous salue Marie**  
 *Répétez ce paragraphe 10 fois (5 lectures, 5 sans regarder).*  
-(Paragraphe synthétique de plusieurs phrases résumant l’essentiel du concept.)
+(Un résumé synthétique de plusieurs phrases du concept.)
 
 **4) Gloire au Père**  
 *Récitez cette phrase 3 fois.*  
-« Le concept “(nom)” est connu et consolidé. »
+« Le concept "[nom du concept]" est connu et consolidé. »
 
-Tu génères **seulement le contenu du Jour {jour_num}**.  
-Le titre du jour est : « {titre_jour} ».  
-Le contenu doit être **adapté au domaine** « {domaine} ».  
-Ne renvoie que le texte des dizaines (sans commentaire avant/après).
+Le contenu doit être ADAPTÉ au domaine "{domaine}". N'invente pas de plan extérieur. Ne parle ni de médicament, ni d'essai clinique, ni d'AMM, sauf si le domaine le demande explicitement.
+
+Commence directement par "**DIZAINE 1**" (ne mets pas le titre du jour avant).
 """
 
-# Noms de jours génériques (DeepSeek peut les adapter, mais on fournit une base)
+# Noms génériques des jours (modifiables si besoin)
 NOMS_JOURS = [
     "Découverte des bases",
     "Approfondissement pratique",
@@ -95,7 +99,8 @@ def generer_jour(domaine, jour_num):
     titre_jour = NOMS_JOURS[jour_num-1]
     prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_jour=titre_jour)
     raw = call_deepseek(prompt)
-    return clean_markdown(raw)
+    # On ajoute le titre du jour proprement pour l'affichage
+    return f"--- Jour {jour_num} – {titre_jour} ---\n\n" + clean_markdown(raw)
 
 def generer_personnel(defauts):
     mantra = "Je me lève tôt, je termine ce que je commence, je sors chaque jour, je structure ma vie, j'attire un travail stable."
@@ -130,7 +135,7 @@ Chapelet Tazzz Bot – © Dr Tazemda
 """
     return texte
 
-# --- ROUTES (inchangées) ---
+# ------------------ ROUTES ------------------
 @app.route('/')
 def index():
     return render_template('index.html')
