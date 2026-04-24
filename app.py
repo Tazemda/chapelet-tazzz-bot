@@ -24,7 +24,7 @@ def call_deepseek(prompt, system_message="Tu es l'assistant Tazzz Bot."):
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 4000  # réduit pour éviter les timeouts
+        "max_tokens": 5000
     }
     resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload)
     if resp.status_code == 200:
@@ -33,19 +33,15 @@ def call_deepseek(prompt, system_message="Tu es l'assistant Tazzz Bot."):
         raise Exception(f"API DeepSeek error {resp.status_code}: {resp.text}")
 
 def clean_markdown(text):
-    # Enlève les blocs de code markdown ``` ... ```
     text = re.sub(r'```[\s\S]*?```', '', text)
     text = text.replace('`', '')
     return text.strip()
 
 def extract_json(text):
-    """Extrait le premier objet JSON valide d'une chaîne de caractères."""
     text = text.strip()
-    # Cherche le premier '{' et le dernier '}'
     start = text.find('{')
     if start == -1:
-        raise ValueError("Aucune accolade ouvrante trouvée")
-    # On va compter les accolades pour trouver la fermeture correcte
+        raise ValueError("Aucune accolade ouvrante")
     brace_count = 0
     end = start
     for i, ch in enumerate(text[start:], start):
@@ -58,43 +54,43 @@ def extract_json(text):
                 break
     if end == start:
         raise ValueError("JSON non valide")
-    json_str = text[start:end+1]
-    return json_str
+    return text[start:end+1]
 
-# ------------------ PROMPT EXPERTISE (version plus courte et fiable) ------------------
+# ------------------ PROMPT EXPERTISE (structure type recherche clinique) ------------------
 PROMPT_EXPERTISE = """
 Génère un CHAPELET TAZZZ BOT – MODE EXPERTISE (7 jours) pour le domaine : {domaine}.
 
-Structure exacte (texte brut, sans markdown) :
+Le chapelet est un outil de mémorisation active par répétition rythmée, basé sur la plasticité cérébrale.
+Chaque jour comporte 5 dizaines. Chaque dizaine suit EXACTEMENT ce modèle (à copier) :
 
-**Rappel** : Une phrase.
-**Point d’entrée du problème** : Une phrase.
-**Règle d’or** : Une phrase.
-
-Puis pour chaque jour (Jour 1 à Jour 7) avec 5 concepts par jour. Chaque concept suit ce format :
-
-**DIZAINE X – Concept : [nom]**
+**DIZAINE X – Concept : [nom du concept]**
 
 **1. Méditation sur le mystère** :  
-(paragraphe dense mais clair, comme une fiche de cours)
+*Grande fiche – détaillée à lire simplement (en tenant le gros grain correspondant).*  
+(Écris ici un paragraphe dense et clair, avec définition, rôle, exemples, points de repère.)
 
 **2. Notre Père (à répéter 3 fois)** :  
-(une question ou problème, formulée comme une prière)
+(Formule une question problématique ou un aide-mémoire, par exemple : « Mon Dieu, aide-moi à ne pas confondre... » ou « Comment vérifier que... ? »)
 
 **3. Je vous salue Marie (à répéter 10 fois)** :  
-(une phrase positive courte)
+(Ton mantra doit être un **paragraphe de plusieurs phrases** qui synthétise tout le concept. Exemple tiré du cours de recherche clinique :  
+« P c’est la Population avec ses critères d’inclusion. Exemple : HSH séronégatifs à haut risque.  
+I c’est l’Intervention précise et reproductible. Exemple : spiruline 500 mg par jour.  
+C c’est le Comparateur pertinent. Exemple : placebo identique.  
+O c’est l’Outcome mesurable et clinique. Exemple : incidence du VIH à 12 mois par ELISA et Western blot. »  
+Adapte ce style au concept traité. Ce paragraphe sera lu ou récité 10 fois, il doit être riche et complet.)
 
 **4. Gloire au Père (à répéter 3 fois)** :  
-"Le concept « X » est connu et consolidé."
+« Le concept « X » est connu et consolidé. »
 
-Sépare les jours par : --- Jour 1 – [titre] --- etc.
+Sépare les jours par : **--- Jour 1 – [titre] ---** , etc. (Jour 1 à Jour 7, avec titres adaptés au domaine : découverte, méthodes, cas pratiques, etc.)
 
-Termine par :
+Termine l’ensemble par :
 Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée.
 Copyright Dr Tazemda
 """
 
-# ------------------ PROMPT PERSONNEL (inchangé) ------------------
+# ------------------ PROMPT PERSONNEL (inchangé, mantra court) ------------------
 PROMPT_PERSONNEL = """
 Génère un CHAPELET TAZZZ BOT – MODE DÉVELOPPEMENT PERSONNEL (21 ou 66 jours) pour ces 5 défauts :
 {defauts}
@@ -114,9 +110,9 @@ Structure canonique (texte brut) :
 Pour chaque défaut :
 **Mystère X – [nom du défaut]**
 **Méditation** : (passé négatif + visualisation positive)
-**Notre Père** : "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité." (à répéter 3 fois)
-**10 × Je vous salue Marie** : (un mantra unique, résumant la correction des 5 défauts) (à répéter 10 fois)
-**Gloire au Père** : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et cette transformation profonde." (à répéter 3 fois)
+**Notre Père** (à répéter 3 fois) : "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité."
+**10 × Je vous salue Marie** (mantra unique pour tous les mystères, une phrase courte résumant la correction des 5 défauts, à répéter 10 fois) : (ici la phrase)
+**Gloire au Père** (à répéter 3 fois) : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et cette transformation profonde."
 
 ### FIN
 - Salve Regina, Mantra final, Signe de croix final.
@@ -126,19 +122,19 @@ Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition r
 Copyright Dr Tazemda
 """
 
-# ------------------ PROMPT CLASSIFICATION (plus robuste) ------------------
+# ------------------ PROMPT CLASSIFICATION (simple, plus fiable) ------------------
 PROMPT_CLASSIFY = """
 Réponds uniquement par un objet JSON valide, sans texte avant ou après.
 
-Message utilisateur : "{}"
+Message reçu : "{}"
 
 Règles :
-- Expertise (apprendre un domaine technique, préparer un entretien) → type = "expertise", contenu = le domaine.
-- Personnel (défauts de comportement) → type = "personnel", contenu = liste de 5 défauts.
+- Si l'utilisateur veut APPRENDRE, MAÎTRISER, COMPRENDRE un domaine technique ou professionnel → type = "expertise", contenu = le nom du domaine.
+- Sinon (défauts personnels : lenteur, procrastination, timidité, désordre...) → type = "personnel", contenu = liste de 5 défauts.
 
 Exemples :
-Message: "Je veux maîtriser l'IT support" → {{"type": "expertise", "contenu": "IT support"}}
-Message: "Je me lève tard, je suis paresseux" → {{"type": "personnel", "contenu": ["Je me lève tard", "Je suis paresseux", "Je manque d'organisation", "Je procrastine", "Je suis timide"]}}
+Message: "Je veux maîtriser l'audit des services d'aide à domicile" → {{"type": "expertise", "contenu": "Audit des services d'aide à domicile"}}
+Message: "Je me lève tard, je suis paresseux, je dépense trop, je suis timide, je manque de motivation" → {{"type": "personnel", "contenu": ["Je me lève tard", "Je suis paresseux", "Je dépense trop", "Je suis timide", "Je manque de motivation"]}}
 """
 
 @app.route('/')
@@ -184,14 +180,13 @@ def generate():
         try:
             raw_class = call_deepseek(classify_prompt, system_message="Retourne uniquement du JSON valide.")
             raw_class = clean_markdown(raw_class)
-            # Extraction du JSON
             json_str = extract_json(raw_class)
             classification = json.loads(json_str)
             type_demande = classification.get('type')
             contenu = classification.get('contenu')
         except Exception as e:
-            # Fallback : détection par mots-clés
-            if any(word in message.lower() for word in ['maîtriser', 'apprendre', 'comprendre', 'entretien', 'formation', 'concepts', 'niveau']):
+            # Fallback mots-clés
+            if any(word in message.lower() for word in ['maîtriser', 'apprendre', 'comprendre', 'entretien', 'formation', 'concepts', 'niveau', 'domaine']):
                 type_demande = "expertise"
                 contenu = message
             else:
