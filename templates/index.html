@@ -150,7 +150,15 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            let data = await res.json();
+            // Vérifier si la réponse est du JSON
+            const text = await res.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error("Réponse non JSON:", text);
+                throw new Error("Le serveur a retourné une réponse invalide (probablement une erreur). Regardez les logs.");
+            }
             if (data.error) alert('Erreur: ' + data.error);
             else {
                 let html = data.chapelet.replace(/\n/g, '<br>');
@@ -158,8 +166,12 @@
                 resultDiv.innerHTML = html;
                 resultDiv.style.display = 'block';
             }
-        } catch (err) { alert(err.message); }
-        finally { loader.classList.remove('show'); }
+        } catch (err) {
+            alert('Erreur réseau ou serveur: ' + err.message);
+            console.error(err);
+        } finally {
+            loader.classList.remove('show');
+        }
     });
 </script>
 </body>
