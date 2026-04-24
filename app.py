@@ -1,280 +1,191 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 CHAPELET TAZZZ BOT</title>
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e2b3c 0%, #0f1a24 100%);
-            margin: 0;
-            padding: 20px;
-            color: #f0f0f0;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
-            padding: 25px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-        }
-        h1, h2 {
-            text-align: center;
-            margin-bottom: 20px;
-            font-weight: 300;
-        }
-        h1 {
-            font-size: 2.2rem;
-            letter-spacing: 2px;
-        }
-        .mode-selector {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-        .mode-btn {
-            background: #2c3e4e;
-            border: none;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            font-weight: bold;
-        }
-        .mode-btn.active {
-            background: #e67e22;
-            box-shadow: 0 0 15px rgba(230,126,34,0.5);
-        }
-        .mode-btn:hover {
-            transform: translateY(-2px);
-        }
-        .mode-panel {
-            display: none;
-            animation: fadeIn 0.4s ease;
-        }
-        .mode-panel.active-panel {
-            display: block;
-        }
-        textarea, input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 12px;
-            border: none;
-            background: #f0f0f0;
-            font-size: 1rem;
-            font-family: inherit;
-        }
-        .defauts-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin: 15px 0;
-        }
-        .defauts-group input {
-            background: #fff;
-            color: #1e2b3c;
-        }
-        button.generate {
-            background: #e67e22;
-            border: none;
-            color: white;
-            padding: 14px 28px;
-            font-size: 1.2rem;
-            border-radius: 40px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 20px;
-            transition: background 0.2s;
-            font-weight: bold;
-        }
-        button.generate:hover {
-            background: #d35400;
-        }
-        .loader {
-            display: none;
-            text-align: center;
-            margin: 20px 0;
-        }
-        .loader.show {
-            display: block;
-        }
-        .result {
-            background: #0b1620;
-            border-radius: 20px;
-            padding: 20px;
-            margin-top: 30px;
-            white-space: pre-wrap;
-            font-family: monospace;
-            font-size: 0.9rem;
-            max-height: 500px;
-            overflow-y: auto;
-            border-left: 5px solid #e67e22;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px);}
-            to { opacity: 1; transform: translateY(0);}
-        }
-        footer {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 0.8rem;
-            opacity: 0.7;
-        }
-        .copyright {
-            font-size: 0.7rem;
-            margin-top: 10px;
-            text-align: center;
-            opacity: 0.6;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
-    <h2>Transforme ta structure mentale</h2>
+import os
+import json
+import re
+import requests
+from flask import Flask, request, render_template, jsonify
 
-    <div class="mode-selector">
-        <button class="mode-btn" data-mode="expertise">📚 Expertise (7 jours)</button>
-        <button class="mode-btn" data-mode="personnel">🔥 Développement personnel (21/66j)</button>
-        <button class="mode-btn" data-mode="consultation">💬 Consultation guidée</button>
-    </div>
+app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 
-    <!-- Mode Expertise -->
-    <div id="expertise" class="mode-panel">
-        <p>🔬 Quel domaine souhaites-tu maîtriser ?</p>
-        <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, IT support niveau 1 et 2...">
-    </div>
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
+DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-    <!-- Mode Personnel -->
-    <div id="personnel" class="mode-panel">
-        <p>📝 Saisis les 5 défauts que tu souhaites corriger :</p>
-        <div class="defauts-group" id="defauts-list">
-            <!-- 5 inputs créés en JS -->
-        </div>
-    </div>
-
-    <!-- Mode Consultation -->
-    <div id="consultation" class="mode-panel">
-        <p>💬 Parle-moi de tes difficultés, de ce qui te bloque, de ce que tu aimerais changer.</p>
-        <textarea id="consult-message" rows="4" placeholder="Ex: Je veux maîtriser les concepts du IT support niveau 1 et 2 pour un entretien..."></textarea>
-    </div>
-
-    <button class="generate" id="generateBtn">✨ GÉNÉRER MON CHAPELET ✨</button>
-
-    <div class="loader" id="loader">
-        <div>⏳ Génération en cours... (20-40 secondes)</div>
-    </div>
-
-    <div id="result" class="result" style="display:none;"></div>
-    <div class="copyright">© Dr Tazemda – Chapelet Taz Bot</div>
-</div>
-
-<script>
-    // Gestion des modes
-    const modeBtns = document.querySelectorAll('.mode-btn');
-    const panels = {
-        expertise: document.getElementById('expertise'),
-        personnel: document.getElementById('personnel'),
-        consultation: document.getElementById('consultation')
-    };
-    let currentMode = 'expertise';
-
-    // Créer 5 inputs pour le mode personnel
-    const defautsContainer = document.getElementById('defauts-list');
-    for (let i = 1; i <= 5; i++) {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = `Défaut ${i} (ex: Je me lève tard)`;
-        input.classList.add('defaut-input');
-        defautsContainer.appendChild(input);
+def call_deepseek(prompt, system_message="Tu es l'assistant Taz Bot."):
+    if not DEEPSEEK_API_KEY:
+        raise Exception("Clé API DeepSeek manquante")
+    headers = {
+        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Content-Type": "application/json"
     }
+    payload = {
+        "model": "deepseek-chat",
+        "messages": [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 4000
+    }
+    resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload)
+    if resp.status_code == 200:
+        return resp.json()["choices"][0]["message"]["content"]
+    else:
+        raise Exception(f"API DeepSeek error {resp.status_code}: {resp.text}")
 
-    modeBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            modeBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const mode = btn.getAttribute('data-mode');
-            currentMode = mode;
-            Object.keys(panels).forEach(key => {
-                panels[key].classList.remove('active-panel');
-            });
-            panels[mode].classList.add('active-panel');
-        });
-    });
-    // Activer expertise par défaut
-    modeBtns[0].classList.add('active');
-    panels.expertise.classList.add('active-panel');
+# nettoie les réponses qui pourraient contenir du markdown
+def clean_markdown(text):
+    # enlève les blocs ```...```
+    text = re.sub(r'```[\s\S]*?```', '', text)
+    # enlève les backticks simples
+    text = text.replace('`', '')
+    return text.strip()
 
-    // Génération
-    const generateBtn = document.getElementById('generateBtn');
-    const loader = document.getElementById('loader');
-    const resultDiv = document.getElementById('result');
+PROMPT_EXPERTISE = f"""
+Génère un CHAPELET TAZ BOT – MODE EXPERTISE (7 jours) pour le domaine : {{domaine}}.
 
-    generateBtn.addEventListener('click', async () => {
-        let payload = { mode: currentMode };
-        if (currentMode === 'expertise') {
-            const domaine = document.getElementById('domaine').value.trim();
-            if (!domaine) {
-                alert('Veuillez entrer un domaine.');
-                return;
-            }
-            payload.domaine = domaine;
-        } else if (currentMode === 'personnel') {
-            const inputs = document.querySelectorAll('.defaut-input');
-            const defauts = [];
-            inputs.forEach(inp => {
-                if (inp.value.trim()) defauts.push(inp.value.trim());
-            });
-            if (defauts.length !== 5) {
-                alert('Veuillez remplir les 5 défauts.');
-                return;
-            }
-            payload.defauts = defauts;
-        } else if (currentMode === 'consultation') {
-            const message = document.getElementById('consult-message').value.trim();
-            if (!message) {
-                alert('Veuillez décrire votre situation.');
-                return;
-            }
-            payload.message = message;
-        }
+Structure à respecter (texte brut, pas de markdown, pas de blocs de code) :
 
-        loader.classList.add('show');
-        resultDiv.style.display = 'none';
-        resultDiv.innerHTML = '';
+- **Rappel** (si pertinent)
+- **Point d'entrée du problème**
+- **Règle d'or**
+- **5 dizaines** (une par concept clé). Pour chaque :
+   - **Méditation** (définition, rôle, exemple)
+   - **Notre Père** (problème général + illustratif avec ?)
+   - **Je vous salue Marie (10x identique)** (mantra spécifique au concept)
+   - **Gloire au Père** : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et cette transformation profonde."
+- **Clôture**
 
-        try {
-            const response = await fetch('/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await response.json();
-            if (data.error) {
-                alert('Erreur : ' + data.error);
-            } else {
-                // Afficher le chapelet avec un formatage propre (sauts de ligne conservés)
-                resultDiv.innerHTML = data.chapelet.replace(/\n/g, '<br>');
-                resultDiv.style.display = 'block';
-            }
-        } catch (err) {
-            alert('Erreur réseau : ' + err.message);
-        } finally {
-            loader.classList.remove('show');
-        }
-    });
-</script>
-</body>
-</html>
+Termine par : "Chapelet Taz Bot – Basé sur la plasticité cérébrale et la répétition rythmée. © Dr Tazemda"
+"""
+
+PROMPT_PERSONNEL = f"""
+Génère un CHAPELET TAZ BOT – MODE DÉVELOPPEMENT PERSONNEL (21 ou 66 jours) pour ces 5 défauts :
+{{defauts}}
+
+Ajoute cette note au début :
+> *"Munissez-vous d'un chapelet (ou de vos doigts) pour égrener chaque grain. Récitez à voix haute ou mentalement, dans un endroit calme."*
+
+Structure canonique (texte brut) :
+
+### DÉBUT
+- Signe de croix : "Au nom de mon engagement, de ma lucidité et de ma persévérance."
+- Crucifix : "Je ne subis plus ma vie. Je deviens l'acteur de chaque heure."
+- 3 Ave initiaux : (donnés)
+- Gloire : "Je rends grâce à la vie pour ce nouveau départ."
+
+### 5 MYSTÈRES (un par défaut)
+Pour chaque défaut :
+**Mystère X – [nom du défaut]**
+**Méditation** : (passé négatif + visualisation positive)
+**Notre Père** : "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité."
+**10 × Je vous salue Marie** : (un mantra unique pour tous les mystères, résumant la correction des 5 défauts)
+**Gloire au Père** : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et cette transformation profonde."
+
+### FIN
+- Salve Regina, Mantra final, Signe de croix final.
+
+Termine par : "Chapelet Taz Bot – Basé sur la plasticité cérébrale et la répétition rythmée. © Dr Tazemda"
+"""
+
+PROMPT_CLASSIFY = """
+Analyse le message de l'utilisateur. Réponds UNIQUEMENT par un objet JSON avec les champs "type" et "contenu".
+
+Règles :
+- Si l'utilisateur veut *apprendre une compétence technique, maîtriser un domaine, préparer un entretien sur des connaissances* → type = "expertise". Le "contenu" est le domaine (exemple: "IT support niveau 1 et 2").
+- Sinon, s'il parle de défauts personnels (lenteur, peur, timidité, procrastination, etc.) → type = "personnel". Le "contenu" est une liste de 5 défauts.
+
+Exemples :
+Message: "Je veux maîtriser les concepts du IT support niveau 1 et niveau 2 pour un entretien"
+→ {"type": "expertise", "contenu": "IT support niveau 1 et 2"}
+
+Message: "Je me lève tard, je suis paresseux, je dépense trop, je suis timide, je manque de motivation"
+→ {"type": "personnel", "contenu": ["Je me lève tard", "Je suis paresseux", "Je dépense trop", "Je suis timide", "Je manque de motivation"]}
+
+Message de l'utilisateur : "{message}"
+"""
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/generate', methods=['POST'])
+def generate():
+    data = request.get_json()
+    mode = data.get('mode')
+
+    if mode == 'expertise':
+        domaine = data.get('domaine')
+        if not domaine:
+            return jsonify({'error': 'Domaine requis'}), 400
+        prompt = PROMPT_EXPERTISE.format(domaine=domaine)
+        try:
+            raw = call_deepseek(prompt)
+            chapelet = clean_markdown(raw)
+            return jsonify({'chapelet': chapelet})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    elif mode == 'personnel':
+        defauts = data.get('defauts')
+        if not defauts or len(defauts) != 5:
+            return jsonify({'error': '5 défauts requis'}), 400
+        defauts_str = "\n".join(f"{i+1}. {d}" for i,d in enumerate(defauts))
+        prompt = PROMPT_PERSONNEL.format(defauts=defauts_str)
+        try:
+            raw = call_deepseek(prompt)
+            chapelet = clean_markdown(raw)
+            return jsonify({'chapelet': chapelet})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    elif mode == 'consultation':
+        message = data.get('message')
+        if not message:
+            return jsonify({'error': 'Message requis'}), 400
+
+        # Classification
+        classify_prompt = PROMPT_CLASSIFY.format(message=message)
+        try:
+            raw_class = call_deepseek(classify_prompt, system_message="Retourne uniquement du JSON valide.")
+            raw_class = clean_markdown(raw_class)
+            # Extraction du JSON
+            start = raw_class.find('{')
+            end = raw_class.rfind('}') + 1
+            if start != -1 and end != 0:
+                json_str = raw_class[start:end]
+                classification = json.loads(json_str)
+            else:
+                raise ValueError("Pas de JSON trouvé")
+            type_demande = classification.get('type')
+            contenu = classification.get('contenu')
+        except Exception as e:
+            # Fallback : si erreur, on suppose que c'est personnel (par sécurité)
+            type_demande = "personnel"
+            contenu = ["Je manque de discipline"] * 5
+
+        # Génération du chapelet selon le type
+        if type_demande == "expertise":
+            prompt = PROMPT_EXPERTISE.format(domaine=contenu)
+        else:
+            if not isinstance(contenu, list) or len(contenu) != 5:
+                contenu = ["Je manque de discipline"] * 5
+            defauts_str = "\n".join(f"{i+1}. {d}" for i,d in enumerate(contenu[:5]))
+            prompt = PROMPT_PERSONNEL.format(defauts=defauts_str)
+
+        try:
+            raw = call_deepseek(prompt)
+            chapelet = clean_markdown(raw)
+            return jsonify({
+                'chapelet': chapelet,
+                'type_detecte': type_demande,
+                'message_info': f"🔍 Type détecté : {'EXPERTISE' if type_demande == 'expertise' else 'DÉVELOPPEMENT PERSONNEL'}"
+            })
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    else:
+        return jsonify({'error': 'Mode invalide'}), 400
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
