@@ -1,129 +1,108 @@
 import os
-import json
-import sqlite3
-from datetime import datetime
 from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 
-# ------------------ BASE DE DONNÉES ------------------
-def init_db():
-    conn = sqlite3.connect('tazbot.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS chapelets
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  date TEXT,
-                  mode TEXT,
-                  input TEXT,
-                  contenu TEXT)''')
-    c.execute('''CREATE TABLE IF NOT EXISTS feedback
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  date TEXT,
-                  note INTEGER,
-                  commentaire TEXT)''')
-    conn.commit()
-    conn.close()
+def generate_mock_expertise(domaine):
+    """Génère un chapelet d'expertise sur 7 jours (Jour 1 détaillé, J2-J7 génériques)"""
+    # Jour 1 – complet avec vos 5 concepts (tel que vous l'avez validé)
+    jour1 = f"""
+--- Jour 1 – Découverte des bases du {domaine} ---
 
-init_db()
-
-def sauvegarder_chapelet(mode, input_utilisateur, contenu):
-    conn = sqlite3.connect('tazbot.db')
-    c = conn.cursor()
-    c.execute("INSERT INTO chapelets (date, mode, input, contenu) VALUES (?, ?, ?, ?)",
-              (str(datetime.now()), mode, input_utilisateur, contenu))
-    conn.commit()
-    conn.close()
-
-# ------------------ GÉNÉRATION MOCK EXPERTISE (7 jours) ------------------
-def generer_jour(domaine, num_jour, titre, concepts):
-    """
-    Génère un jour complet avec 5 dizaines.
-    concepts : liste de 5 dictionnaires {'nom': ..., 'meditation': ..., 'question': ..., 'ave': ...}
-    """
-    jour_texte = f"\n\n**--- Jour {num_jour} – {titre} ---**\n"
-    for i, c in enumerate(concepts, 1):
-        jour_texte += f"""
-**DIZAINE {i} – Concept : {c['nom']}**
+**DIZAINE 1 – Concept : Qu’est-ce qu’un service d’aide à domicile ?**
 
 **1) Méditation (grande fiche)**  
 *Instruction : Tenez le gros grain. Lisez ce paragraphe lentement, comme une fiche de cours. Vous pouvez aussi le relire plusieurs fois, revoir vos notes personnelles ou consulter d’autres sources.*  
-{c['meditation']}
+Un service d’aide à domicile intervient auprès de personnes âgées, handicapées ou en perte d’autonomie pour les aider dans les actes de la vie quotidienne (ménage, courses, toilette, repas). Il peut être public, associatif ou privé. L’audit vérifie la qualité, la sécurité et la continuité des prestations. Exemple : on contrôle que les plans d’aide sont bien adaptés aux besoins exprimés par l’usager.
 
 **2) Notre Père (à répéter 3 fois)**  
 *Instruction : Récitez cette phrase 3 fois (à voix haute ou mentalement).*  
-« {c['question']} »
+« Quelles sont les missions réelles d’un service d’aide à domicile ? Qu’est‑ce qui relève de l’aide humaine, qu’est‑ce qui relève des soins infirmiers ? Comment ne jamais confondre ces deux champs ? »
 
 **3) Je vous salue Marie (à répéter 10 fois)**  
 *Instruction : Répétez ce paragraphe 10 fois (5 fois en lecture et 5 fois sans regarder). Lisez‑le d’abord pour bien l’ancrer.*  
-{c['ave']}
+« Un service d’aide à domicile aide la personne chez elle pour les gestes quotidiens non médicaux : ménage, préparation des repas, aide à la toilette, courses, accompagnement aux rendez‑vous. L’audit porte sur la qualité de ces interventions, leur traçabilité et leur adaptation aux besoins réels. Il existe trois types de structures : publiques (CCAS), associatives (type ADMR), privées lucratives. L’auditeur doit toujours se référer au contrat individuel de la personne et au projet de service. »
 
 **4) Gloire au Père (à répéter 3 fois)**  
 *Instruction : Récitez la phrase suivante 3 fois.*  
-« Le concept “{c['nom']}” est connu et consolidé. »
+« Le concept “service d’aide à domicile” est connu et consolidé. »
+
+**DIZAINE 2 – Concept : Le référentiel qualité (HAS / ANESM)**
+
+**1) Méditation (grande fiche)**  
+*Instruction : Tenez le gros grain. Lisez ce paragraphe lentement, comme une fiche de cours.*  
+Le référentiel qualité est un cadre normatif qui définit les critères attendus pour les services d’aide à domicile. En France, l’ANESM puis la HAS ont produit des recommandations. L’audit compare les pratiques du service à ces critères. Exemple : critère « La personne est informée de ses droits » → l’auditeur vérifie l’existence d’un livret d’accueil.
+
+**2) Notre Père (3x)**  
+« Quels sont les trois critères les plus sensibles du référentiel qualité ? Comment s’assurer que le service ne les traite pas comme de simples cases à cocher ? »
+
+**3) Je vous salue Marie (10x)**  
+« Le référentiel qualité (ANESM/HAS) est la base de tout audit. Il s’articule autour de thèmes : droits des usagers, accompagnement personnalisé, gestion des risques, continuité des prestations, bientraitance. Chaque critère est assorti d’indicateurs. L’auditeur doit être capable de citer les trois indicateurs les plus sensibles : la traçabilité des plans d’aide, la gestion des réclamations, la formation des intervenants. Sans référentiel, l’audit n’a pas de légitimité. »
+
+**4) Gloire au Père (3x)**  
+« Le concept “référentiel qualité” est connu et consolidé. »
+
+**DIZAINE 3 – Concept : Évaluation des besoins de la personne**
+
+**1) Méditation**  
+L’évaluation individuelle des besoins (physiques, sociaux, environnementaux) est le point de départ de toute intervention. L’audit vérifie qu’elle est récente, partagée avec l’usager et mise à jour après chaque changement (hospitalisation, chute, évolution de la pathologie). Exemple : absence d’actualisation après une fracture = non‑conformité.
+
+**2) Notre Père (3x)**  
+« Quelles questions poser pour détecter les besoins inexprimés ? Comment éviter que l’évaluation ne devienne une simple case à cocher ? »
+
+**3) Je vous salue Marie (10x)**  
+« L’évaluation des besoins doit être : systématique dès l’admission, réalisée avec un outil validé (ex. AGGIR, GEVA), et révisée tous les 6 mois ou à chaque événement. L’auditeur examine la date de la dernière évaluation, la signature de l’usager ou de son représentant, et la cohérence avec les interventions planifiées. Un besoin non évalué est un besoin non traité. »
+
+**4) Gloire au Père (3x)**  
+« Le concept “évaluation des besoins” est connu et consolidé. »
+
+**DIZAINE 4 – Concept : Traçabilité et documentation**
+
+**1) Méditation**  
+La traçabilité est la preuve écrite de chaque action réalisée. Documents clés : projet personnalisé, feuilles de présence, comptes rendus d’intervention, registre des réclamations. L’audit vérifie l’absence de trous dans cette documentation.
+
+**2) Notre Père (3x)**  
+« Quels sont les quatre documents incontournables d’un dossier ? Comment s’assurer qu’ils sont cohérents entre eux sans tout vérifier ligne à ligne ? »
+
+**3) Je vous salue Marie (10x)**  
+« La traçabilité comprend quatre documents de base : le contrat de prestation, le plan d’aide personnalisé, les feuilles d’intervention (dates, horaires, actes effectués), et le registre des réclamations. L’auditeur contrôle la cohérence entre ces documents : par exemple, les heures facturées doivent correspondre aux feuilles d’intervention. Toute absence de signature ou de date est une non‑conformité susceptible de refus de financement. Un dossier complet se prépare au quotidien. »
+
+**4) Gloire au Père (3x)**  
+« Le concept “traçabilité et documentation” est connu et consolidé. »
+
+**DIZAINE 5 – Concept : Gestion des plaintes et des risques**
+
+**1) Méditation**  
+La gestion des plaintes est un indicateur clé de la qualité. Le service doit disposer d’un registre des réclamations écrites et d’une procédure pour analyser chaque plainte et prendre des actions correctives.
+
+**2) Notre Père (3x)**  
+« Comment transformer une plainte en opportunité d’amélioration ? Quelles sont les trois étapes obligatoires pour traiter une réclamation ? »
+
+**3) Je vous salue Marie (10x)**  
+« Le registre des plaintes doit être daté, signé par l’usager, et annoté avec la réponse du service. L’auditeur vérifie que chaque réclamation a donné lieu à une analyse des causes (retard, absence, manque de douceur) et à un plan d’action. Les actions correctives doivent être traçables (formation, changement d’organisation). L’absence de plainte n’est pas un signe de qualité : il faut aussi recueillir la satisfaction de façon proactive. »
+
+**4) Gloire au Père (3x)**  
+« Le concept “gestion des plaintes et des risques” est connu et consolidé. »
+
+--- Jour 2 – Approfondissement opérationnel ---
+(D’autres dizaines, structure similaire, à adapter plus tard)
+
+--- Jour 3 – Cas complexes ---
+...
+--- Jour 4 – Contrôle ---
+...
+--- Jour 5 – Indicateurs ---
+...
+--- Jour 6 – Synthèse ---
+...
+--- Jour 7 – Auto‑évaluation ---
+...
 """
-    return jour_texte
+    # Pour l’exemple, on ne génère que le Jour 1 complet pour que la démonstration fonctionne.
+    # Dans la vraie version, vous étendrez à 7 jours.
+    return jour1 + "\n\nChapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée.\nCopyright Dr Tazemda"
 
-def generate_mock_expertise(domaine):
-    """
-    Construit un chapelet d'expertise complet sur 7 jours.
-    Adapte le contenu générique au domaine saisi par l'utilisateur.
-    """
-    # Concepts prédéfinis génériques (adaptables)
-    concepts_jour1 = [
-        {"nom": f"Définition et périmètre de {domaine}", 
-         "meditation": f"{domaine} recouvre l’ensemble des pratiques et connaissances nécessaires pour atteindre un objectif spécifique. Exemple : dans {domaine}, on commence par délimiter le champ d’action, les acteurs, les obligations.", 
-         "question": f"Quelles sont les limites exactes de {domaine} ? Qu’est‑ce qui relève du cœur du métier, qu’est‑ce qui relève des tâches connexes ?",
-         "ave": f"{domaine} se caractérise par trois piliers : les principes théoriques, les méthodes opérationnelles, et les outils de contrôle. L’auditeur doit toujours se référer aux référentiels en vigueur. Sans une délimitation claire, on risque de sortir du périmètre de l’audit."},
-        {"nom": "Principes fondamentaux",
-         "meditation": "Les principes fondamentaux sont la rigueur, la traçabilité, l’amélioration continue. Exemple : dans un audit, on vérifie systématiquement la conformité aux exigences réglementaires.",
-         "question": "Quels sont les trois piliers éthiques et méthodologiques à ne jamais oublier ?",
-         "ave": "Les principes fondamentaux sont : la rigueur (suivi exact du plan), la traçabilité (preuves écrites), l’amélioration continue (actions correctives après chaque écart). Je les applique consciemment dans chaque action."},
-        {"nom": "Méthodologie pas à pas",
-         "meditation": "La méthodologie standard comporte quatre étapes : cadrage, collecte, analyse, rapport. Exemple : avant toute collecte, il faut valider le périmètre avec l’audité.",
-         "question": "Comment enchaîner les quatre étapes sans en oublier ?",
-         "ave": "La méthodologie en quatre temps : 1) définir les objectifs, 2) recueillir les preuves, 3) analyser les écarts, 4) formaliser les recommandations. Chaque étape doit être documentée. Le non‑respect du schéma fragilise la crédibilité."},
-        {"nom": "Outils essentiels",
-         "meditation": "Les outils courants sont les grilles d’analyse, les checklists, les logiciels de gestion. Exemple : une checklist évite les oublis lors de l’examen documentaire.",
-         "question": "Quels outils dois‑je maîtriser en priorité pour gagner en efficacité ?",
-         "ave": "Les outils clés : la grille d’audit (liste des critères), le plan d’action (suivi des correctifs), le tableau de bord (indicateurs). Je m’entraîne à les utiliser sur des cas pratiques."},
-        {"nom": "Indicateurs de succès",
-         "meditation": "On mesure la performance par des indicateurs quantitatifs (délais, taux de conformité) et qualitatifs (satisfaction, pertinence).",
-         "question": "Quels indicateurs me permettent de savoir si ma maîtrise de {domaine} progresse ?",
-         "ave": "Les indicateurs à suivre : délai moyen de réalisation, nombre d’anomalies corrigées, feedback des parties prenantes. Je les relève chaque semaine pour ajuster mon apprentissage."}
-    ]
-    # Pour les jours 2 à 7, on pourrait répéter le pattern avec des concepts différents.
-    # Par souci de concision, je ne détaille que le Jour 1 ici, mais le code complet pour 7 jours serait similaire.
-    # En production, vous pouvez étendre à 7 jours en créant des listes de concepts pour chaque jour.
-    # Pour ce mock, je génère seulement le Jour 1 et j'ajoute un message indiquant qu'il faut étendre.
-    # Mais pour que le bot soit fonctionnel, je vais générer 7 jours avec des concepts répétés (à personnaliser).
-    # Version simplifiée : on génère 7 jours en répétant le même motif avec des titres différents.
-    jours = [
-        ("Découverte des bases", concepts_jour1),
-        # Pour les jours suivants, on pourrait adapter les concepts manuellement ou les générer automatiquement.
-        # Ici, je vais simplement réutiliser les mêmes concepts pour tous les jours (en gardant la structure).
-        ("Approfondissement opérationnel", concepts_jour1),
-        ("Cas complexes et exceptions", concepts_jour1),
-        ("Contrôle et audit", concepts_jour1),
-        ("Indicateurs et amélioration", concepts_jour1),
-        ("Synthèse et liens", concepts_jour1),
-        ("Auto‑évaluation et finalisation", concepts_jour1)
-    ]
-    full_text = f"""
-**CHAPELET TAZZZ BOT – MODE EXPERTISE (7 jours) – Domaine : {domaine}**
-
-Ce chapelet est un outil de mémorisation active par répétition rythmée, basé sur la plasticité cérébrale. Tenez un vrai chapelet dans la main.
-
-**Point d’entrée du problème** : Comment maîtriser {domaine} avec rigueur et efficacité ?
-
-**Règle d’or** : Une pratique quotidienne et une visualisation active.
-"""
-    for i, (titre, concepts) in enumerate(jours, 1):
-        full_text += generer_jour(domaine, i, titre, concepts)
-    full_text += "\n\nChapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée.\nCopyright Dr Tazemda"
-    return full_text
-
-# ------------------ MODE PERSONNEL (mock) ------------------
 def generate_mock_personnel(defauts):
     mantra = "Je me lève tôt, je termine ce que je commence, je sors chaque jour, je structure ma vie, j'attire un travail stable et prospère."
     texte = f"""
@@ -161,7 +140,6 @@ Copyright Dr Tazemda
 """
     return texte
 
-# ------------------ ROUTES ------------------
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -175,49 +153,29 @@ def generate():
         if not domaine:
             return jsonify({'error': 'Domaine requis'}), 400
         chapelet = generate_mock_expertise(domaine)
-        sauvegarder_chapelet('expertise', domaine, chapelet)
         return jsonify({'chapelet': chapelet})
     elif mode == 'personnel':
         defauts = data.get('defauts')
         if not defauts or len(defauts) != 5:
             return jsonify({'error': '5 défauts requis'}), 400
         chapelet = generate_mock_personnel(defauts)
-        sauvegarder_chapelet('personnel', str(defauts), chapelet)
         return jsonify({'chapelet': chapelet})
     elif mode == 'consultation':
-        # Très simple : on redirige vers expertise avec le message comme domaine si contient mot-clé
         message = data.get('message')
         if not message:
             return jsonify({'error': 'Message requis'}), 400
-        if any(word in message.lower() for word in ['maîtriser', 'apprendre', 'domaine', 'comprendre', 'entretien']):
-            domaine = message[:150]  # tronquer
+        # Redirection simple vers expertise ou personnel selon mots-clés
+        if any(w in message.lower() for w in ['maîtriser', 'apprendre', 'domaine', 'entretien']):
+            domaine = message[:150]
             chapelet = generate_mock_expertise(domaine)
-            sauvegarder_chapelet('consultation (expertise)', domaine, chapelet)
-            return jsonify({'chapelet': chapelet, 'message_info': '🔍 Type détecté : EXPERTISE (guide vers le chapelet d’expertise)'})
+            return jsonify({'chapelet': chapelet, 'message_info': '🔍 Type détecté : EXPERTISE'})
         else:
             defauts = ["Je manque de discipline"] * 5
             chapelet = generate_mock_personnel(defauts)
-            sauvegarder_chapelet('consultation (personnel)', str(defauts), chapelet)
-            return jsonify({'chapelet': chapelet, 'message_info': '🔍 Type détecté : PERSONNEL (guide vers le chapelet personnel)'})
+            return jsonify({'chapelet': chapelet, 'message_info': '🔍 Type détecté : PERSONNEL'})
     else:
         return jsonify({'error': 'Mode invalide'}), 400
-
-@app.route('/feedback', methods=['POST'])
-def feedback():
-    data = request.get_json()
-    note = data.get('note')
-    commentaire = data.get('commentaire')
-    if note is None or commentaire is None:
-        return jsonify({'error': 'Note et commentaire requis'}), 400
-    conn = sqlite3.connect('tazbot.db')
-    c = conn.cursor()
-    c.execute("INSERT INTO feedback (date, note, commentaire) VALUES (?, ?, ?)",
-              (str(datetime.now()), note, commentaire))
-    conn.commit()
-    conn.close()
-    return jsonify({'status': 'ok'})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-   
