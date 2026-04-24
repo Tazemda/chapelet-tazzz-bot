@@ -22,7 +22,7 @@ def call_deepseek(prompt, system_message="Tu es un expert pédagogique."):
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 3000
+        "max_tokens": 3500
     }
     resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=120)
     if resp.status_code == 200:
@@ -46,63 +46,59 @@ def init_db():
     conn.close()
 init_db()
 
-# --- Prompt pour générer un jour ---
+# --- PROMPT MODIFIÉ : on ne donne PAS de plan. On laisse DeepSeek inventer son propre découpage ---
 PROMPT_JOUR = """
-Génère le **Jour {jour_num} – {titre}** d’un chapelet d’apprentissage sur le domaine : « {domaine} ».
+Tu es un expert en pédagogie. L’utilisateur souhaite maîtriser le domaine suivant : « {domaine} ».
 
-Plan global des jours (pour contexte) :
-Jour 1 – Découverte des bases
-Jour 2 – Approfondissement
-Jour 3 – Cas complexes
-Jour 4 – Contrôle et indicateurs
-Jour 5 – Gestion des risques
-Jour 6 – Synthèse
-Jour 7 – Auto‑évaluation
+Tu vas l’aider en générant un **chapelet d’apprentissage** structuré sur **7 jours**.  
+Chaque jour doit avoir un **titre informatif** (ex: "Jour 1 – Découverte des fondamentaux") et **5 dizaines** (concepts).
 
-Pour le jour demandé, produis exactement 5 dizaines au format suivant :
+Pour le **Jour {jour_num}** , dont le titre prévu est « {titre_jour} », tu dois produire exactement 5 dizaines.  
+Chaque dizaine doit respecter ce format :
 
---- Jour {jour_num} – {titre} ---
-
-**DIZAINE 1 – Concept : (nom du concept)**
+**DIZAINE X – Concept : (nom du concept)**
 
 **1) Méditation (grande fiche)**  
 *Instruction : Tenez le gros grain. Lisez ce paragraphe comme une fiche de cours.*  
-(Paragraphe dense : définitions, exemples, points clés.)
+(Paragraphe dense : définitions, exemples concrets, points clés – adapté au domaine.)
 
 **2) Notre Père**  
 *Récitez cette question 3 fois.*  
-« (Question problématique) »
+« (Question problématique sur le concept) »
 
 **3) Je vous salue Marie**  
 *Répétez ce paragraphe 10 fois (5 lectures, 5 sans regarder).*  
-(Paragraphe synthétique de plusieurs phrases.)
+(Paragraphe synthétique de plusieurs phrases résumant l’essentiel du concept.)
 
 **4) Gloire au Père**  
 *Récitez cette phrase 3 fois.*  
 « Le concept “(nom)” est connu et consolidé. »
 
-(répéter pour DIZAINE 2 à 5 avec des concepts différents et pertinents pour le jour.)
-
-Ne mets rien après la dernière dizaine.
+Tu génères **seulement le contenu du Jour {jour_num}**.  
+Le titre du jour est : « {titre_jour} ».  
+Le contenu doit être **adapté au domaine** « {domaine} ».  
+Ne renvoie que le texte des dizaines (sans commentaire avant/après).
 """
 
+# Noms de jours génériques (DeepSeek peut les adapter, mais on fournit une base)
+NOMS_JOURS = [
+    "Découverte des bases",
+    "Approfondissement pratique",
+    "Cas complexes et exceptions",
+    "Contrôle et indicateurs",
+    "Gestion des risques",
+    "Synthèse et liens",
+    "Auto‑évaluation"
+]
+
 def generer_jour(domaine, jour_num):
-    titres = [
-        "Découverte des bases",
-        "Approfondissement opérationnel",
-        "Cas complexes et exceptions",
-        "Contrôle qualité et indicateurs",
-        "Gestion des risques et plan d'action",
-        "Synthèse et liens entre concepts",
-        "Auto‑évaluation et perfectionnement"
-    ]
-    titre = titres[jour_num-1]
-    prompt = PROMPT_JOUR.format(jour_num=jour_num, titre=titre, domaine=domaine)
+    titre_jour = NOMS_JOURS[jour_num-1]
+    prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_jour=titre_jour)
     raw = call_deepseek(prompt)
     return clean_markdown(raw)
 
 def generer_personnel(defauts):
-    mantra = "Je me lève tôt, je termine ce que je commence, je sors chaque jour, je structure ma vie, j'attire un travail stable et prospère."
+    mantra = "Je me lève tôt, je termine ce que je commence, je sors chaque jour, je structure ma vie, j'attire un travail stable."
     texte = f"""
 **CHAPELET TAZZZ BOT – MODE DÉVELOPPEMENT PERSONNEL (21/66 jours)**
 
@@ -134,7 +130,7 @@ Chapelet Tazzz Bot – © Dr Tazemda
 """
     return texte
 
-# --- ROUTES ---
+# --- ROUTES (inchangées) ---
 @app.route('/')
 def index():
     return render_template('index.html')
