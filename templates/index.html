@@ -79,6 +79,41 @@
             font-size: 0.9rem;
         }
         .info-msg { background: #2c3e4e; padding: 8px; border-radius: 12px; margin-top: 10px; text-align: center; }
+        .feedback-box {
+            margin-top: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stars {
+            display: inline-flex;
+            gap: 5px;
+            margin: 10px 0;
+        }
+        .star {
+            font-size: 28px;
+            cursor: pointer;
+            color: #555;
+            transition: color 0.2s;
+        }
+        .star.selected {
+            color: gold;
+        }
+        .comment-input {
+            width: 80%;
+            margin: 10px auto;
+            display: block;
+        }
+        .submit-feedback {
+            background: #e67e22;
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
         .footer {
             text-align: center;
@@ -118,6 +153,18 @@
     <button class="generate" id="generateBtn">✨ GÉNÉRER MON CHAPELET ✨</button>
     <div class="loader" id="loader">⏳ Génération (20-40s)...</div>
     <div id="result" class="result" style="display:none;"></div>
+    <div class="feedback-box" id="feedbackBox" style="display:none;">
+        <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
+        <div class="stars" id="stars">
+            <span class="star" data-value="1">☆</span>
+            <span class="star" data-value="2">☆</span>
+            <span class="star" data-value="3">☆</span>
+            <span class="star" data-value="4">☆</span>
+            <span class="star" data-value="5">☆</span>
+        </div>
+        <textarea id="feedbackComment" class="comment-input" rows="2" placeholder="Vos remarques ou suggestions (facultatif)"></textarea>
+        <button id="submitFeedback" class="submit-feedback">Envoyer mon avis</button>
+    </div>
     <div class="footer">
         🧠 CHAPELET TAZZZ BOT 📿<br>
         <span class="copyright">© Dr Tazemda – Plasticité cérébrale & répétition rythmée</span>
@@ -155,6 +202,53 @@
     const generateBtn = document.getElementById('generateBtn');
     const loader = document.getElementById('loader');
     const resultDiv = document.getElementById('result');
+    const feedbackBox = document.getElementById('feedbackBox');
+    let currentChapeletText = ''; // sauvegarde pour feedback
+
+    // Gestion des étoiles
+    let currentNote = 0;
+    const stars = document.querySelectorAll('.star');
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            currentNote = parseInt(star.getAttribute('data-value'));
+            stars.forEach(s => {
+                if (parseInt(s.getAttribute('data-value')) <= currentNote) {
+                    s.textContent = '★';
+                    s.classList.add('selected');
+                } else {
+                    s.textContent = '☆';
+                    s.classList.remove('selected');
+                }
+            });
+        });
+    });
+
+    document.getElementById('submitFeedback').addEventListener('click', async () => {
+        if (currentNote === 0) {
+            alert('Veuillez sélectionner une note (1 à 5 étoiles)');
+            return;
+        }
+        const comment = document.getElementById('feedbackComment').value.trim();
+        try {
+            const res = await fetch('/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ note: currentNote, commentaire: comment })
+            });
+            const data = await res.json();
+            if (data.status === 'ok') {
+                alert('Merci pour votre avis !');
+                feedbackBox.style.display = 'none';
+                currentNote = 0;
+                stars.forEach(s => { s.textContent = '☆'; s.classList.remove('selected'); });
+                document.getElementById('feedbackComment').value = '';
+            } else {
+                alert('Erreur lors de l\'envoi');
+            }
+        } catch (err) {
+            alert('Erreur réseau: ' + err.message);
+        }
+    });
 
     generateBtn.addEventListener('click', async () => {
         let payload = { mode: currentMode };
@@ -175,6 +269,7 @@
         loader.classList.add('show');
         resultDiv.style.display = 'none';
         resultDiv.innerHTML = '';
+        feedbackBox.style.display = 'none';
         try {
             let res = await fetch('/generate', {
                 method: 'POST',
@@ -184,19 +279,16 @@
             let data = await res.json();
             if (data.error) alert('Erreur: ' + data.error);
             else {
-                // Afficher selon le mode (expertise = navigation par jours)
+                currentChapeletText = data.chapelet;
                 if (currentMode === 'expertise' && data.chapelet.includes('--- Jour ')) {
-                    // Découper en jours
+                    // Découpage en jours (identique à avant)
                     const jours = data.chapelet.split(/(?=--- Jour \d+)/).filter(j => j.trim() !== '');
                     let indexJour = 0;
-
                     function afficherJour() {
                         let jourTexte = jours[indexJour];
-                        // Extraire le titre
                         let titreMatch = jourTexte.match(/--- Jour \d+ – [^\n]+/);
                         let titre = titreMatch ? titreMatch[0] : `Jour ${indexJour+1}`;
                         let contenu = jourTexte.replace(/--- Jour \d+ – [^\n]+/, '').trim();
-                        // Affichage avec boutons
                         resultDiv.innerHTML = `
                             <div style="font-weight: bold; text-align: center; margin-bottom: 10px;">${titre}</div>
                             <div>${contenu.replace(/\n/g, '<br>')}</div>
@@ -221,12 +313,12 @@
                     }
                     afficherJour();
                 } else {
-                    // Mode personnel ou consultation : affichage simple
                     let html = data.chapelet.replace(/\n/g, '<br>');
                     if (data.message_info) html = `<div class="info-msg">${data.message_info}</div><br>${html}`;
                     resultDiv.innerHTML = html;
                 }
                 resultDiv.style.display = 'block';
+                feedbackBox.style.display = 'block';
             }
         } catch (err) {
             alert('Erreur réseau ou serveur: ' + err.message);
