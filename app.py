@@ -1,9 +1,7 @@
 import os
-import sqlite3
 import re
 import requests
-from datetime import datetime
-from flask import Flask, request, jsonify, render_template, session
+from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
@@ -11,35 +9,6 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-# ------------------ BASE SQLITE ------------------
-def init_db():
-    conn = sqlite3.connect('tazbot.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS chapelets
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  date TEXT,
-                  mode TEXT,
-                  input TEXT,
-                  contenu TEXT)''')
-    c.execute('''CREATE TABLE IF NOT EXISTS feedback
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  date TEXT,
-                  note INTEGER,
-                  commentaire TEXT)''')
-    conn.commit()
-    conn.close()
-
-init_db()
-
-def sauvegarder_chapelet(mode, input_utilisateur, contenu):
-    conn = sqlite3.connect('tazbot.db')
-    c = conn.cursor()
-    c.execute("INSERT INTO chapelets (date, mode, input, contenu) VALUES (?, ?, ?, ?)",
-              (str(datetime.now()), mode, input_utilisateur, contenu))
-    conn.commit()
-    conn.close()
-
-# ------------------ APPEL API ------------------
 def call_deepseek(prompt, system_message="Tu es un expert pédagogique."):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API DeepSeek manquante")
@@ -53,56 +22,47 @@ def call_deepseek(prompt, system_message="Tu es un expert pédagogique."):
         "temperature": 0.7,
         "max_tokens": 2500
     }
-    resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=90)
+    resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=120)
     if resp.status_code == 200:
         return resp.json()["choices"][0]["message"]["content"]
     else:
         raise Exception(f"API error {resp.status_code}: {resp.text[:200]}")
 
 def clean_markdown(text):
-    text = re.sub(r'```[\s\S]*?```', '', text)
-    return text.replace('`', '').strip()
+    return re.sub(r'```[\s\S]*?```', '', text).replace('`', '').strip()
 
-# ------------------ PROMPT POUR UN JOUR (1 à 7) ------------------
+# ---------- PROMPT POUR UN JOUR (très court) ----------
 PROMPT_JOUR = """
-Tu es un expert en pédagogie. Génère le **Jour {jour_num} – {titre}** d’un chapelet d’apprentissage sur le domaine : « {domaine} ».
+Génère le **Jour {jour_num} – {titre}** d’un chapelet d’apprentissage sur le domaine « {domaine} ».
+Le plan des 7 jours est :
+1: Découverte des bases
+2: Approfondissement opérationnel
+3: Cas complexes
+4: Contrôle qualité
+5: Gestion des risques
+6: Synthèse
+7: Auto‑évaluation
 
-Le chapelet complet comporte 7 jours. Voici le plan des jours :
-Jour 1 – Découverte des bases
-Jour 2 – Approfondissement opérationnel
-Jour 3 – Cas complexes et exceptions
-Jour 4 – Contrôle qualité et indicateurs
-Jour 5 – Gestion des risques et plan d'action
-Jour 6 – Synthèse et liens entre concepts
-Jour 7 – Auto‑évaluation et perfectionnement
-
-Pour le jour demandé, tu dois produire exactement le format suivant (5 dizaines) :
+Pour ce jour, produis exactement 5 dizaines au format suivant :
 
 --- Jour {jour_num} – {titre} ---
 
-**DIZAINE 1 – Concept : (nom du concept)**
-
+**DIZAINE 1 – Concept : (nom)**
 **1) Méditation (grande fiche)**  
-*Instruction : Tenez le gros grain. Lisez ce paragraphe comme une fiche de cours.*  
-(Paragraphe dense : définition, exemples, points clés. Adapté au domaine.)
-
+*Instruction : Tenez le gros grain, lisez comme une fiche de cours.*  
+(Paragraphe dense, définitions, exemples)
 **2) Notre Père**  
-*Récitez cette question 3 fois.*  
-« (Question problématique sur le concept) »
-
+*Récitez 3 fois.*  
+« (Question problématique) »
 **3) Je vous salue Marie**  
-*Répétez ce paragraphe 10 fois (5 lectures, 5 sans regarder).*  
-(Paragraphe synthétique de plusieurs phrases résumant le concept.)
-
+*Répétez 10 fois (5 lectures, 5 sans regarder).*  
+(Paragraphe synthétique de plusieurs phrases)
 **4) Gloire au Père**  
-*Récitez cette phrase 3 fois.*  
-« Le concept “(nom du concept)” est connu et consolidé. »
+*Récitez 3 fois.*  
+« Le concept “(nom)” est connu et consolidé. »
 
-(Recommence pour DIZAINE 2, 3, 4, 5 avec des concepts différents et pertinents pour le jour.)
-
-Termine par : (rien de plus, pas de copyright ici).
-
-Soigne la qualité : les méditations doivent être instructives, les Ave Maria denses mais clairs, les questions pertinentes.
+(Recommence pour DIZAINE 2 à 5, avec des concepts différents et adaptés au jour.)
+N’ajoute rien d’autre après la dernière dizaine.
 """
 
 def generer_jour(domaine, jour_num):
@@ -120,11 +80,36 @@ def generer_jour(domaine, jour_num):
     raw = call_deepseek(prompt)
     return clean_markdown(raw)
 
-# ------------------ FALLBACK (si API échoue) ------------------
-def fallback_jour(domaine, jour_num):
-    return f"--- Jour {jour_num} (mode dégradé) ---\nImpossible de générer le contenu via DeepSeek. Vérifiez votre clé API ou votre crédit."
+# ---------- MODE PERSONNEL ----------
+PROMPT_PERSONNEL = """
+Génère un chapelet développement personnel pour ces 5 défauts :
+{defauts}
 
-# ------------------ ROUTES ------------------
+Structure :
+> *Munissez-vous d'un chapelet...*
+### DÉBUT
+- Signe de croix : "Au nom de mon engagement..."
+- Crucifix : "Je ne subis plus ma vie..."
+- 3 Ave initiaux
+- Gloire
+### 5 MYSTÈRES (un par défaut)
+Pour chaque défaut :
+**Mystère X – (défaut)**
+**Méditation** : (souvenir + visualisation positive)
+**Notre Père** : "Mon cerveau, par sa plasticité infinie..." *(3 fois)*
+**Je vous salue Marie** : (une phrase courte résumant la correction des 5 défauts) *(10 fois)*
+**Gloire au Père** : "Je remercie Dieu..." *(3 fois)*
+### FIN
+Salve Regina, mantra final, signe de croix.
+Termine par : © Dr Tazemda
+"""
+
+def generer_personnel(defauts):
+    prompt = PROMPT_PERSONNEL.format(defauts="\n".join(defauts))
+    raw = call_deepseek(prompt)
+    return clean_markdown(raw)
+
+# ---------- ROUTES ----------
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -138,28 +123,34 @@ def generate_jour():
         return jsonify({'error': 'Domaine et jour requis'}), 400
     try:
         contenu = generer_jour(domaine, jour)
-        # Sauvegarde de l'intégralité (optionnel) - on pourrait sauvegarder jour par jour
-        # mais on peut aussi sauvegarder seulement à la fin. Pour simplifier, on ne sauvegarde pas ici.
         return jsonify({'contenu': contenu})
     except Exception as e:
         print("Erreur génération jour:", e)
-        contenu = fallback_jour(domaine, jour)
-        return jsonify({'contenu': contenu})
+        return jsonify({'error': str(e)}), 500
 
-@app.route('/feedback', methods=['POST'])
-def feedback():
+@app.route('/generate_personnel', methods=['POST'])
+def generate_personnel_route():
     data = request.get_json()
-    note = data.get('note')
-    commentaire = data.get('commentaire')
-    if note is None or commentaire is None:
-        return jsonify({'error': 'Note et commentaire requis'}), 400
-    conn = sqlite3.connect('tazbot.db')
-    c = conn.cursor()
-    c.execute("INSERT INTO feedback (date, note, commentaire) VALUES (?, ?, ?)",
-              (str(datetime.now()), note, commentaire))
-    conn.commit()
-    conn.close()
-    return jsonify({'status': 'ok'})
+    defauts = data.get('defauts')
+    if not defauts or len(defauts) != 5:
+        return jsonify({'error': '5 défauts requis'}), 400
+    try:
+        chapelet = generer_personnel(defauts)
+        return jsonify({'chapelet': chapelet})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/consultation', methods=['POST'])
+def consultation():
+    data = request.get_json()
+    message = data.get('message')
+    if not message:
+        return jsonify({'error': 'Message requis'}), 400
+    # Détection simple
+    if any(w in message.lower() for w in ['maîtriser', 'apprendre', 'domaine', 'entretien', 'concept']):
+        return jsonify({'redirige': 'expertise', 'message': message})
+    else:
+        return jsonify({'redirige': 'personnel', 'message': message})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
