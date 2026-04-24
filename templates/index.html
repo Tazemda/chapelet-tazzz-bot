@@ -50,7 +50,7 @@
         }
         .info-msg { background: #2c3e4e; padding: 8px; border-radius: 12px; margin-top: 10px; text-align: center; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
-        .copyright { text-align: center; margin-top: 30px; font-size: 0.7rem; opacity: 0.7; }
+        .copyright { text-align: center; margin-top: 30px; font-size: 0.7rem; opacity: 0.7; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -72,13 +72,16 @@
     </div>
     <div id="consultation" class="mode-panel">
         <p>💬 Décris ta situation ou ton besoin :</p>
-        <textarea id="consult-message" rows="4" placeholder="Ex: Je veux maîtriser les concepts du IT support..."></textarea>
+        <textarea id="consult-message" rows="4" placeholder="Ex: Je veux maîtriser les concepts du IT support niveau 1 et 2 pour un entretien d'embauche..."></textarea>
     </div>
 
     <button class="generate" id="generateBtn">✨ GÉNÉRER MON CHAPELET ✨</button>
     <div class="loader" id="loader">⏳ Génération (20-40s)...</div>
     <div id="result" class="result" style="display:none;"></div>
-    <div class="copyright">© Dr Tazemda – Chapelet Taz Bot – Plasticité & répétition rythmée</div>
+    <div class="copyright">
+        Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée.<br>
+        Copyright Dr Tazemda
+    </div>
 </div>
 
 <script>
