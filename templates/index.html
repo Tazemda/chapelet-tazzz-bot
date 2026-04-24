@@ -1,54 +1,240 @@
-// À l’intérieur de la fonction qui reçoit la réponse fetch
-const data = await res.json();
-if (data.error) alert('Erreur: ' + data.error);
-else {
-    let html = '';
-    let navigationHtml = '';
-    
-    // Vérifier si c'est le mode expertise (on peut aussi utiliser data.mode, mais on ne l'a pas dans la réponse)
-    // On va plutôt tester la présence du séparateur "--- Jour " dans le texte, ET que ce n'est pas du personnel (qui a "### DÉBUT")
-    const isExpertise = data.chapelet.includes('--- Jour ') && !data.chapelet.includes('### DÉBUT');
-    
-    if (isExpertise) {
-        // Découpage des jours (le séparateur est "--- Jour X")
-        const jours = data.chapelet.split(/(?=--- Jour \d+)/).filter(j => j.trim() !== '');
-        let indexJour = 0;
-        
-        function afficherJour() {
-            let jourTexte = jours[indexJour];
-            // Extraire le titre du jour pour l'afficher en haut
-            const titreMatch = jourTexte.match(/--- Jour \d+ – [^\n]+/);
-            const titre = titreMatch ? titreMatch[0] : `Jour ${indexJour+1}`;
-            
-            const contenu = jourTexte.replace(/--- Jour \d+ – [^\n]+/, '').trim(); // enlever le titre du contenu
-            resultDiv.innerHTML = `
-                <div style="margin-bottom: 15px; font-weight: bold; text-align: center;">${titre}</div>
-                <div>${contenu.replace(/\n/g, '<br>')}</div>
-                <div style="margin-top: 20px; text-align: center;">
-                    <button id="prevDayBtn" ${indexJour === 0 ? 'disabled' : ''}>◀ Jour précédent</button>
-                    <span style="margin: 0 15px;">Jour ${indexJour+1} / ${jours.length}</span>
-                    <button id="nextDayBtn" ${indexJour === jours.length-1 ? 'disabled' : ''}>Jour suivant ▶</button>
-                </div>
-            `;
-            document.getElementById('prevDayBtn')?.addEventListener('click', () => {
-                if (indexJour > 0) {
-                    indexJour--;
-                    afficherJour();
-                }
-            });
-            document.getElementById('nextDayBtn')?.addEventListener('click', () => {
-                if (indexJour < jours.length-1) {
-                    indexJour++;
-                    afficherJour();
-                }
-            });
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 CHAPELET TAZZZ BOT 📿</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e2b3c 0%, #0f1a24 100%);
+            margin: 0;
+            padding: 20px;
+            color: #f0f0f0;
+            min-height: 100vh;
         }
-        afficherJour();
-    } else {
-        // Affichage normal (mode personnel ou consultation)
-        html = data.chapelet.replace(/\n/g, '<br>');
-        if (data.message_info) html = `<div class="info-msg">${data.message_info}</div><br>${html}`;
-        resultDiv.innerHTML = html;
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        h1 { text-align: center; font-size: 2.2rem; margin-bottom: 5px; }
+        .subtitle { text-align: center; font-size: 1rem; opacity: 0.8; margin-bottom: 25px; }
+        .mode-selector { display: flex; gap: 15px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
+        .mode-btn {
+            background: #2c3e4e; border: none; color: white; padding: 12px 24px;
+            border-radius: 40px; cursor: pointer; font-weight: bold;
+        }
+        .mode-btn.active { background: #e67e22; box-shadow: 0 0 15px rgba(230,126,34,0.5); }
+        .mode-panel { display: none; animation: fadeIn 0.4s ease; }
+        .mode-panel.active-panel { display: block; }
+        textarea, input[type="text"] {
+            width: 100%; padding: 12px; margin: 10px 0;
+            border-radius: 12px; border: none; background: #f0f0f0; font-size: 1rem;
+        }
+        .defauts-group { display: flex; flex-direction: column; gap: 10px; margin: 15px 0; }
+        button.generate {
+            background: #e67e22; border: none; color: white; padding: 14px 28px;
+            font-size: 1.2rem; border-radius: 40px; cursor: pointer; width: 100%; margin-top: 20px;
+        }
+        .loader { display: none; text-align: center; margin: 20px 0; }
+        .loader.show { display: block; }
+        .result {
+            background: #0b1620;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 30px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 500px;
+            overflow-y: auto;
+            border-left: 5px solid #e67e22;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        .nav-buttons button {
+            background: #2c3e4e;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .nav-buttons button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .day-counter {
+            font-size: 0.9rem;
+        }
+        .info-msg { background: #2c3e4e; padding: 8px; border-radius: 12px; margin-top: 10px; text-align: center; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        .copyright {
+            font-size: 0.7rem;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
+    <div class="subtitle">Transforme ta structure mentale</div>
+    <div class="mode-selector">
+        <button class="mode-btn" data-mode="expertise">📚 Expertise (7 jours)</button>
+        <button class="mode-btn" data-mode="personnel">🔥 Développement personnel (21/66j)</button>
+        <button class="mode-btn" data-mode="consultation">💬 Consultation guidée</button>
+    </div>
+
+    <div id="expertise" class="mode-panel">
+        <p>🔬 Domaine à maîtriser :</p>
+        <input type="text" id="domaine" placeholder="Ex: Audit des services d'aide à domicile">
+    </div>
+    <div id="personnel" class="mode-panel">
+        <p>📝 5 défauts :</p>
+        <div class="defauts-group" id="defauts-list"></div>
+    </div>
+    <div id="consultation" class="mode-panel">
+        <p>💬 Décris ta situation ou ton besoin :</p>
+        <textarea id="consult-message" rows="4" placeholder="Ex: Je veux maîtriser l'audit des services d'aide à domicile"></textarea>
+    </div>
+
+    <button class="generate" id="generateBtn">✨ GÉNÉRER MON CHAPELET ✨</button>
+    <div class="loader" id="loader">⏳ Génération (20-40s)...</div>
+    <div id="result" class="result" style="display:none;"></div>
+    <div class="footer">
+        🧠 CHAPELET TAZZZ BOT 📿<br>
+        <span class="copyright">© Dr Tazemda – Plasticité cérébrale & répétition rythmée</span>
+    </div>
+</div>
+
+<script>
+    // Gestion des modes
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    const panels = { expertise: document.getElementById('expertise'), personnel: document.getElementById('personnel'), consultation: document.getElementById('consultation') };
+    let currentMode = 'expertise';
+
+    // Créer 5 inputs pour le mode personnel
+    const defautsContainer = document.getElementById('defauts-list');
+    for (let i = 1; i <= 5; i++) {
+        let inp = document.createElement('input');
+        inp.type = 'text';
+        inp.placeholder = `Défaut ${i} (ex: Je me lève tard)`;
+        inp.classList.add('defaut-input');
+        defautsContainer.appendChild(inp);
     }
-    resultDiv.style.display = 'block';
-}
+
+    modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            modeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentMode = btn.getAttribute('data-mode');
+            Object.keys(panels).forEach(k => panels[k].classList.remove('active-panel'));
+            panels[currentMode].classList.add('active-panel');
+        });
+    });
+    modeBtns[0].classList.add('active');
+    panels.expertise.classList.add('active-panel');
+
+    const generateBtn = document.getElementById('generateBtn');
+    const loader = document.getElementById('loader');
+    const resultDiv = document.getElementById('result');
+
+    generateBtn.addEventListener('click', async () => {
+        let payload = { mode: currentMode };
+        if (currentMode === 'expertise') {
+            let domaine = document.getElementById('domaine').value.trim();
+            if (!domaine) return alert('Domaine requis');
+            payload.domaine = domaine;
+        } else if (currentMode === 'personnel') {
+            let defauts = Array.from(document.querySelectorAll('.defaut-input')).map(i => i.value.trim()).filter(v => v);
+            if (defauts.length !== 5) return alert('Les 5 défauts sont requis');
+            payload.defauts = defauts;
+        } else {
+            let msg = document.getElementById('consult-message').value.trim();
+            if (!msg) return alert('Décrivez votre situation');
+            payload.message = msg;
+        }
+
+        loader.classList.add('show');
+        resultDiv.style.display = 'none';
+        resultDiv.innerHTML = '';
+        try {
+            let res = await fetch('/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            let data = await res.json();
+            if (data.error) alert('Erreur: ' + data.error);
+            else {
+                // Afficher selon le mode (expertise = navigation par jours)
+                if (currentMode === 'expertise' && data.chapelet.includes('--- Jour ')) {
+                    // Découper en jours
+                    const jours = data.chapelet.split(/(?=--- Jour \d+)/).filter(j => j.trim() !== '');
+                    let indexJour = 0;
+
+                    function afficherJour() {
+                        let jourTexte = jours[indexJour];
+                        // Extraire le titre
+                        let titreMatch = jourTexte.match(/--- Jour \d+ – [^\n]+/);
+                        let titre = titreMatch ? titreMatch[0] : `Jour ${indexJour+1}`;
+                        let contenu = jourTexte.replace(/--- Jour \d+ – [^\n]+/, '').trim();
+                        // Affichage avec boutons
+                        resultDiv.innerHTML = `
+                            <div style="font-weight: bold; text-align: center; margin-bottom: 10px;">${titre}</div>
+                            <div>${contenu.replace(/\n/g, '<br>')}</div>
+                            <div class="nav-buttons">
+                                <button id="prevDayBtn" ${indexJour === 0 ? 'disabled' : ''}>◀ Précédent</button>
+                                <span class="day-counter">Jour ${indexJour+1} / ${jours.length}</span>
+                                <button id="nextDayBtn" ${indexJour === jours.length-1 ? 'disabled' : ''}>Suivant ▶</button>
+                            </div>
+                        `;
+                        document.getElementById('prevDayBtn')?.addEventListener('click', () => {
+                            if (indexJour > 0) {
+                                indexJour--;
+                                afficherJour();
+                            }
+                        });
+                        document.getElementById('nextDayBtn')?.addEventListener('click', () => {
+                            if (indexJour < jours.length-1) {
+                                indexJour++;
+                                afficherJour();
+                            }
+                        });
+                    }
+                    afficherJour();
+                } else {
+                    // Mode personnel ou consultation : affichage simple
+                    let html = data.chapelet.replace(/\n/g, '<br>');
+                    if (data.message_info) html = `<div class="info-msg">${data.message_info}</div><br>${html}`;
+                    resultDiv.innerHTML = html;
+                }
+                resultDiv.style.display = 'block';
+            }
+        } catch (err) {
+            alert('Erreur réseau ou serveur: ' + err.message);
+            console.error(err);
+        } finally {
+            loader.classList.remove('show');
+        }
+    });
+</script>
+</body>
+</html>
