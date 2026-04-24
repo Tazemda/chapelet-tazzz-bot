@@ -1,10 +1,44 @@
 import os
 import sqlite3
+import json
+import re
+import requests
 from datetime import datetime
 from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
+
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
+DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
+
+def call_deepseek(prompt, system_message="Tu es un expert pédagogique qui génère des chapelets d'apprentissage de haute qualité."):
+    if not DEEPSEEK_API_KEY:
+        raise Exception("Clé API DeepSeek manquante. Ajoutez DEEPSEEK_API_KEY dans les variables d'environnement.")
+    headers = {
+        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": "deepseek-chat",
+        "messages": [
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 4500
+    }
+    resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=60)
+    if resp.status_code == 200:
+        return resp.json()["choices"][0]["message"]["content"]
+    else:
+        raise Exception(f"API DeepSeek error {resp.status_code}: {resp.text}")
+
+def clean_markdown(text):
+    # Enlève les blocs markdown et les backticks éventuels
+    text = re.sub(r'```[\s\S]*?```', '', text)
+    text = text.replace('`', '')
+    return text.strip()
 
 # ------------------ BASE DE DONNÉES ------------------
 def init_db():
@@ -34,80 +68,55 @@ def sauvegarder_chapelet(mode, input_utilisateur, contenu):
     conn.commit()
     conn.close()
 
-# ------------------ GÉNÉRATION EXPERTISE (7 jours – dynamique) ------------------
-def generer_dizaine(num, concept, meditation, question, ave):
-    return f"""
-**DIZAINE {num} – Concept : {concept}**
+# ------------------ PROMPT POUR EXPERTISE (API DeepSeek) ------------------
+PROMPT_EXPERTISE = f"""
+Tu vas générer un CHAPELET TAZZZ BOT – MODE EXPERTISE (7 jours) pour le domaine : {{domaine}}.
+
+Le chapelet est un outil de mémorisation active par répétition rythmée, basé sur la plasticité cérébrale. Chaque jour contient 5 dizaines (concepts). Chaque dizaine doit suivre EXACTEMENT ce format (texte brut, sans markdown, mais avec des sauts de ligne) :
+
+**DIZAINE X – Concept : [nom du concept]**
 
 **1) Méditation (grande fiche)**  
 *Instruction : Tenez le gros grain. Lisez ce paragraphe lentement, comme une fiche de cours. Vous pouvez aussi le relire plusieurs fois, revoir vos notes personnelles ou consulter d’autres sources.*  
-{meditation}
+[Ici, écris un paragraphe dense, précis, pédagogique – définition, explications, exemples, points clés – comme une mini‑fiche de cours.]
 
 **2) Notre Père**  
 *Récitez cette question 3 fois (à voix haute ou mentalement).*  
-« {question} »
+« [Question problématisée, générale, qui invite à la réflexion sur le concept] »
 
 **3) Je vous salue Marie**  
 *Répétez ce paragraphe 10 fois (5 fois en lecture et 5 fois sans regarder). Lisez‑le d’abord pour bien l’ancrer.*  
-{ave}
+[Paragraphe synthétique de plusieurs phrases, résumant l’essentiel du concept, à mémoriser et réciter.]
 
 **4) Gloire au Père**  
 *Récitez cette phrase 3 fois.*  
-« Le concept “{concept}” est connu et consolidé. »
+« Le concept “[nom du concept]” est connu et consolidé. »
+
+Structure à produire :
+
+- **--- Jour 1 – [titre] ---** (jour 1 : Découverte des bases)
+- 5 dizaines (concepts fondamentaux du domaine)
+- **--- Jour 2 – Approfondissement opérationnel ---** (5 dizaines)
+- **--- Jour 3 – Cas complexes et exceptions ---** (5 dizaines)
+- **--- Jour 4 – Contrôle qualité et indicateurs ---** (5 dizaines)
+- **--- Jour 5 – Gestion des risques et plan d'action ---** (5 dizaines)
+- **--- Jour 6 – Synthèse et liens entre concepts ---** (5 dizaines)
+- **--- Jour 7 – Auto‑évaluation et perfectionnement ---** (5 dizaines)
+
+Chaque jour doit avoir 5 dizaines. Soigne la qualité pédagogique : les méditations doivent être réellement instructives, les Ave Maria doivent être des résumés denses mais clairs. N’utilise pas de placeholders génériques. Produis un vrai contenu de formation pour le domaine “{{domaine}}”.
+
+Termine par :
+Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée.
+Copyright Dr Tazemda
 """
 
-def generer_contenu_pour_domaine(domaine, jour, num_concept):
-    """
-    Génère un texte cohérent pour une dizaine à partir du domaine saisi.
-    """
-    sujet = domaine.lower().strip()
-    concepts_base = [
-        f"Définition et enjeux de {sujet}",
-        f"Principes fondamentaux de {sujet}",
-        f"Méthodologie pour {sujet}",
-        f"Outils et techniques de {sujet}",
-        f"Indicateurs de réussite en {sujet}"
-    ]
-    concept = concepts_base[num_concept % len(concepts_base)]
-    
-    meditation = f"Exploration détaillée de {concept}. Cela inclut les aspects clés, les bonnes pratiques et les erreurs fréquentes à éviter. Exemple concret : dans le domaine de {sujet}, il est essentiel de maîtriser les bases avant d'aborder les cas complexes."
-    
-    question = f"Comment appliquer correctement les règles de {concept} dans une situation réelle ? Quelles sont les trois actions prioritaires à retenir ?"
-    
-    ave = f"Pour bien maîtriser {sujet}, il faut comprendre que {concept} repose sur des principes solides. La répétition et la pratique permettent d'ancrer ces connaissances. Chaque professionnel doit être capable de décrire et d'utiliser ces concepts sans hésitation."
+def generate_expertise_via_api(domaine):
+    prompt = PROMPT_EXPERTISE.format(domaine=domaine)
+    raw = call_deepseek(prompt)
+    chapelet = clean_markdown(raw)
+    return chapelet
 
-    return concept, meditation, question, ave
-
-def generate_mock_expertise(domaine):
-    jours_titres = [
-        "Découverte des bases",
-        "Approfondissement opérationnel",
-        "Cas complexes et exceptions",
-        "Contrôle qualité et indicateurs",
-        "Gestion des risques et plan d'action",
-        "Synthèse et liens entre concepts",
-        "Auto‑évaluation et perfectionnement"
-    ]
-    texte_complet = f"""
---- Jour 1 – {jours_titres[0]} ---
-
-Ce chapelet est un outil de mémorisation active par répétition rythmée, basé sur la plasticité cérébrale. Tenez un vrai chapelet dans la main.
-
-**Point d’entrée du problème** : Comment maîtriser {domaine} avec rigueur et efficacité ?
-
-**Règle d’or** : Une pratique quotidienne et une visualisation active.
-
-"""
-    for jour in range(1, 8):
-        if jour > 1:
-            texte_complet += f"\n\n--- Jour {jour} – {jours_titres[jour-1]} ---\n"
-        for num_concept in range(1, 6):
-            concept, meditation, question, ave = generer_contenu_pour_domaine(domaine, jour, num_concept)
-            texte_complet += generer_dizaine(num_concept, concept, meditation, question, ave)
-    
-    texte_complet += "\n\nChapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée.\nCopyright Dr Tazemda"
-    return texte_complet
-
+# ------------------ MODE PERSONNEL (mock, peut rester simple) ------------------
 def generate_mock_personnel(defauts):
     mantra = "Je me lève tôt, je termine ce que je commence, je sors chaque jour, je structure ma vie, j'attire un travail stable et prospère."
     texte = f"""
@@ -154,35 +163,43 @@ def index():
 def generate():
     data = request.get_json()
     mode = data.get('mode')
-    if mode == 'expertise':
-        domaine = data.get('domaine')
-        if not domaine:
-            return jsonify({'error': 'Domaine requis'}), 400
-        chapelet = generate_mock_expertise(domaine)
-        sauvegarder_chapelet('expertise', domaine, chapelet)
-        return jsonify({'chapelet': chapelet})
-    elif mode == 'personnel':
-        defauts = data.get('defauts')
-        if not defauts or len(defauts) != 5:
-            return jsonify({'error': '5 défauts requis'}), 400
-        chapelet = generate_mock_personnel(defauts)
-        sauvegarder_chapelet('personnel', str(defauts), chapelet)
-        return jsonify({'chapelet': chapelet})
-    elif mode == 'consultation':
-        message = data.get('message')
-        if not message:
-            return jsonify({'error': 'Message requis'}), 400
-        if any(w in message.lower() for w in ['maîtriser', 'apprendre', 'domaine', 'entretien', 'comprendre']):
-            domaine = message[:150]
-            chapelet = generate_mock_expertise(domaine)
-            sauvegarder_chapelet('consultation_expertise', message, chapelet)
-            return jsonify({'chapelet': chapelet, 'message_info': '🔍 Type détecté : EXPERTISE'})
-        else:
-            defauts = ["Je manque de discipline"] * 5
+    try:
+        if mode == 'expertise':
+            domaine = data.get('domaine')
+            if not domaine:
+                return jsonify({'error': 'Domaine requis'}), 400
+            chapelet = generate_expertise_via_api(domaine)
+            sauvegarder_chapelet('expertise', domaine, chapelet)
+            return jsonify({'chapelet': chapelet})
+
+        elif mode == 'personnel':
+            defauts = data.get('defauts')
+            if not defauts or len(defauts) != 5:
+                return jsonify({'error': '5 défauts requis'}), 400
             chapelet = generate_mock_personnel(defauts)
-            sauvegarder_chapelet('consultation_personnel', message, chapelet)
-            return jsonify({'chapelet': chapelet, 'message_info': '🔍 Type détecté : PERSONNEL'})
-    return jsonify({'error': 'Mode invalide'}), 400
+            sauvegarder_chapelet('personnel', str(defauts), chapelet)
+            return jsonify({'chapelet': chapelet})
+
+        elif mode == 'consultation':
+            message = data.get('message')
+            if not message:
+                return jsonify({'error': 'Message requis'}), 400
+            # Détection simple par mots-clés
+            if any(w in message.lower() for w in ['maîtriser', 'apprendre', 'domaine', 'entretien', 'comprendre']):
+                domaine = message[:150]
+                chapelet = generate_expertise_via_api(domaine)
+                sauvegarder_chapelet('consultation_expertise', message, chapelet)
+                return jsonify({'chapelet': chapelet, 'message_info': '🔍 Type détecté : EXPERTISE'})
+            else:
+                defauts = ["Je manque de discipline"] * 5
+                chapelet = generate_mock_personnel(defauts)
+                sauvegarder_chapelet('consultation_personnel', message, chapelet)
+                return jsonify({'chapelet': chapelet, 'message_info': '🔍 Type détecté : PERSONNEL'})
+        else:
+            return jsonify({'error': 'Mode invalide'}), 400
+    except Exception as e:
+        print("Erreur serveur:", e)
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/feedback', methods=['POST'])
 def feedback():
