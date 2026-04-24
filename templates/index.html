@@ -5,29 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🧠 CHAPELET TAZZZ BOT</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #1e2b3c; margin: 0; padding: 20px; color: #f0f0f0; }
-        .container { max-width: 800px; margin: auto; background: rgba(255,255,255,0.1); border-radius: 24px; padding: 25px; }
-        h1, h2 { text-align: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1e2b3c; margin: 0; padding: 20px; color: #f0f0f0; }
+        .container { max-width: 800px; margin: auto; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 24px; padding: 25px; }
+        h1 { text-align: center; }
+        .mode-selector { display: flex; gap: 15px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
+        .mode-btn { background: #2c3e4e; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer; font-weight: bold; }
+        .mode-btn.active { background: #e67e22; }
+        .mode-panel { display: none; animation: fadeIn 0.4s; }
+        .mode-panel.active-panel { display: block; }
+        input, textarea { width: 96%; padding: 12px; margin: 10px 0; border-radius: 12px; border: none; background: #f0f0f0; }
         button { background: #e67e22; border: none; color: white; padding: 10px 20px; border-radius: 40px; cursor: pointer; margin: 5px; }
         button:disabled { opacity: 0.5; }
-        .mode-btn { background: #2c3e4e; }
-        .active { background: #e67e22; }
-        .mode-panel { display: none; }
-        .active-panel { display: block; }
-        .result { background: #0b1620; border-radius: 20px; padding: 20px; white-space: pre-wrap; font-family: monospace; margin-top: 20px; }
-        .loader { display: none; text-align: center; margin: 20px; }
-        .nav-buttons { display: flex; justify-content: space-between; margin-top: 20px; }
+        .result { background: #0b1620; border-radius: 20px; padding: 20px; margin-top: 20px; white-space: pre-wrap; font-family: monospace; border-left: 5px solid #e67e22; max-height: 500px; overflow-y: auto; }
+        .nav-buttons { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; }
         .feedback-box { margin-top: 20px; background: rgba(0,0,0,0.3); border-radius: 20px; padding: 15px; text-align: center; }
         .stars { display: inline-flex; gap: 5px; margin: 10px; }
-        .star { font-size: 28px; cursor: pointer; color: #555; }
+        .star { font-size: 28px; cursor: pointer; color: #555; transition: color 0.2s; }
         .star.selected { color: gold; }
-        input, textarea { width: 90%; padding: 10px; margin: 10px; border-radius: 12px; border: none; }
+        .loader { display: none; text-align: center; margin: 20px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
-    <div style="text-align:center; margin-bottom:20px;">
+    <div class="mode-selector">
         <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
         <button class="mode-btn" data-mode="personnel">🔥 Développement personnel (21/66j)</button>
         <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
@@ -38,23 +40,6 @@
         <p>🔬 Domaine à maîtriser :</p>
         <input type="text" id="domaine" placeholder="Ex: Prévention des escarres par un auxiliaire de vie">
         <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
-        
-        <!-- Pré‑ambule (titres J1..J7) – version générique sans médicament -->
-        <div id="preambule" style="margin-top:20px; display:none;">
-            <h2>📖 Programme des 7 jours</h2>
-            <ul>
-                <li><strong>Jour 1</strong> – Découverte des bases fondamentales</li>
-                <li><strong>Jour 2</strong> – Approfondissement pratique</li>
-                <li><strong>Jour 3</strong> – Cas complexes et exceptions</li>
-                <li><strong>Jour 4</strong> – Contrôle qualité et indicateurs</li>
-                <li><strong>Jour 5</strong> – Gestion des risques et plan d'action</li>
-                <li><strong>Jour 6</strong> – Synthèse et liens entre concepts</li>
-                <li><strong>Jour 7</strong> – Auto‑évaluation et perfectionnement</li>
-            </ul>
-            <button id="goToJour1">🎯 PASSER AU JOUR 1</button>
-        </div>
-
-        <!-- Affichage du jour courant -->
         <div id="jourContainer" style="display:none;">
             <div id="jourContent" class="result"></div>
             <div class="nav-buttons">
@@ -64,15 +49,21 @@
             </div>
             <div id="feedbackBox" class="feedback-box" style="display:none;">
                 <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
-                <div class="stars" id="stars">☆ ☆ ☆ ☆ ☆</div>
-                <textarea id="feedbackComment" rows="2" placeholder="Vos remarques..."></textarea>
+                <div class="stars" id="stars">
+                    <span class="star" data-value="1">☆</span>
+                    <span class="star" data-value="2">☆</span>
+                    <span class="star" data-value="3">☆</span>
+                    <span class="star" data-value="4">☆</span>
+                    <span class="star" data-value="5">☆</span>
+                </div>
+                <textarea id="feedbackComment" rows="2" placeholder="Vos remarques (facultatif)"></textarea>
                 <button id="submitFeedback">Envoyer mon avis</button>
             </div>
         </div>
-        <div id="expertiseLoader" class="loader">⏳ Génération du jour...</div>
+        <div id="expertiseLoader" class="loader">⏳ Génération en cours...</div>
     </div>
 
-    <!-- Mode Personnel (simplifié) -->
+    <!-- Mode Personnel -->
     <div id="personnelPanel" class="mode-panel">
         <p>📝 5 défauts (un par ligne) :</p>
         <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;..."></textarea>
@@ -80,17 +71,17 @@
         <div id="personnelResult" class="result"></div>
     </div>
 
-    <!-- Mode Consultation (simplifié, redirige vers expertise) -->
+    <!-- Mode Consultation -->
     <div id="consultationPanel" class="mode-panel">
         <p>💬 Décrivez votre besoin :</p>
-        <textarea id="consultMessage" rows="4" placeholder="Je veux maîtriser..."></textarea>
+        <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention des escarres..."></textarea>
         <button id="generateConsult">✨ GÉNÉRER ✨</button>
         <div id="consultResult" class="result"></div>
     </div>
 </div>
 
 <script>
-    // ========== GESTION DES MODES ==========
+    // Onglets
     const modeBtns = document.querySelectorAll('.mode-btn');
     const panels = {
         expertise: document.getElementById('expertisePanel'),
@@ -107,9 +98,9 @@
         });
     });
 
-    // ========== EXPERTISE (lazy loading par jour) ==========
+    // Expertise : pas de préambule, on charge le jour 1 directement
     let domaine = '';
-    let jours = {};      // { 1: "contenu...", 2: "..." }
+    let jours = {};
     let currentJour = 1;
 
     function chargerJour(jour) {
@@ -117,27 +108,25 @@
             afficherJour(jour);
             return;
         }
-        document.getElementById('expertiseLoader').style.display = 'block';
+        const loader = document.getElementById('expertiseLoader');
+        loader.style.display = 'block';
         fetch('/generer_jour', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ domaine: domaine, jour: jour })
         })
-        .then(res => {
-            if (!res.ok) throw new Error('Erreur serveur');
-            return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
             if (data.error) throw new Error(data.error);
             jours[jour] = data.contenu;
             afficherJour(jour);
         })
         .catch(err => {
-            alert('Erreur réseau : ' + err.message);
-            jours[jour] = `--- Jour ${jour} (erreur) ---\nImpossible de générer le contenu.`;
+            console.error(err);
+            jours[jour] = `--- Jour ${jour} (erreur) ---\nImpossible de générer le contenu pour le moment. Veuillez réessayer plus tard.`;
             afficherJour(jour);
         })
-        .finally(() => document.getElementById('expertiseLoader').style.display = 'none');
+        .finally(() => loader.style.display = 'none');
     }
 
     function afficherJour(jour) {
@@ -151,17 +140,11 @@
     document.getElementById('startExpertise').addEventListener('click', () => {
         domaine = document.getElementById('domaine').value.trim();
         if (!domaine) { alert('Domaine requis'); return; }
-        // Afficher le pré‑ambule et cacher le bouton de démarrage
-        document.getElementById('preambule').style.display = 'block';
-        document.getElementById('startExpertise').style.display = 'none';
-    });
-
-    document.getElementById('goToJour1').addEventListener('click', () => {
         jours = {};
         currentJour = 1;
         chargerJour(1);
         document.getElementById('jourContainer').style.display = 'block';
-        document.getElementById('preambule').style.display = 'none';
+        document.getElementById('startExpertise').style.display = 'none';
     });
 
     document.getElementById('prevDay').addEventListener('click', () => {
@@ -180,15 +163,15 @@
         }
     });
 
-    // ========== FEEDBACK ==========
+    // Feedback
     let currentNote = 0;
-    const starsContainer = document.getElementById('stars');
-    starsContainer.innerHTML = ['☆','☆','☆','☆','☆'].map((s,i) => `<span class="star" data-value="${i+1}">${s}</span>`).join('');
-    document.querySelectorAll('.star').forEach(star => {
+    const stars = document.querySelectorAll('#stars .star');
+    stars.forEach(star => {
         star.addEventListener('click', () => {
             currentNote = parseInt(star.getAttribute('data-value'));
-            document.querySelectorAll('.star').forEach((s, idx) => {
-                if (idx < currentNote) {
+            stars.forEach(s => {
+                const val = parseInt(s.getAttribute('data-value'));
+                if (val <= currentNote) {
                     s.textContent = '★';
                     s.classList.add('selected');
                 } else {
@@ -199,7 +182,7 @@
         });
     });
     document.getElementById('submitFeedback').addEventListener('click', async () => {
-        if (currentNote === 0) return alert('Sélectionnez une note');
+        if (currentNote === 0) { alert('Sélectionnez une note'); return; }
         const comment = document.getElementById('feedbackComment').value.trim();
         try {
             const res = await fetch('/feedback', {
@@ -215,10 +198,10 @@
         } catch (err) { alert('Erreur réseau'); }
     });
 
-    // ========== MODE PERSONNEL ==========
+    // Personnel
     document.getElementById('generatePersonnel').addEventListener('click', async () => {
         let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
-        if (defauts.length !== 5) { alert('5 défauts exactement.'); return; }
+        if (defauts.length !== 5) { alert('5 défauts requis'); return; }
         document.getElementById('personnelResult').innerHTML = '⏳ Génération...';
         try {
             const res = await fetch('/generer_personnel', {
@@ -229,21 +212,18 @@
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             document.getElementById('personnelResult').innerHTML = data.contenu.replace(/\n/g, '<br>');
-        } catch (err) { alert('Erreur : ' + err.message); }
+        } catch (err) { alert('Erreur: ' + err.message); }
     });
 
-    // ========== MODE CONSULTATION (redirige vers expertise) ==========
-    document.getElementById('generateConsult').addEventListener('click', async () => {
+    // Consultation (redirige vers expertise)
+    document.getElementById('generateConsult').addEventListener('click', () => {
         let msg = document.getElementById('consultMessage').value.trim();
-        if (!msg) return alert('Message requis');
-        document.getElementById('consultResult').innerHTML = '⏳ Analyse...';
-        // Redirection vers l'expertise
+        if (!msg) { alert('Message requis'); return; }
         domaine = msg;
         jours = {};
         currentJour = 1;
         chargerJour(1);
         document.getElementById('jourContainer').style.display = 'block';
-        document.getElementById('preambule').style.display = 'none';
         document.getElementById('startExpertise').style.display = 'none';
         document.getElementById('consultResult').innerHTML = 'Redirection vers le mode Expertise... (consultez l’onglet Expertise)';
     });
