@@ -5,45 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🧠 CHAPELET TAZZZ BOT</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #121212; color: white; padding: 20px; }
-        .container { max-width: 800px; margin: auto; background: #1e1e2f; padding: 20px; border-radius: 20px; }
-        button, input, textarea { background: #2c3e4e; color: white; border: none; padding: 10px; border-radius: 10px; margin: 5px; }
-        button { background: #e67e22; cursor: pointer; }
-        .result { background: #0b1620; padding: 15px; border-radius: 15px; white-space: pre-wrap; font-family: monospace; margin-top: 20px; }
-        .mode-btn { background: #2c3e4e; margin: 5px; }
-        .active { background: #e67e22; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1e2b3c; margin: 0; padding: 20px; color: #f0f0f0; }
+        .container { max-width: 800px; margin: auto; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 24px; padding: 25px; }
+        h1 { text-align: center; }
+        .mode-selector { display: flex; gap: 15px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
+        .mode-btn { background: #2c3e4e; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer; font-weight: bold; }
+        .mode-btn.active { background: #e67e22; }
+        .mode-panel { display: none; animation: fadeIn 0.4s; }
+        .mode-panel.active-panel { display: block; }
+        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 12px; border: none; background: #f0f0f0; }
+        button.generate { background: #e67e22; color: white; padding: 14px 28px; font-size: 1.2rem; border: none; border-radius: 40px; cursor: pointer; width: 100%; margin-top: 20px; }
+        .loader { display: none; text-align: center; margin: 20px; }
+        .result { background: #0b1620; border-radius: 20px; padding: 20px; margin-top: 30px; white-space: pre-wrap; font-family: monospace; border-left: 5px solid #e67e22; }
+        .nav-buttons { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; }
+        .nav-buttons button { background: #2c3e4e; color: white; padding: 8px 16px; border-radius: 20px; cursor: pointer; border: none; }
+        .day-counter { font-size: 0.9rem; }
+        .feedback-box { margin-top: 20px; background: rgba(0,0,0,0.3); border-radius: 20px; padding: 15px; text-align: center; }
+        .stars { display: inline-flex; gap: 5px; margin: 10px; }
+        .star { font-size: 28px; cursor: pointer; color: #555; }
+        .star.selected { color: gold; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🧠 CHAPELET TAZZZ BOT</h1>
-    <div>
-        <button class="mode-btn" data-mode="expertise">📚 Expertise (7j)</button>
-        <button class="mode-btn" data-mode="personnel">🔥 Personnel (21j)</button>
+    <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
+    <div class="mode-selector">
+        <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
+        <button class="mode-btn" data-mode="personnel">🔥 Personnel (21/66j)</button>
         <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
     </div>
-    <div id="expertisePanel">
-        <p>Domaine à maîtriser :</p>
-        <input type="text" id="domaine" placeholder="Ex: Cheminement du médicament">
+    <!-- Mode Expertise -->
+    <div id="expertise" class="mode-panel active-panel">
+        <p>🔬 Domaine à maîtriser :</p>
+        <input type="text" id="domaine" placeholder="Ex: Cheminement du médicament de la naissance à la commercialisation">
+        <button id="initExpertise" class="generate">✨ DÉMARRER L'EXPERTISE ✨</button>
+        <div id="expertiseLoader" class="loader">⏳ Initialisation...</div>
+        <div id="jourContainer" style="display:none;">
+            <div id="jourContent" class="result"></div>
+            <div class="nav-buttons">
+                <button id="prevDay" disabled>◀ Précédent</button>
+                <span id="dayCounter" class="day-counter">Jour 1 / 7</span>
+                <button id="nextDay">Suivant ▶</button>
+            </div>
+            <div class="feedback-box" id="feedbackBox" style="display:none;">
+                <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
+                <div class="stars" id="stars">
+                    <span class="star" data-value="1">☆</span>
+                    <span class="star" data-value="2">☆</span>
+                    <span class="star" data-value="3">☆</span>
+                    <span class="star" data-value="4">☆</span>
+                    <span class="star" data-value="5">☆</span>
+                </div>
+                <textarea id="feedbackComment" rows="2" placeholder="Vos remarques (facultatif)"></textarea>
+                <button id="submitFeedback">Envoyer mon avis</button>
+            </div>
+        </div>
     </div>
-    <div id="personnelPanel" style="display:none;">
-        <p>5 défauts (un par ligne) :</p>
+    <!-- Mode Personnel (simplifié) -->
+    <div id="personnel" class="mode-panel" style="display:none;">
+        <p>📝 5 défauts :</p>
         <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;..."></textarea>
+        <button id="generatePersonnel" class="generate">✨ GÉNÉRER MON CHAPELET PERSONNEL ✨</button>
+        <div id="personnelResult" class="result"></div>
     </div>
-    <div id="consultationPanel" style="display:none;">
-        <p>Décrivez votre besoin :</p>
+    <!-- Mode Consultation -->
+    <div id="consultation" class="mode-panel" style="display:none;">
+        <p>💬 Décrivez votre besoin :</p>
         <textarea id="consultMessage" rows="4" placeholder="Je veux maîtriser..."></textarea>
+        <button id="generateConsult" class="generate">✨ GÉNÉRER ✨</button>
+        <div id="consultResult" class="result"></div>
     </div>
-    <button id="generateBtn">✨ GÉNÉRER ✨</button>
-    <div id="loader" style="display:none;">⏳ Génération...</div>
-    <div id="result" class="result"></div>
 </div>
 <script>
+    // ---------- MODES ----------
     const modeBtns = document.querySelectorAll('.mode-btn');
     const panels = {
-        expertise: document.getElementById('expertisePanel'),
-        personnel: document.getElementById('personnelPanel'),
-        consultation: document.getElementById('consultationPanel')
+        expertise: document.getElementById('expertise'),
+        personnel: document.getElementById('personnel'),
+        consultation: document.getElementById('consultation')
     };
     let currentMode = 'expertise';
     modeBtns.forEach(btn => {
@@ -51,37 +91,138 @@
             modeBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentMode = btn.getAttribute('data-mode');
-            Object.values(panels).forEach(p => p.style.display = 'none');
+            Object.keys(panels).forEach(k => panels[k].style.display = 'none');
             panels[currentMode].style.display = 'block';
         });
     });
-    document.getElementById('generateBtn').addEventListener('click', async () => {
-        let payload = { mode: currentMode };
-        if (currentMode === 'expertise') {
-            let domaine = document.getElementById('domaine').value.trim();
-            if (!domaine) return alert('Domaine requis');
-            payload.domaine = domaine;
-        } else if (currentMode === 'personnel') {
-            let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
-            if (defauts.length !== 5) return alert('5 défauts requis');
-            payload.defauts = defauts;
-        } else {
-            let msg = document.getElementById('consultMessage').value.trim();
-            if (!msg) return alert('Message requis');
-            payload.message = msg;
+
+    // ---------- EXPERTISE (lazy loading par jour) ----------
+    let domaine = '';
+    let jours = {};      // stockage des contenus générés (index 1..7)
+    let currentJour = 1;
+
+    function chargerJour(jour) {
+        if (jours[jour]) {
+            afficherJour(jour);
+            return;
         }
-        document.getElementById('loader').style.display = 'block';
+        document.getElementById('expertiseLoader').style.display = 'block';
+        fetch('/generate_jour', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ domaine: domaine, jour: jour })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) alert('Erreur: ' + data.error);
+            else {
+                jours[jour] = data.contenu;
+                afficherJour(jour);
+            }
+        })
+        .catch(err => alert('Erreur réseau: ' + err.message))
+        .finally(() => document.getElementById('expertiseLoader').style.display = 'none');
+    }
+
+    function afficherJour(jour) {
+        document.getElementById('jourContent').innerHTML = jours[jour].replace(/\n/g, '<br>');
+        document.getElementById('dayCounter').innerText = `Jour ${jour} / 7`;
+        document.getElementById('prevDay').disabled = (jour === 1);
+        document.getElementById('nextDay').disabled = (jour === 7);
+        document.getElementById('feedbackBox').style.display = 'block';
+    }
+
+    document.getElementById('initExpertise').addEventListener('click', () => {
+        domaine = document.getElementById('domaine').value.trim();
+        if (!domaine) { alert('Domaine requis'); return; }
+        jours = {};
+        currentJour = 1;
+        chargerJour(1);
+        document.getElementById('jourContainer').style.display = 'block';
+        document.getElementById('initExpertise').style.display = 'none';
+    });
+
+    document.getElementById('prevDay').addEventListener('click', () => {
+        if (currentJour > 1) {
+            currentJour--;
+            if (jours[currentJour]) afficherJour(currentJour);
+            else chargerJour(currentJour);
+        }
+    });
+    document.getElementById('nextDay').addEventListener('click', () => {
+        if (currentJour < 7) {
+            currentJour++;
+            if (jours[currentJour]) afficherJour(currentJour);
+            else chargerJour(currentJour);
+        }
+    });
+
+    // ---------- FEEDBACK (étoiles) ----------
+    let currentNote = 0;
+    const stars = document.querySelectorAll('.star');
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            currentNote = parseInt(star.getAttribute('data-value'));
+            stars.forEach(s => {
+                if (parseInt(s.getAttribute('data-value')) <= currentNote) {
+                    s.textContent = '★';
+                    s.classList.add('selected');
+                } else {
+                    s.textContent = '☆';
+                    s.classList.remove('selected');
+                }
+            });
+        });
+    });
+    document.getElementById('submitFeedback').addEventListener('click', async () => {
+        if (currentNote === 0) return alert('Sélectionnez une note');
+        const commentaire = document.getElementById('feedbackComment').value.trim();
         try {
-            let res = await fetch('/generate', {
+            const res = await fetch('/feedback', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ note: currentNote, commentaire: commentaire })
             });
-            let data = await res.json();
-            if (data.error) alert('Erreur: ' + data.error);
-            else document.getElementById('result').innerHTML = data.chapelet.replace(/\n/g, '<br>');
+            const data = await res.json();
+            if (data.status === 'ok') {
+                alert('Merci pour votre avis !');
+                document.getElementById('feedbackBox').style.display = 'none';
+            } else alert('Erreur lors de l’envoi');
         } catch (err) { alert('Erreur réseau'); }
-        finally { document.getElementById('loader').style.display = 'none'; }
+    });
+
+    // ---------- PERSONNEL (simplifié) ----------
+    document.getElementById('generatePersonnel').addEventListener('click', async () => {
+        let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
+        if (defauts.length !== 5) { alert('5 défauts requis'); return; }
+        document.getElementById('personnelResult').innerHTML = '⏳ Génération...';
+        try {
+            const res = await fetch('/generate_personnel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ defauts: defauts })
+            });
+            const data = await res.json();
+            if (data.error) alert('Erreur: ' + data.error);
+            else document.getElementById('personnelResult').innerHTML = data.chapelet.replace(/\n/g, '<br>');
+        } catch (err) { alert('Erreur réseau'); }
+    });
+
+    // ---------- CONSULTATION (redirige vers expertise ou personnel) ----------
+    document.getElementById('generateConsult').addEventListener('click', async () => {
+        let msg = document.getElementById('consultMessage').value.trim();
+        if (!msg) return alert('Message requis');
+        document.getElementById('consultResult').innerHTML = '⏳ Analyse...';
+        try {
+            const res = await fetch('/consultation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msg })
+            });
+            const data = await res.json();
+            if (data.error) alert('Erreur: ' + data.error);
+            else document.getElementById('consultResult').innerHTML = data.chapelet.replace(/\n/g, '<br>');
+        } catch (err) { alert('Erreur réseau'); }
     });
 </script>
 </body>
