@@ -1,114 +1,108 @@
 import os
-import sqlite3
-import re
-import requests
-import traceback
-from datetime import datetime
 from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
-DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
+def generate_mock_expertise(domaine):
+    """Génère un chapelet d'expertise sur 7 jours (Jour 1 détaillé, J2-J7 génériques)"""
+    # Jour 1 – complet avec vos 5 concepts (tel que vous l'avez validé)
+    jour1 = f"""
+--- Jour 1 – Découverte des bases du {domaine} ---
 
-def call_deepseek(prompt, system_message="Tu es un expert pédagogique qui génère des chapelets d'apprentissage de haute qualité."):
-    if not DEEPSEEK_API_KEY:
-        raise Exception("Clé API DeepSeek manquante. Ajoutez DEEPSEEK_API_KEY dans les variables d'environnement.")
-    headers = {
-        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": "deepseek-chat",
-        "messages": [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.7,
-        "max_tokens": 4500
-    }
-    try:
-        resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=90)
-    except requests.exceptions.Timeout:
-        raise Exception("Timeout : DeepSeek ne répond pas après 90 secondes.")
-    if resp.status_code == 200:
-        # Vérifie que la réponse est du JSON valide
-        try:
-            data = resp.json()
-            return data["choices"][0]["message"]["content"]
-        except Exception as e:
-            raise Exception(f"Réponse inattendue de l'API : {resp.text[:200]}")
-    else:
-        # Affiche le code d'erreur et le message pour diagnostic
-        raise Exception(f"API DeepSeek error {resp.status_code}: {resp.text[:500]}")
-
-def clean_markdown(text):
-    text = re.sub(r'```[\s\S]*?```', '', text)
-    text = text.replace('`', '')
-    return text.strip()
-
-# ------------------ FALLBACK (chapelet de secours complet) ------------------
-def generate_fallback_expertise(domaine):
-    return f"""
---- CHAPELET TAZZZ BOT – EXPERTISE (7 jours) ---
-Mode dégradé (API injoignable). Voici un chapelet générique pour "{domaine}".
-
-**--- Jour 1 – Découverte des bases ---**
-
-**DIZAINE 1 – Concept : Fondamentaux de {domaine}**  
-**1) Méditation** : Pour maîtriser {domaine}, il faut d'abord en connaître les objectifs et les principaux acteurs.  
-**2) Notre Père** : Quels sont les trois piliers de {domaine} ?  
-**3) Je vous salue Marie** : Je retiens que {domaine} repose sur la connaissance des règles, des bonnes pratiques et des outils. Je répète cela chaque jour.  
-**4) Gloire au Père** : Le concept "fondamentaux" est consolidé.
-
-(Structure identique pour les 5 dizaines du jour 1, puis jours 2 à 7 sur le même modèle. En production, ce texte serait plus long, mais l'API est la solution définitive.)
-Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée.
-Copyright Dr Tazemda
-"""
-
-# ------------------ PROMPT EXPERTISE (avec instructions de qualité) ------------------
-PROMPT_EXPERTISE = f"""
-Tu vas générer un CHAPELET TAZZZ BOT – MODE EXPERTISE (7 jours) pour le domaine : {{domaine}}.
-
-Chaque jour contient 5 dizaines. Chaque dizaine doit suivre EXACTEMENT ce format :
-
-**DIZAINE X – Concept : [nom du concept]**
+**DIZAINE 1 – Concept : Qu’est-ce qu’un service d’aide à domicile ?**
 
 **1) Méditation (grande fiche)**  
 *Instruction : Tenez le gros grain. Lisez ce paragraphe lentement, comme une fiche de cours. Vous pouvez aussi le relire plusieurs fois, revoir vos notes personnelles ou consulter d’autres sources.*  
-[Paragraphe dense, précis, pédagogique – définitions, explications, exemples concrets, points clés.]
+Un service d’aide à domicile intervient auprès de personnes âgées, handicapées ou en perte d’autonomie pour les aider dans les actes de la vie quotidienne (ménage, courses, toilette, repas). Il peut être public, associatif ou privé. L’audit vérifie la qualité, la sécurité et la continuité des prestations. Exemple : on contrôle que les plans d’aide sont bien adaptés aux besoins exprimés par l’usager.
 
-**2) Notre Père**  
-*Récitez cette question 3 fois (à voix haute ou mentalement).*  
-« [Question problématisée, générale, qui invite à réfléchir sur le concept] »
+**2) Notre Père (à répéter 3 fois)**  
+*Instruction : Récitez cette phrase 3 fois (à voix haute ou mentalement).*  
+« Quelles sont les missions réelles d’un service d’aide à domicile ? Qu’est‑ce qui relève de l’aide humaine, qu’est‑ce qui relève des soins infirmiers ? Comment ne jamais confondre ces deux champs ? »
 
-**3) Je vous salue Marie**  
-*Répétez ce paragraphe 10 fois (5 fois en lecture et 5 fois sans regarder). Lisez‑le d’abord pour bien l’ancrer.*  
-[Paragraphe synthétique de plusieurs phrases, résumant l’essentiel du concept.]
+**3) Je vous salue Marie (à répéter 10 fois)**  
+*Instruction : Répétez ce paragraphe 10 fois (5 fois en lecture et 5 fois sans regarder). Lisez‑le d’abord pour bien l’ancrer.*  
+« Un service d’aide à domicile aide la personne chez elle pour les gestes quotidiens non médicaux : ménage, préparation des repas, aide à la toilette, courses, accompagnement aux rendez‑vous. L’audit porte sur la qualité de ces interventions, leur traçabilité et leur adaptation aux besoins réels. Il existe trois types de structures : publiques (CCAS), associatives (type ADMR), privées lucratives. L’auditeur doit toujours se référer au contrat individuel de la personne et au projet de service. »
 
-**4) Gloire au Père**  
-*Récitez cette phrase 3 fois.*  
-« Le concept “[nom du concept]” est connu et consolidé. »
+**4) Gloire au Père (à répéter 3 fois)**  
+*Instruction : Récitez la phrase suivante 3 fois.*  
+« Le concept “service d’aide à domicile” est connu et consolidé. »
 
-Structure à produire (7 jours avec titres) :
-- Jour 1 – Découverte des bases
-- Jour 2 – Approfondissement opérationnel
-- Jour 3 – Cas complexes et exceptions
-- Jour 4 – Contrôle qualité et indicateurs
-- Jour 5 – Gestion des risques et plan d'action
-- Jour 6 – Synthèse et liens entre concepts
-- Jour 7 – Auto‑évaluation et perfectionnement
+**DIZAINE 2 – Concept : Le référentiel qualité (HAS / ANESM)**
 
-Termine par : Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée. Copyright Dr Tazemda
+**1) Méditation (grande fiche)**  
+*Instruction : Tenez le gros grain. Lisez ce paragraphe lentement, comme une fiche de cours.*  
+Le référentiel qualité est un cadre normatif qui définit les critères attendus pour les services d’aide à domicile. En France, l’ANESM puis la HAS ont produit des recommandations. L’audit compare les pratiques du service à ces critères. Exemple : critère « La personne est informée de ses droits » → l’auditeur vérifie l’existence d’un livret d’accueil.
+
+**2) Notre Père (3x)**  
+« Quels sont les trois critères les plus sensibles du référentiel qualité ? Comment s’assurer que le service ne les traite pas comme de simples cases à cocher ? »
+
+**3) Je vous salue Marie (10x)**  
+« Le référentiel qualité (ANESM/HAS) est la base de tout audit. Il s’articule autour de thèmes : droits des usagers, accompagnement personnalisé, gestion des risques, continuité des prestations, bientraitance. Chaque critère est assorti d’indicateurs. L’auditeur doit être capable de citer les trois indicateurs les plus sensibles : la traçabilité des plans d’aide, la gestion des réclamations, la formation des intervenants. Sans référentiel, l’audit n’a pas de légitimité. »
+
+**4) Gloire au Père (3x)**  
+« Le concept “référentiel qualité” est connu et consolidé. »
+
+**DIZAINE 3 – Concept : Évaluation des besoins de la personne**
+
+**1) Méditation**  
+L’évaluation individuelle des besoins (physiques, sociaux, environnementaux) est le point de départ de toute intervention. L’audit vérifie qu’elle est récente, partagée avec l’usager et mise à jour après chaque changement (hospitalisation, chute, évolution de la pathologie). Exemple : absence d’actualisation après une fracture = non‑conformité.
+
+**2) Notre Père (3x)**  
+« Quelles questions poser pour détecter les besoins inexprimés ? Comment éviter que l’évaluation ne devienne une simple case à cocher ? »
+
+**3) Je vous salue Marie (10x)**  
+« L’évaluation des besoins doit être : systématique dès l’admission, réalisée avec un outil validé (ex. AGGIR, GEVA), et révisée tous les 6 mois ou à chaque événement. L’auditeur examine la date de la dernière évaluation, la signature de l’usager ou de son représentant, et la cohérence avec les interventions planifiées. Un besoin non évalué est un besoin non traité. »
+
+**4) Gloire au Père (3x)**  
+« Le concept “évaluation des besoins” est connu et consolidé. »
+
+**DIZAINE 4 – Concept : Traçabilité et documentation**
+
+**1) Méditation**  
+La traçabilité est la preuve écrite de chaque action réalisée. Documents clés : projet personnalisé, feuilles de présence, comptes rendus d’intervention, registre des réclamations. L’audit vérifie l’absence de trous dans cette documentation.
+
+**2) Notre Père (3x)**  
+« Quels sont les quatre documents incontournables d’un dossier ? Comment s’assurer qu’ils sont cohérents entre eux sans tout vérifier ligne à ligne ? »
+
+**3) Je vous salue Marie (10x)**  
+« La traçabilité comprend quatre documents de base : le contrat de prestation, le plan d’aide personnalisé, les feuilles d’intervention (dates, horaires, actes effectués), et le registre des réclamations. L’auditeur contrôle la cohérence entre ces documents : par exemple, les heures facturées doivent correspondre aux feuilles d’intervention. Toute absence de signature ou de date est une non‑conformité susceptible de refus de financement. Un dossier complet se prépare au quotidien. »
+
+**4) Gloire au Père (3x)**  
+« Le concept “traçabilité et documentation” est connu et consolidé. »
+
+**DIZAINE 5 – Concept : Gestion des plaintes et des risques**
+
+**1) Méditation**  
+La gestion des plaintes est un indicateur clé de la qualité. Le service doit disposer d’un registre des réclamations écrites et d’une procédure pour analyser chaque plainte et prendre des actions correctives.
+
+**2) Notre Père (3x)**  
+« Comment transformer une plainte en opportunité d’amélioration ? Quelles sont les trois étapes obligatoires pour traiter une réclamation ? »
+
+**3) Je vous salue Marie (10x)**  
+« Le registre des plaintes doit être daté, signé par l’usager, et annoté avec la réponse du service. L’auditeur vérifie que chaque réclamation a donné lieu à une analyse des causes (retard, absence, manque de douceur) et à un plan d’action. Les actions correctives doivent être traçables (formation, changement d’organisation). L’absence de plainte n’est pas un signe de qualité : il faut aussi recueillir la satisfaction de façon proactive. »
+
+**4) Gloire au Père (3x)**  
+« Le concept “gestion des plaintes et des risques” est connu et consolidé. »
+
+--- Jour 2 – Approfondissement opérationnel ---
+(D’autres dizaines, structure similaire, à adapter plus tard)
+
+--- Jour 3 – Cas complexes ---
+...
+--- Jour 4 – Contrôle ---
+...
+--- Jour 5 – Indicateurs ---
+...
+--- Jour 6 – Synthèse ---
+...
+--- Jour 7 – Auto‑évaluation ---
+...
 """
+    # Pour l’exemple, on ne génère que le Jour 1 complet pour que la démonstration fonctionne.
+    # Dans la vraie version, vous étendrez à 7 jours.
+    return jour1 + "\n\nChapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée.\nCopyright Dr Tazemda"
 
-def generate_expertise_via_api(domaine):
-    prompt = PROMPT_EXPERTISE.format(domaine=domaine)
-    raw = call_deepseek(prompt)
-    return clean_markdown(raw)
-
-# ------------------ MODE PERSONNEL (mock, stable) ------------------
 def generate_mock_personnel(defauts):
     mantra = "Je me lève tôt, je termine ce que je commence, je sors chaque jour, je structure ma vie, j'attire un travail stable et prospère."
     texte = f"""
@@ -131,9 +125,9 @@ def generate_mock_personnel(defauts):
         texte += f"""
 **Mystère {i} – {defaut}**  
 **Méditation** : (souvenir d’une situation où ce défaut a nui) … Aujourd’hui, je visualise le comportement opposé réussi.  
-**Notre Père** : "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité." *(à répéter 3 fois)*  
-**Je vous salue Marie** : {mantra} *(à répéter 10 fois)*  
-**Gloire au Père** : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et cette transformation profonde." *(à répéter 3 fois)*
+**Notre Père (à répéter 3 fois)** : "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité."  
+**10 × Je vous salue Marie** : {mantra}  
+**Gloire au Père (à répéter 3 fois)** : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et cette transformation profonde."
 """
     texte += """
 ### FIN
@@ -146,35 +140,6 @@ Copyright Dr Tazemda
 """
     return texte
 
-# ------------------ BASE DE DONNÉES ------------------
-def init_db():
-    conn = sqlite3.connect('tazbot.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS chapelets
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  date TEXT,
-                  mode TEXT,
-                  input TEXT,
-                  contenu TEXT)''')
-    c.execute('''CREATE TABLE IF NOT EXISTS feedback
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  date TEXT,
-                  note INTEGER,
-                  commentaire TEXT)''')
-    conn.commit()
-    conn.close()
-
-init_db()
-
-def sauvegarder_chapelet(mode, input_utilisateur, contenu):
-    conn = sqlite3.connect('tazbot.db')
-    c = conn.cursor()
-    c.execute("INSERT INTO chapelets (date, mode, input, contenu) VALUES (?, ?, ?, ?)",
-              (str(datetime.now()), mode, input_utilisateur, contenu))
-    conn.commit()
-    conn.close()
-
-# ------------------ ROUTES ------------------
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -183,68 +148,33 @@ def index():
 def generate():
     data = request.get_json()
     mode = data.get('mode')
-    try:
-        if mode == 'expertise':
-            domaine = data.get('domaine')
-            if not domaine:
-                return jsonify({'error': 'Domaine requis'}), 400
-            try:
-                chapelet = generate_expertise_via_api(domaine)
-                status = "API"
-            except Exception as e:
-                print("Erreur API, fallback activé:", e)
-                chapelet = generate_fallback_expertise(domaine)
-                status = "fallback"
-            sauvegarder_chapelet('expertise', domaine, chapelet)
-            return jsonify({'chapelet': chapelet, 'status': status})
-
-        elif mode == 'personnel':
-            defauts = data.get('defauts')
-            if not defauts or len(defauts) != 5:
-                return jsonify({'error': '5 défauts requis'}), 400
-            chapelet = generate_mock_personnel(defauts)
-            sauvegarder_chapelet('personnel', str(defauts), chapelet)
-            return jsonify({'chapelet': chapelet})
-
-        elif mode == 'consultation':
-            message = data.get('message')
-            if not message:
-                return jsonify({'error': 'Message requis'}), 400
-            if any(w in message.lower() for w in ['maîtriser', 'apprendre', 'domaine', 'entretien', 'comprendre']):
-                domaine = message[:150]
-                try:
-                    chapelet = generate_expertise_via_api(domaine)
-                except Exception as e:
-                    print("Erreur API consultation, fallback:", e)
-                    chapelet = generate_fallback_expertise(domaine)
-                sauvegarder_chapelet('consultation_expertise', message, chapelet)
-                return jsonify({'chapelet': chapelet, 'message_info': '🔍 Type détecté : EXPERTISE'})
-            else:
-                defauts = ["Je manque de discipline"] * 5
-                chapelet = generate_mock_personnel(defauts)
-                sauvegarder_chapelet('consultation_personnel', message, chapelet)
-                return jsonify({'chapelet': chapelet, 'message_info': '🔍 Type détecté : PERSONNEL'})
+    if mode == 'expertise':
+        domaine = data.get('domaine')
+        if not domaine:
+            return jsonify({'error': 'Domaine requis'}), 400
+        chapelet = generate_mock_expertise(domaine)
+        return jsonify({'chapelet': chapelet})
+    elif mode == 'personnel':
+        defauts = data.get('defauts')
+        if not defauts or len(defauts) != 5:
+            return jsonify({'error': '5 défauts requis'}), 400
+        chapelet = generate_mock_personnel(defauts)
+        return jsonify({'chapelet': chapelet})
+    elif mode == 'consultation':
+        message = data.get('message')
+        if not message:
+            return jsonify({'error': 'Message requis'}), 400
+        # Redirection simple vers expertise ou personnel selon mots-clés
+        if any(w in message.lower() for w in ['maîtriser', 'apprendre', 'domaine', 'entretien']):
+            domaine = message[:150]
+            chapelet = generate_mock_expertise(domaine)
+            return jsonify({'chapelet': chapelet, 'message_info': '🔍 Type détecté : EXPERTISE'})
         else:
-            return jsonify({'error': 'Mode invalide'}), 400
-
-    except Exception as e:
-        print(traceback.format_exc())
-        return jsonify({'error': f'Erreur interne : {str(e)}'}), 500
-
-@app.route('/feedback', methods=['POST'])
-def feedback():
-    data = request.get_json()
-    note = data.get('note')
-    commentaire = data.get('commentaire')
-    if note is None or commentaire is None:
-        return jsonify({'error': 'Note et commentaire requis'}), 400
-    conn = sqlite3.connect('tazbot.db')
-    c = conn.cursor()
-    c.execute("INSERT INTO feedback (date, note, commentaire) VALUES (?, ?, ?)",
-              (str(datetime.now()), note, commentaire))
-    conn.commit()
-    conn.close()
-    return jsonify({'status': 'ok'})
+            defauts = ["Je manque de discipline"] * 5
+            chapelet = generate_mock_personnel(defauts)
+            return jsonify({'chapelet': chapelet, 'message_info': '🔍 Type détecté : PERSONNEL'})
+    else:
+        return jsonify({'error': 'Mode invalide'}), 400
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
