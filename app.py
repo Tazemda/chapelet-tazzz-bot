@@ -2,7 +2,8 @@ import os
 import json
 import re
 import requests
-from flask import Flask, request, render_template, jsonify
+import traceback
+from flask import Flask, request, jsonify, render_template
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
@@ -24,9 +25,9 @@ def call_deepseek(prompt, system_message="Tu es l'assistant Tazzz Bot."):
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 5000
+        "max_tokens": 4000  # réduit pour éviter timeout
     }
-    resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload)
+    resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=60)
     if resp.status_code == 200:
         return resp.json()["choices"][0]["message"]["content"]
     else:
@@ -56,41 +57,35 @@ def extract_json(text):
         raise ValueError("JSON non valide")
     return text[start:end+1]
 
-# ------------------ PROMPT EXPERTISE (structure type recherche clinique) ------------------
+# ------------------ PROMPT EXPERTISE (version plus courte et structurée) ------------------
 PROMPT_EXPERTISE = """
 Génère un CHAPELET TAZZZ BOT – MODE EXPERTISE (7 jours) pour le domaine : {domaine}.
 
 Le chapelet est un outil de mémorisation active par répétition rythmée, basé sur la plasticité cérébrale.
-Chaque jour comporte 5 dizaines. Chaque dizaine suit EXACTEMENT ce modèle (à copier) :
+Chaque jour comporte 5 dizaines. Chaque dizaine suit EXACTEMENT ce modèle :
 
 **DIZAINE X – Concept : [nom du concept]**
 
 **1. Méditation sur le mystère** :  
-*Grande fiche – détaillée à lire simplement (en tenant le gros grain correspondant).*  
-(Écris ici un paragraphe dense et clair, avec définition, rôle, exemples, points de repère.)
+(paragraphe dense avec définition, rôle, exemples)
 
 **2. Notre Père (à répéter 3 fois)** :  
-(Formule une question problématique ou un aide-mémoire, par exemple : « Mon Dieu, aide-moi à ne pas confondre... » ou « Comment vérifier que... ? »)
+(une question problématique ou aide-mémoire)
 
 **3. Je vous salue Marie (à répéter 10 fois)** :  
-(Ton mantra doit être un **paragraphe de plusieurs phrases** qui synthétise tout le concept. Exemple tiré du cours de recherche clinique :  
-« P c’est la Population avec ses critères d’inclusion. Exemple : HSH séronégatifs à haut risque.  
-I c’est l’Intervention précise et reproductible. Exemple : spiruline 500 mg par jour.  
-C c’est le Comparateur pertinent. Exemple : placebo identique.  
-O c’est l’Outcome mesurable et clinique. Exemple : incidence du VIH à 12 mois par ELISA et Western blot. »  
-Adapte ce style au concept traité. Ce paragraphe sera lu ou récité 10 fois, il doit être riche et complet.)
+(plusieurs phrases synthétisant tout le concept – comme dans un cours)
 
 **4. Gloire au Père (à répéter 3 fois)** :  
 « Le concept « X » est connu et consolidé. »
 
-Sépare les jours par : **--- Jour 1 – [titre] ---** , etc. (Jour 1 à Jour 7, avec titres adaptés au domaine : découverte, méthodes, cas pratiques, etc.)
+Sépare les jours par : **--- Jour 1 – [titre] ---** (Jour 1 à Jour 7, titres adaptés au domaine)
 
-Termine l’ensemble par :
+Termine par :
 Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée.
 Copyright Dr Tazemda
 """
 
-# ------------------ PROMPT PERSONNEL (inchangé, mantra court) ------------------
+# ------------------ PROMPT PERSONNEL (inchangé) ------------------
 PROMPT_PERSONNEL = """
 Génère un CHAPELET TAZZZ BOT – MODE DÉVELOPPEMENT PERSONNEL (21 ou 66 jours) pour ces 5 défauts :
 {defauts}
@@ -111,7 +106,7 @@ Pour chaque défaut :
 **Mystère X – [nom du défaut]**
 **Méditation** : (passé négatif + visualisation positive)
 **Notre Père** (à répéter 3 fois) : "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité."
-**10 × Je vous salue Marie** (mantra unique pour tous les mystères, une phrase courte résumant la correction des 5 défauts, à répéter 10 fois) : (ici la phrase)
+**10 × Je vous salue Marie** : (une phrase courte unique, résumant la correction des 5 défauts, à répéter 10 fois)
 **Gloire au Père** (à répéter 3 fois) : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et cette transformation profonde."
 
 ### FIN
@@ -122,19 +117,19 @@ Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition r
 Copyright Dr Tazemda
 """
 
-# ------------------ PROMPT CLASSIFICATION (simple, plus fiable) ------------------
+# ------------------ PROMPT CLASSIFICATION (simplifié) ------------------
 PROMPT_CLASSIFY = """
 Réponds uniquement par un objet JSON valide, sans texte avant ou après.
 
-Message reçu : "{}"
+Message : "{}"
 
 Règles :
-- Si l'utilisateur veut APPRENDRE, MAÎTRISER, COMPRENDRE un domaine technique ou professionnel → type = "expertise", contenu = le nom du domaine.
-- Sinon (défauts personnels : lenteur, procrastination, timidité, désordre...) → type = "personnel", contenu = liste de 5 défauts.
+- Expertise (apprendre un domaine technique, préparer un entretien) → type="expertise", contenu=le domaine
+- Personnel (défauts de comportement) → type="personnel", contenu=liste de 5 défauts
 
 Exemples :
-Message: "Je veux maîtriser l'audit des services d'aide à domicile" → {{"type": "expertise", "contenu": "Audit des services d'aide à domicile"}}
-Message: "Je me lève tard, je suis paresseux, je dépense trop, je suis timide, je manque de motivation" → {{"type": "personnel", "contenu": ["Je me lève tard", "Je suis paresseux", "Je dépense trop", "Je suis timide", "Je manque de motivation"]}}
+Message: "Je veux maîtriser l'audit des services" → {{"type": "expertise", "contenu": "Audit des services"}}
+Message: "Je me lève tard, je suis paresseux" → {{"type": "personnel", "contenu": ["Je me lève tard", "Je suis paresseux", "Je manque d'organisation", "Je procrastine", "Je suis timide"]}}
 """
 
 @app.route('/')
@@ -143,68 +138,54 @@ def index():
 
 @app.route('/generate', methods=['POST'])
 def generate():
-    data = request.get_json()
-    mode = data.get('mode')
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'Données JSON manquantes'}), 400
+        mode = data.get('mode')
 
-    if mode == 'expertise':
-        domaine = data.get('domaine')
-        if not domaine:
-            return jsonify({'error': 'Domaine requis'}), 400
-        prompt = PROMPT_EXPERTISE.format(domaine=domaine)
-        try:
+        if mode == 'expertise':
+            domaine = data.get('domaine')
+            if not domaine:
+                return jsonify({'error': 'Domaine requis'}), 400
+            prompt = PROMPT_EXPERTISE.format(domaine=domaine)
             raw = call_deepseek(prompt)
             chapelet = clean_markdown(raw)
             return jsonify({'chapelet': chapelet})
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
 
-    elif mode == 'personnel':
-        defauts = data.get('defauts')
-        if not defauts or len(defauts) != 5:
-            return jsonify({'error': '5 défauts requis'}), 400
-        defauts_str = "\n".join(f"{i+1}. {d}" for i,d in enumerate(defauts))
-        prompt = PROMPT_PERSONNEL.format(defauts=defauts_str)
-        try:
+        elif mode == 'personnel':
+            defauts = data.get('defauts')
+            if not defauts or len(defauts) != 5:
+                return jsonify({'error': '5 défauts requis'}), 400
+            defauts_str = "\n".join(f"{i+1}. {d}" for i,d in enumerate(defauts))
+            prompt = PROMPT_PERSONNEL.format(defauts=defauts_str)
             raw = call_deepseek(prompt)
             chapelet = clean_markdown(raw)
             return jsonify({'chapelet': chapelet})
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
 
-    elif mode == 'consultation':
-        message = data.get('message')
-        if not message:
-            return jsonify({'error': 'Message requis'}), 400
-
-        classify_prompt = PROMPT_CLASSIFY.format(message)
-        try:
+        elif mode == 'consultation':
+            message = data.get('message')
+            if not message:
+                return jsonify({'error': 'Message requis'}), 400
+            classify_prompt = PROMPT_CLASSIFY.format(message)
             raw_class = call_deepseek(classify_prompt, system_message="Retourne uniquement du JSON valide.")
             raw_class = clean_markdown(raw_class)
             json_str = extract_json(raw_class)
             classification = json.loads(json_str)
             type_demande = classification.get('type')
             contenu = classification.get('contenu')
-        except Exception as e:
-            # Fallback mots-clés
-            if any(word in message.lower() for word in ['maîtriser', 'apprendre', 'comprendre', 'entretien', 'formation', 'concepts', 'niveau', 'domaine']):
-                type_demande = "expertise"
-                contenu = message
+
+            if type_demande == "expertise":
+                domaine = contenu if isinstance(contenu, str) else message
+                prompt = PROMPT_EXPERTISE.format(domaine=domaine)
+                type_aff = "EXPERTISE"
             else:
-                type_demande = "personnel"
-                contenu = ["Je manque de discipline"] * 5
+                if not isinstance(contenu, list) or len(contenu) != 5:
+                    contenu = ["Je manque de discipline"] * 5
+                defauts_str = "\n".join(f"{i+1}. {d}" for i,d in enumerate(contenu[:5]))
+                prompt = PROMPT_PERSONNEL.format(defauts=defauts_str)
+                type_aff = "PERSONNEL"
 
-        if type_demande == "expertise":
-            domaine = contenu if isinstance(contenu, str) else message
-            prompt = PROMPT_EXPERTISE.format(domaine=domaine)
-            type_aff = "EXPERTISE"
-        else:
-            if not isinstance(contenu, list) or len(contenu) != 5:
-                contenu = ["Je manque de discipline"] * 5
-            defauts_str = "\n".join(f"{i+1}. {d}" for i,d in enumerate(contenu[:5]))
-            prompt = PROMPT_PERSONNEL.format(defauts=defauts_str)
-            type_aff = "PERSONNEL"
-
-        try:
             raw = call_deepseek(prompt)
             chapelet = clean_markdown(raw)
             return jsonify({
@@ -212,11 +193,17 @@ def generate():
                 'type_detecte': type_demande,
                 'message_info': f"🔍 Type détecté : {type_aff}"
             })
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
 
-    else:
-        return jsonify({'error': 'Mode invalide'}), 400
+        else:
+            return jsonify({'error': 'Mode invalide'}), 400
+
+    except Exception as e:
+        # Log l'erreur dans la console (visible dans Render)
+        print("="*50)
+        print("ERREUR DANS /generate")
+        print(traceback.format_exc())
+        print("="*50)
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
