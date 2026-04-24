@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🧠 CHAPELET TAZZZ BOT</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #121212; color: white; padding: 20px; }
+        body { font-family: Arial, sans-serif; background: #121212; color: white; padding: 20px; }
         .container { max-width: 800px; margin: auto; background: #1e1e2f; padding: 20px; border-radius: 20px; }
         button, input, textarea { background: #2c3e4e; color: white; border: none; padding: 10px; border-radius: 10px; margin: 5px; }
         button { background: #e67e22; cursor: pointer; }
@@ -22,21 +22,21 @@
         <button class="mode-btn" data-mode="personnel">🔥 Personnel (21j)</button>
         <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
     </div>
-    <div id="expertisePanel" style="display:block;">
+    <div id="expertisePanel">
         <p>Domaine à maîtriser :</p>
-        <input type="text" id="domaine" placeholder="Ex: Recherche clinique" style="width:100%;">
+        <input type="text" id="domaine" placeholder="Ex: Cheminement du médicament">
     </div>
     <div id="personnelPanel" style="display:none;">
         <p>5 défauts (un par ligne) :</p>
         <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;..."></textarea>
     </div>
     <div id="consultationPanel" style="display:none;">
-        <p>Décrivez votre situation :</p>
-        <textarea id="consultMessage" rows="4" placeholder="Je veux maîtriser la recherche clinique..."></textarea>
+        <p>Décrivez votre besoin :</p>
+        <textarea id="consultMessage" rows="4" placeholder="Je veux maîtriser..."></textarea>
     </div>
-    <button id="generateBtn">✨ GÉNÉRER MON CHAPELET ✨</button>
+    <button id="generateBtn">✨ GÉNÉRER ✨</button>
+    <div id="loader" style="display:none;">⏳ Génération...</div>
     <div id="result" class="result"></div>
-    <div id="loader" style="display:none;">⏳ Génération (max 90s)...</div>
 </div>
 <script>
     const modeBtns = document.querySelectorAll('.mode-btn');
@@ -46,17 +46,15 @@
         consultation: document.getElementById('consultationPanel')
     };
     let currentMode = 'expertise';
-
     modeBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             modeBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentMode = btn.getAttribute('data-mode');
-            Object.keys(panels).forEach(k => panels[k].style.display = 'none');
+            Object.values(panels).forEach(p => p.style.display = 'none');
             panels[currentMode].style.display = 'block';
         });
     });
-
     document.getElementById('generateBtn').addEventListener('click', async () => {
         let payload = { mode: currentMode };
         if (currentMode === 'expertise') {
@@ -72,9 +70,7 @@
             if (!msg) return alert('Message requis');
             payload.message = msg;
         }
-
         document.getElementById('loader').style.display = 'block';
-        document.getElementById('result').innerHTML = '';
         try {
             let res = await fetch('/generate', {
                 method: 'POST',
@@ -83,10 +79,7 @@
             });
             let data = await res.json();
             if (data.error) alert('Erreur: ' + data.error);
-            else {
-                document.getElementById('result').innerHTML = data.chapelet.replace(/\n/g, '<br>');
-                if (data.message_info) document.getElementById('result').innerHTML = `<div>${data.message_info}</div><br>` + document.getElementById('result').innerHTML;
-            }
+            else document.getElementById('result').innerHTML = data.chapelet.replace(/\n/g, '<br>');
         } catch (err) { alert('Erreur réseau'); }
         finally { document.getElementById('loader').style.display = 'none'; }
     });
