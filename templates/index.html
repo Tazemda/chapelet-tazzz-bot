@@ -36,15 +36,15 @@
     <!-- Mode Expertise -->
     <div id="expertisePanel" class="mode-panel active-panel">
         <p>🔬 Domaine à maîtriser :</p>
-        <input type="text" id="domaine" placeholder="Ex: Cheminement du médicament de la naissance à la commercialisation">
+        <input type="text" id="domaine" placeholder="Ex: Prévention des escarres par un auxiliaire de vie">
         <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
         
-        <!-- Pré‑ambule (titres J1..J7) -->
+        <!-- Pré‑ambule (titres J1..J7) – version générique sans médicament -->
         <div id="preambule" style="margin-top:20px; display:none;">
             <h2>📖 Programme des 7 jours</h2>
             <ul>
-                <li><strong>Jour 1</strong> – Découverte des bases</li>
-                <li><strong>Jour 2</strong> – Approfondissement opérationnel</li>
+                <li><strong>Jour 1</strong> – Découverte des bases fondamentales</li>
+                <li><strong>Jour 2</strong> – Approfondissement pratique</li>
                 <li><strong>Jour 3</strong> – Cas complexes et exceptions</li>
                 <li><strong>Jour 4</strong> – Contrôle qualité et indicateurs</li>
                 <li><strong>Jour 5</strong> – Gestion des risques et plan d'action</li>
@@ -237,7 +237,7 @@
         let msg = document.getElementById('consultMessage').value.trim();
         if (!msg) return alert('Message requis');
         document.getElementById('consultResult').innerHTML = '⏳ Analyse...';
-        // Ici on suppose que la consultation renvoie vers l'expertise
+        // Redirection vers l'expertise
         domaine = msg;
         jours = {};
         currentJour = 1;
