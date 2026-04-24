@@ -24,7 +24,7 @@ def call_deepseek(prompt, system_message="Tu es l'assistant Tazzz Bot."):
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 8000  # augmenté pour 7 jours
+        "max_tokens": 4000  # réduit pour éviter les timeouts
     }
     resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload)
     if resp.status_code == 200:
@@ -33,57 +33,71 @@ def call_deepseek(prompt, system_message="Tu es l'assistant Tazzz Bot."):
         raise Exception(f"API DeepSeek error {resp.status_code}: {resp.text}")
 
 def clean_markdown(text):
+    # Enlève les blocs de code markdown ``` ... ```
     text = re.sub(r'```[\s\S]*?```', '', text)
     text = text.replace('`', '')
     return text.strip()
 
-# ------------------ PROMPT EXPERTISE (7 jours, structure par dizaine) ------------------
+def extract_json(text):
+    """Extrait le premier objet JSON valide d'une chaîne de caractères."""
+    text = text.strip()
+    # Cherche le premier '{' et le dernier '}'
+    start = text.find('{')
+    if start == -1:
+        raise ValueError("Aucune accolade ouvrante trouvée")
+    # On va compter les accolades pour trouver la fermeture correcte
+    brace_count = 0
+    end = start
+    for i, ch in enumerate(text[start:], start):
+        if ch == '{':
+            brace_count += 1
+        elif ch == '}':
+            brace_count -= 1
+            if brace_count == 0:
+                end = i
+                break
+    if end == start:
+        raise ValueError("JSON non valide")
+    json_str = text[start:end+1]
+    return json_str
+
+# ------------------ PROMPT EXPERTISE (version plus courte et fiable) ------------------
 PROMPT_EXPERTISE = """
-Tu vas générer un CHAPELET TAZZZ BOT – MODE EXPERTISE pour maîtriser le domaine : {domaine}.
+Génère un CHAPELET TAZZZ BOT – MODE EXPERTISE (7 jours) pour le domaine : {domaine}.
 
-Ce chapelet se pratique sur **7 jours**. Chaque jour correspond à un objectif d’apprentissage différent, avec 5 dizaines (concepts clés).  
-Au total, tu produiras 35 dizaines (5 par jour).
+Structure exacte (texte brut, sans markdown) :
 
-Structure pour **chaque dizaine** (respecte impérativement ce format) :
+**Rappel** : Une phrase.
+**Point d’entrée du problème** : Une phrase.
+**Règle d’or** : Une phrase.
 
-**DIZAINE X – Concept : [nom du concept]**
+Puis pour chaque jour (Jour 1 à Jour 7) avec 5 concepts par jour. Chaque concept suit ce format :
+
+**DIZAINE X – Concept : [nom]**
 
 **1. Méditation sur le mystère** :  
-*Grande fiche – détaillée à lire simplement (en tenant le gros grain correspondant).*  
-(Donne une explication claire, des définitions, des exemples, des points de repère – comme une mini‑fiche de cours.)
+(paragraphe dense mais clair, comme une fiche de cours)
 
 **2. Notre Père (à répéter 3 fois)** :  
-(une question ou un problème général formulé comme une prière, par exemple : « Mon Dieu, aide-moi à ne pas confondre... » ou « Quelle est la bonne méthode pour... ? »)
+(une question ou problème, formulée comme une prière)
 
 **3. Je vous salue Marie (à répéter 10 fois)** :  
-(une phrase courte, positive, qui synthétise l’essentiel du concept. Exemple : « Ma déclaration est déposée avant la date légale, sans stress ni retard. »)
+(une phrase positive courte)
 
 **4. Gloire au Père (à répéter 3 fois)** :  
-(une phrase de consolidation du type : « Le concept « X » est connu et consolidé. »)
+"Le concept « X » est connu et consolidé."
 
-Entre les jours, sépare avec : **--- Jour X ---** et un titre (ex: **Jour 1 – Découverte des bases**).
+Sépare les jours par : --- Jour 1 – [titre] --- etc.
 
-Contenu à générer :
-
-- **Jour 1** : Concepts fondamentaux (définitions, principes de base)
-- **Jour 2** : Méthodologie et outils clés
-- **Jour 3** : Application pratique et cas courants
-- **Jour 4** : Cas complexes et exceptions
-- **Jour 5** : Contrôle, audit et indicateurs
-- **Jour 6** : Synthèse et liens entre concepts
-- **Jour 7** : Auto‑évaluation et préparation à l’expertise
-
-Soigne la qualité pédagogique. Chaque méditation doit être dense mais claire. Les mantras (Je vous salue Marie) doivent être positifs, courts, spécifiques au concept. Les questions du Notre Père doivent provoquer la réflexion.
-
-Termine l’ensemble par :
+Termine par :
 Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée.
 Copyright Dr Tazemda
 """
 
 # ------------------ PROMPT PERSONNEL (inchangé) ------------------
-PROMPT_PERSONNEL = f"""
+PROMPT_PERSONNEL = """
 Génère un CHAPELET TAZZZ BOT – MODE DÉVELOPPEMENT PERSONNEL (21 ou 66 jours) pour ces 5 défauts :
-{{defauts}}
+{defauts}
 
 Ajoute cette note au début :
 > *"Munissez-vous d'un chapelet pour égrener chaque grain correspondant en récitant à voix haute ou mentalement, dans un endroit calme."*
@@ -101,7 +115,7 @@ Pour chaque défaut :
 **Mystère X – [nom du défaut]**
 **Méditation** : (passé négatif + visualisation positive)
 **Notre Père** : "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité." (à répéter 3 fois)
-**10 × Je vous salue Marie** : (un mantra unique pour tous les mystères, résumant la correction des 5 défauts) (à répéter 10 fois)
+**10 × Je vous salue Marie** : (un mantra unique, résumant la correction des 5 défauts) (à répéter 10 fois)
 **Gloire au Père** : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et cette transformation profonde." (à répéter 3 fois)
 
 ### FIN
@@ -112,24 +126,19 @@ Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition r
 Copyright Dr Tazemda
 """
 
-# ------------------ PROMPT CLASSIFICATION (inchangé) ------------------
+# ------------------ PROMPT CLASSIFICATION (plus robuste) ------------------
 PROMPT_CLASSIFY = """
-Tu es un classificateur. Réponds UNIQUEMENT par un objet JSON valide, sans texte avant ou après.
+Réponds uniquement par un objet JSON valide, sans texte avant ou après.
 
-Analyse le message de l'utilisateur :
-
-"{}"
+Message utilisateur : "{}"
 
 Règles :
-- Si l'utilisateur veut APPRENDRE une compétence technique, MAÎTRISER un domaine, PRÉPARER un entretien sur des connaissances → type = "expertise", contenu = le nom du domaine (une phrase courte).
-- Sinon (défauts personnels : lenteur, procrastination, timidité, désordre, etc.) → type = "personnel", contenu = une liste de 5 défauts (tableau JSON).
+- Expertise (apprendre un domaine technique, préparer un entretien) → type = "expertise", contenu = le domaine.
+- Personnel (défauts de comportement) → type = "personnel", contenu = liste de 5 défauts.
 
-EXEMPLES :
-Message: "Je veux maîtriser les concepts du IT support niveau 1 et 2"
-→ {{"type": "expertise", "contenu": "IT support niveau 1 et 2"}}
-
-Message: "Je me lève tard, je suis paresseux, je dépense trop, je suis timide, je manque de motivation"
-→ {{"type": "personnel", "contenu": ["Je me lève tard", "Je suis paresseux", "Je dépense trop", "Je suis timide", "Je manque de motivation"]}}
+Exemples :
+Message: "Je veux maîtriser l'IT support" → {{"type": "expertise", "contenu": "IT support"}}
+Message: "Je me lève tard, je suis paresseux" → {{"type": "personnel", "contenu": ["Je me lève tard", "Je suis paresseux", "Je manque d'organisation", "Je procrastine", "Je suis timide"]}}
 """
 
 @app.route('/')
@@ -175,16 +184,14 @@ def generate():
         try:
             raw_class = call_deepseek(classify_prompt, system_message="Retourne uniquement du JSON valide.")
             raw_class = clean_markdown(raw_class)
-            start = raw_class.find('{')
-            end = raw_class.rfind('}') + 1
-            if start == -1 or end == 0:
-                raise ValueError("Aucun JSON trouvé")
-            json_str = raw_class[start:end]
+            # Extraction du JSON
+            json_str = extract_json(raw_class)
             classification = json.loads(json_str)
             type_demande = classification.get('type')
             contenu = classification.get('contenu')
         except Exception as e:
-            if any(word in message.lower() for word in ['maîtriser', 'apprendre', 'comprendre', 'entretien', 'formation', 'concepts', 'niveau 1', 'niveau 2']):
+            # Fallback : détection par mots-clés
+            if any(word in message.lower() for word in ['maîtriser', 'apprendre', 'comprendre', 'entretien', 'formation', 'concepts', 'niveau']):
                 type_demande = "expertise"
                 contenu = message
             else:
