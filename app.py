@@ -1,8 +1,8 @@
 import os
 import sqlite3
-import json
 import re
 import requests
+import traceback
 from datetime import datetime
 from flask import Flask, request, jsonify, render_template
 
@@ -14,7 +14,7 @@ DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
 def call_deepseek(prompt, system_message="Tu es un expert pédagogique qui génère des chapelets d'apprentissage de haute qualité."):
     if not DEEPSEEK_API_KEY:
-        raise Exception("Clé API DeepSeek manquante. Ajoutez DEEPSEEK_API_KEY dans les variables d'environnement.")
+        raise Exception("Clé API DeepSeek manquante")
     headers = {
         "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
         "Content-Type": "application/json"
@@ -35,10 +35,25 @@ def call_deepseek(prompt, system_message="Tu es un expert pédagogique qui gén�
         raise Exception(f"API DeepSeek error {resp.status_code}: {resp.text}")
 
 def clean_markdown(text):
-    # Enlève les blocs markdown et les backticks éventuels
     text = re.sub(r'```[\s\S]*?```', '', text)
     text = text.replace('`', '')
     return text.strip()
+
+# ------------------ FALLBACK (si API échoue) ------------------
+def generate_fallback_expertise(domaine):
+    return f"""
+--- MODE DÉGRADÉ (API indisponible) ---
+Chapelet générique pour : {domaine}
+
+**DIZAINE 1 – Concept : Introduction**
+- Méditation : Définition et enjeux de {domaine}.
+- Notre Père : Quelle est la première notion à retenir ?
+- Je vous salue Marie : Pour maîtriser {domaine}, il faut en comprendre les bases.
+- Gloire : Le concept est consolidé.
+
+(Les jours suivants sont similaires. Contactez l'administrateur pour rétablir l'API.)
+"""
+    # Pour un fallback plus complet, on pourrait générer 7 jours, mais ce n'est qu'un exemple.
 
 # ------------------ BASE DE DONNÉES ------------------
 def init_db():
@@ -68,55 +83,47 @@ def sauvegarder_chapelet(mode, input_utilisateur, contenu):
     conn.commit()
     conn.close()
 
-# ------------------ PROMPT POUR EXPERTISE (API DeepSeek) ------------------
-PROMPT_EXPERTISE = f"""
-Tu vas générer un CHAPELET TAZZZ BOT – MODE EXPERTISE (7 jours) pour le domaine : {{domaine}}.
+# ------------------ PROMPT D'EXPERTISE (API) ------------------
+PROMPT_EXPERTISE = """
+Tu vas générer un CHAPELET TAZZZ BOT – MODE EXPERTISE (7 jours) pour le domaine : {domaine}.
 
-Le chapelet est un outil de mémorisation active par répétition rythmée, basé sur la plasticité cérébrale. Chaque jour contient 5 dizaines (concepts). Chaque dizaine doit suivre EXACTEMENT ce format (texte brut, sans markdown, mais avec des sauts de ligne) :
+Chaque jour contient 5 dizaines. Chaque dizaine doit suivre EXACTEMENT ce format (texte brut) :
 
 **DIZAINE X – Concept : [nom du concept]**
 
 **1) Méditation (grande fiche)**  
 *Instruction : Tenez le gros grain. Lisez ce paragraphe lentement, comme une fiche de cours. Vous pouvez aussi le relire plusieurs fois, revoir vos notes personnelles ou consulter d’autres sources.*  
-[Ici, écris un paragraphe dense, précis, pédagogique – définition, explications, exemples, points clés – comme une mini‑fiche de cours.]
+[Rédigez un paragraphe dense, précis et pédagogique – définitions, explications, exemples concrets, points clés. Faites comme une mini‑fiche de cours.]
 
 **2) Notre Père**  
 *Récitez cette question 3 fois (à voix haute ou mentalement).*  
-« [Question problématisée, générale, qui invite à la réflexion sur le concept] »
+« [Question problématisée, générale, qui invite à réfléchir sur le concept] »
 
 **3) Je vous salue Marie**  
 *Répétez ce paragraphe 10 fois (5 fois en lecture et 5 fois sans regarder). Lisez‑le d’abord pour bien l’ancrer.*  
-[Paragraphe synthétique de plusieurs phrases, résumant l’essentiel du concept, à mémoriser et réciter.]
+[Paragraphe synthétique de plusieurs phrases, résumant l’essentiel du concept – à mémoriser et réciter.]
 
 **4) Gloire au Père**  
 *Récitez cette phrase 3 fois.*  
 « Le concept “[nom du concept]” est connu et consolidé. »
 
-Structure à produire :
+Structure à produire (7 jours) :
+- Jour 1 – Découverte des bases (5 concepts fondamentaux)
+- Jour 2 – Approfondissement opérationnel
+- Jour 3 – Cas complexes et exceptions
+- Jour 4 – Contrôle qualité et indicateurs
+- Jour 5 – Gestion des risques et plan d'action
+- Jour 6 – Synthèse et liens entre concepts
+- Jour 7 – Auto‑évaluation et perfectionnement
 
-- **--- Jour 1 – [titre] ---** (jour 1 : Découverte des bases)
-- 5 dizaines (concepts fondamentaux du domaine)
-- **--- Jour 2 – Approfondissement opérationnel ---** (5 dizaines)
-- **--- Jour 3 – Cas complexes et exceptions ---** (5 dizaines)
-- **--- Jour 4 – Contrôle qualité et indicateurs ---** (5 dizaines)
-- **--- Jour 5 – Gestion des risques et plan d'action ---** (5 dizaines)
-- **--- Jour 6 – Synthèse et liens entre concepts ---** (5 dizaines)
-- **--- Jour 7 – Auto‑évaluation et perfectionnement ---** (5 dizaines)
-
-Chaque jour doit avoir 5 dizaines. Soigne la qualité pédagogique : les méditations doivent être réellement instructives, les Ave Maria doivent être des résumés denses mais clairs. N’utilise pas de placeholders génériques. Produis un vrai contenu de formation pour le domaine “{{domaine}}”.
-
-Termine par :
-Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée.
-Copyright Dr Tazemda
+Soigne la qualité : méditations riches, Ave Maria synthétiques mais denses. Termine par : Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée. Copyright Dr Tazemda
 """
 
 def generate_expertise_via_api(domaine):
     prompt = PROMPT_EXPERTISE.format(domaine=domaine)
     raw = call_deepseek(prompt)
-    chapelet = clean_markdown(raw)
-    return chapelet
+    return clean_markdown(raw)
 
-# ------------------ MODE PERSONNEL (mock, peut rester simple) ------------------
 def generate_mock_personnel(defauts):
     mantra = "Je me lève tôt, je termine ce que je commence, je sors chaque jour, je structure ma vie, j'attire un travail stable et prospère."
     texte = f"""
@@ -168,7 +175,11 @@ def generate():
             domaine = data.get('domaine')
             if not domaine:
                 return jsonify({'error': 'Domaine requis'}), 400
-            chapelet = generate_expertise_via_api(domaine)
+            try:
+                chapelet = generate_expertise_via_api(domaine)
+            except Exception as e:
+                print("API DeepSeek échoué, fallback:", e)
+                chapelet = f"⚠️ (Mode dégradé – API indisponible. Voici un aperçu.)\n\n{generate_fallback_expertise(domaine)}"
             sauvegarder_chapelet('expertise', domaine, chapelet)
             return jsonify({'chapelet': chapelet})
 
@@ -184,10 +195,12 @@ def generate():
             message = data.get('message')
             if not message:
                 return jsonify({'error': 'Message requis'}), 400
-            # Détection simple par mots-clés
             if any(w in message.lower() for w in ['maîtriser', 'apprendre', 'domaine', 'entretien', 'comprendre']):
                 domaine = message[:150]
-                chapelet = generate_expertise_via_api(domaine)
+                try:
+                    chapelet = generate_expertise_via_api(domaine)
+                except Exception:
+                    chapelet = generate_fallback_expertise(domaine)
                 sauvegarder_chapelet('consultation_expertise', message, chapelet)
                 return jsonify({'chapelet': chapelet, 'message_info': '🔍 Type détecté : EXPERTISE'})
             else:
@@ -198,8 +211,8 @@ def generate():
         else:
             return jsonify({'error': 'Mode invalide'}), 400
     except Exception as e:
-        print("Erreur serveur:", e)
-        return jsonify({'error': str(e)}), 500
+        print(traceback.format_exc())
+        return jsonify({'error': f'Erreur interne : {str(e)}'}), 500
 
 @app.route('/feedback', methods=['POST'])
 def feedback():
