@@ -13,7 +13,7 @@ DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
 def call_deepseek(prompt, system_message="Tu es l'assistant Tazzz Bot."):
     if not DEEPSEEK_API_KEY:
-        raise Exception("Clé API DeepSeek manquante")
+        raise Exception("Clé API DeepSeek manquante. Ajoute DEEPSEEK_API_KEY dans les variables d'environnement.")
     headers = {
         "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
         "Content-Type": "application/json"
@@ -25,9 +25,13 @@ def call_deepseek(prompt, system_message="Tu es l'assistant Tazzz Bot."):
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 4000  # réduit pour éviter timeout
+        "max_tokens": 2000,  # réduit pour éviter timeout
+        "timeout": 45
     }
-    resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=60)
+    try:
+        resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=60)
+    except requests.exceptions.Timeout:
+        raise Exception("Timeout: DeepSeek ne répond pas (plus de 60 secondes).")
     if resp.status_code == 200:
         return resp.json()["choices"][0]["message"]["content"]
     else:
@@ -57,12 +61,12 @@ def extract_json(text):
         raise ValueError("JSON non valide")
     return text[start:end+1]
 
-# ------------------ PROMPT EXPERTISE (version plus courte et structurée) ------------------
+# ------------------ PROMPT EXPERTISE : seulement le Jour 1 pour tester ------------------
 PROMPT_EXPERTISE = """
-Génère un CHAPELET TAZZZ BOT – MODE EXPERTISE (7 jours) pour le domaine : {domaine}.
+Génère le **Jour 1** d'un CHAPELET TAZZZ BOT – MODE EXPERTISE (7 jours) pour le domaine : {domaine}.
 
 Le chapelet est un outil de mémorisation active par répétition rythmée, basé sur la plasticité cérébrale.
-Chaque jour comporte 5 dizaines. Chaque dizaine suit EXACTEMENT ce modèle :
+Ne produis que le Jour 1, avec 5 dizaines (concepts fondamentaux). Chaque dizaine suit exactement ce modèle :
 
 **DIZAINE X – Concept : [nom du concept]**
 
@@ -73,19 +77,22 @@ Chaque jour comporte 5 dizaines. Chaque dizaine suit EXACTEMENT ce modèle :
 (une question problématique ou aide-mémoire)
 
 **3. Je vous salue Marie (à répéter 10 fois)** :  
-(plusieurs phrases synthétisant tout le concept – comme dans un cours)
+(plusieurs phrases synthétisant tout le concept – comme dans un cours. Exemple long donné dans les instructions.)
 
 **4. Gloire au Père (à répéter 3 fois)** :  
 « Le concept « X » est connu et consolidé. »
 
-Sépare les jours par : **--- Jour 1 – [titre] ---** (Jour 1 à Jour 7, titres adaptés au domaine)
+Commence par :
+**Rappel** : (une phrase)
+**Point d’entrée du problème** : (une phrase)
+**Règle d’or** : (une phrase)
 
 Termine par :
 Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée.
 Copyright Dr Tazemda
 """
 
-# ------------------ PROMPT PERSONNEL (inchangé) ------------------
+# ------------------ PROMPT PERSONNEL ------------------
 PROMPT_PERSONNEL = """
 Génère un CHAPELET TAZZZ BOT – MODE DÉVELOPPEMENT PERSONNEL (21 ou 66 jours) pour ces 5 défauts :
 {defauts}
@@ -124,12 +131,12 @@ Réponds uniquement par un objet JSON valide, sans texte avant ou après.
 Message : "{}"
 
 Règles :
-- Expertise (apprendre un domaine technique, préparer un entretien) → type="expertise", contenu=le domaine
-- Personnel (défauts de comportement) → type="personnel", contenu=liste de 5 défauts
+- Expertise (apprendre un domaine technique) → type="expertise", contenu=le domaine
+- Personnel (défauts) → type="personnel", contenu=liste de 5 défauts
 
 Exemples :
-Message: "Je veux maîtriser l'audit des services" → {{"type": "expertise", "contenu": "Audit des services"}}
-Message: "Je me lève tard, je suis paresseux" → {{"type": "personnel", "contenu": ["Je me lève tard", "Je suis paresseux", "Je manque d'organisation", "Je procrastine", "Je suis timide"]}}
+Message: "Je veux maîtriser l'audit" → {"type": "expertise", "contenu": "Audit"}
+Message: "Je me lève tard, paresseux" → {"type": "personnel", "contenu": ["Je me lève tard", "paresseux", "désordonné", "timide", "démotivé"]}
 """
 
 @app.route('/')
@@ -149,10 +156,24 @@ def generate():
             if not domaine:
                 return jsonify({'error': 'Domaine requis'}), 400
             prompt = PROMPT_EXPERTISE.format(domaine=domaine)
-            raw = call_deepseek(prompt)
-            chapelet = clean_markdown(raw)
-            return jsonify({'chapelet': chapelet})
-
+            try:
+                raw = call_deepseek(prompt)
+                chapelet = clean_markdown(raw)
+                return jsonify({'chapelet': chapelet})
+            except Exception as e:
+                # En cas d'échec, on renvoie un chapelet mock pour ne pas planter l'interface
+                mock = f"**ERREUR API : {str(e)}**\n\nGénération d'un chapelet d'exemple pour le domaine '{domaine}'.\n\n"
+                mock += "**Rappel** : Cet outil de mémorisation active utilise la répétition.\n"
+                mock += "**Point d'entrée** : Comment maîtriser ce domaine rapidement ?\n"
+                mock += "**Règle d'or** : Pratique quotidienne.\n\n"
+                for i in range(1,6):
+                    mock += f"**DIZAINE {i} – Concept : Exemple concept {i}**\n"
+                    mock += f"**1. Méditation** : Description du concept {i} (à personnaliser).\n"
+                    mock += "**2. Notre Père (3x)** : Quelle est la clé de ce concept ?\n"
+                    mock += "**3. Je vous salue Marie (10x)** : Phrase de synthèse avec plusieurs mots clés.\n"
+                    mock += "**4. Gloire au Père (3x)** : Le concept est connu et consolidé.\n\n"
+                mock += "Chapelet Tazzz Bot – Basé sur la plasticité cérébrale.\nCopyright Dr Tazemda"
+                return jsonify({'chapelet': mock, 'warning': f'API DeepSeek indisponible : {str(e)}'})
         elif mode == 'personnel':
             defauts = data.get('defauts')
             if not defauts or len(defauts) != 5:
@@ -176,7 +197,7 @@ def generate():
             contenu = classification.get('contenu')
 
             if type_demande == "expertise":
-                domaine = contenu if isinstance(contenu, str) else message
+                domaine = contenu if isinstance(contenu, str) else message[:100]
                 prompt = PROMPT_EXPERTISE.format(domaine=domaine)
                 type_aff = "EXPERTISE"
             else:
@@ -193,15 +214,13 @@ def generate():
                 'type_detecte': type_demande,
                 'message_info': f"🔍 Type détecté : {type_aff}"
             })
-
         else:
             return jsonify({'error': 'Mode invalide'}), 400
 
     except Exception as e:
-        # Log l'erreur dans la console (visible dans Render)
         print("="*50)
         print("ERREUR DANS /generate")
-        print(traceback.format_exc())
+        traceback.print_exc()
         print("="*50)
         return jsonify({'error': str(e)}), 500
 
