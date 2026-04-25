@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 CHAPELET TAZZZ BOT – EXPERTISE 7 JOURS</title>
+    <title>🧠 CHAPELET TAZZZ BOT</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -124,13 +124,13 @@
                 <button id="submitFeedbackEx">Envoyer mon avis</button>
             </div>
         </div>
-        <div id="expertiseLoader" class="loader">⏳ Génération en cours...</div>
+        <div id="expertiseLoader" class="loader">⏳ Génération...</div>
     </div>
 
     <!-- Mode Personnel -->
     <div id="personnelPanel" class="mode-panel">
         <p>📝 5 défauts (un par ligne) :</p>
-        <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;Je dépense sans compter&#10;Je suis timide&#10;Je manque de motivation"></textarea>
+        <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;..."></textarea>
         <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
         <div id="personnelResult" class="result"></div>
     </div>
@@ -165,7 +165,7 @@
         });
     });
 
-    // ========== EXPERTISE : navigation jour 1 à 7 (sans page 0) ==========
+    // ========== EXPERTISE : navigation jours 1 à 7 ==========
     let domaine = '';
     let jours = {};
     let currentJour = 1;
@@ -181,7 +181,7 @@
             document.getElementById('nextDay').disabled = (jour === 7);
             document.getElementById('feedbackBox').style.display = 'block';
         } else {
-            contentDiv.innerHTML = '<em>Chargement du jour...</em>';
+            contentDiv.innerHTML = '<em>Chargement...</em>';
             chargerJour(jour);
         }
     }
@@ -189,7 +189,7 @@
     function chargerJour(jour) {
         const loader = document.getElementById('expertiseLoader');
         loader.style.display = 'block';
-        fetch('/generer_jour_expertise', {
+        fetch('/generer_jour', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ domaine: domaine, jour: jour })
@@ -202,7 +202,7 @@
         })
         .catch(err => {
             console.error(err);
-            jours[jour] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jour}. Rafraîchissez ou réessayez.`;
+            jours[jour] = `<strong>Erreur</strong><br>Contenu indisponible pour le jour ${jour}. Réessayez.`;
             afficherJour(jour);
         })
         .finally(() => loader.style.display = 'none');
@@ -231,7 +231,7 @@
         }
     });
 
-    // Feedback Expertise
+    // Feedback
     let currentNoteEx = 0;
     const starsEx = document.querySelectorAll('#starsEx .star');
     starsEx.forEach(star => {
@@ -239,13 +239,9 @@
             currentNoteEx = parseInt(star.getAttribute('data-value'));
             starsEx.forEach(s => {
                 const val = parseInt(s.getAttribute('data-value'));
-                if (val <= currentNoteEx) {
-                    s.textContent = '★';
-                    s.classList.add('selected');
-                } else {
-                    s.textContent = '☆';
-                    s.classList.remove('selected');
-                }
+                s.textContent = val <= currentNoteEx ? '★' : '☆';
+                if (val <= currentNoteEx) s.classList.add('selected');
+                else s.classList.remove('selected');
             });
         });
     });
@@ -266,7 +262,7 @@
         } catch (err) { alert('Erreur réseau'); }
     });
 
-    // ========== PERSONNEL ==========
+    // Personnel
     document.getElementById('generatePersonnel').addEventListener('click', async () => {
         let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
         if (defauts.length !== 5) { alert('5 défauts requis'); return; }
@@ -283,7 +279,7 @@
         } catch (err) { alert('Erreur: ' + err.message); }
     });
 
-    // ========== CONSULTATION ==========
+    // Consultation
     document.getElementById('generateConsult').addEventListener('click', () => {
         let msg = document.getElementById('consultMessage').value.trim();
         if (!msg) { alert('Message requis'); return; }
@@ -293,7 +289,7 @@
         chargerJour(1);
         document.getElementById('jourContainer').style.display = 'block';
         document.getElementById('startExpertise').style.display = 'none';
-        document.getElementById('consultResult').innerHTML = 'Redirection vers le mode Expertise...';
+        document.getElementById('consultResult').innerHTML = 'Redirection vers Expertise...';
         document.querySelector('.mode-btn[data-mode="expertise"]').click();
     });
 </script>
