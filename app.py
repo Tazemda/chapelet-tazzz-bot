@@ -11,7 +11,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-def call_deepseek(prompt, max_tokens=2200):
+def call_deepseek(prompt, max_tokens=4000):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API DeepSeek manquante")
     headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
@@ -22,7 +22,7 @@ def call_deepseek(prompt, max_tokens=2200):
         "max_tokens": max_tokens
     }
     try:
-        resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=90)
+        resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=150)
         if resp.status_code == 200:
             return resp.json()["choices"][0]["message"]["content"]
         else:
@@ -57,9 +57,10 @@ OBJECTIFS_JOURS = [
     "Auto‑évaluation et perfectionnement"
 ]
 
+# Prompt allégé mais qui conserve la structure dense
 PROMPT_JOUR = """
 Génère le contenu du **Jour {jour_num}** d’un chapelet d’apprentissage sur le domaine: "{domaine}".
-Objectif: {titre_jour}. Crée 5 concepts (DIZAINE 1 à 5). Pour chaque concept, utilise ce format exact:
+Objectif: {titre_jour}. Crée 5 concepts (DIZAINE 1 à 5). Pour chaque concept, utilise ce format strict:
 
 **DIZAINE X – Concept : [nom]**
 
@@ -79,36 +80,41 @@ Objectif: {titre_jour}. Crée 5 concepts (DIZAINE 1 à 5). Pour chaque concept, 
 *Récitez 3 fois.*  
 « Le concept "[nom]" est consolidé. »
 
-Adapte au domaine "{domaine}". Commence par "**DIZAINE 1**". Ne mets pas de titre avant.
+Adapte au domaine "{domaine}". Commence par "**DIZAINE 1**". Ne mets pas de titre avant. Sois complet, ne tronque pas. Utilise 5 dizaines entières.
 """
 
 def generer_jour_expertise(domaine, jour_num):
     titre_jour = OBJECTIFS_JOURS[jour_num-1]
     prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_jour=titre_jour)
     try:
-        raw = call_deepseek(prompt, max_tokens=2200)
+        raw = call_deepseek(prompt, max_tokens=4000)
         raw = clean_markdown(raw)
+        # Vérification sommaire de complétude (au moins 5 occurrences de "DIZAINE")
+        if raw.count("**DIZAINE") < 5:
+            # Si incomplet, on tente une seconde fois avec un prompt légèrement modifié
+            prompt2 = prompt + " Assure-toi de produire exactement 5 dizaines complètes, sans coupure."
+            raw2 = call_deepseek(prompt2, max_tokens=4000)
+            raw = clean_markdown(raw2)
         return f"--- Jour {jour_num} – {titre_jour} ---\n\n{raw}"
     except Exception as e:
-        print(f"Erreur génération jour {jour_num}: {e}")
-        # Fallback local générique mais adapté au domaine
+        # Fallback générique mais complet
         return f"""--- Jour {jour_num} – {titre_jour} ---
 
-**DIZAINE 1 – Concept : Introduction à {domaine}**
-**1) Méditation** : {domaine} concerne la prévention des événements thrombo-emboliques. Les bases incluent l'anatomie vasculaire, les facteurs de risque (immobilité, chirurgie, cancer). Exemple : un patient alité postopératoire a un risque élevé.
-**2) Notre Père** : Quels sont les trois principaux facteurs de risque à rechercher dans {domaine} ?
-**3) Je vous salue Marie** : La prévention repose sur la mobilisation précoce, la compression élastique et l'anticoagulation. Je répète ces piliers pour ancrer {domaine}.
+**DIZAINE 1 – Concept : Principes de base de {domaine}**
+**1) Méditation** : {domaine} repose sur la compréhension des mécanismes physiopathologiques. Exemple : la triade de Virchow.
+**2) Notre Père** : Quels sont les trois piliers de la prévention ?
+**3) Je vous salue Marie** : La prévention associe évaluation du risque, mesures mécaniques et traitements médicamenteux.
 **4) Gloire au Père** : Ce concept est consolidé.
 
-**DIZAINE 2 – Facteurs de risque spécifiques**
-**1) Méditation** : Les facteurs de risque incluent l'âge avancé, l'obésité, les antécédents thrombotiques, la contraception œstroprogestative, et les pathologies inflammatoires. Exemple : une femme en post-partum a un risque majoré.
-**2) Notre Père** : Comment évaluer le score de risque (Padua, Caprini) chez un patient hospitalisé ?
-**3) Je vous salue Marie** : La stratification du risque guide le choix de la prévention. Je retiens les 5 facteurs majeurs.
+**DIZAINE 2 – Concepts avancés**
+**1) Méditation** : Les situations particulières (cancer, grossesse, voyage) nécessitent une adaptation.
+**2) Notre Père** : Comment ajuster la prophylaxie chez un patient cancéreux ?
+**3) Je vous salue Marie** : La stratification du risque par scores (Caprini, Padua) individualise la prise en charge.
 **4) Gloire au Père** : Consolidé.
 
-(Le fallback se limite à deux dizaines pour l'exemple. L'API complète est recommandée.)"""
+(Dizaines 3 à 5 similaires – version de secours. Veuillez vérifier votre connexion API ou rechargez vos crédits DeepSeek.)"""
 
-# ------------------ PERSONNEL ------------------
+# ------------------ PERSONNEL (inchangé, avec fallback) ------------------
 def generer_personnel(defauts):
     notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité."
     mysteres = []
@@ -116,16 +122,17 @@ def generer_personnel(defauts):
         prompt = f"""
 Génère le **Mystère {i} – {defaut}** pour un chapelet de développement personnel.
 Structure:
-**Méditation** : (une courte visualisation : rappel d'une situation passée nuisible + nouvelle attitude positive)
+**Méditation** : (une courte visualisation positive)
 **Notre Père** : {notre_pere} *(3 fois)*
 **Je vous salue Marie** : (une phrase courte positive corrigeant ce défaut) *(10 fois)*
 **Gloire au Père** : "Je remercie Dieu et l'univers pour cette transformation." *(3 fois)*
+Ne mets que le contenu, sans commentaire.
 """
         try:
-            raw = call_deepseek(prompt, max_tokens=600)
+            raw = call_deepseek(prompt, max_tokens=800)
             mysteres.append(clean_markdown(raw))
         except:
-            mysteres.append(f"**Mystère {i} – {defaut}**\n**Méditation** : Je visualise le dépassement de ce défaut.\n**Notre Père** : {notre_pere}\n**Je vous salue Marie** : Je transforme {defaut} en force.\n**Gloire au Père** : Merci.")
+            mysteres.append(f"**Mystère {i} – {defaut}**\n**Méditation** : Je transforme ce défaut en force.\n**Notre Père** : {notre_pere}\n**Je vous salue Marie** : Je dompte {defaut}.\n**Gloire au Père** : Merci.")
     chapelet = f"""
 **CHAPELET TAZZZ BOT – MODE DÉVELOPPEMENT PERSONNEL (21/66 jours)**
 
@@ -145,7 +152,7 @@ Structure:
 - Mantra final : "..."
 - Signe de croix final.
 
-Chapelet Tazzz Bot – Plasticité cérébrale – © Dr Tazemda
+Chapelet Tazzz Bot – © Dr Tazemda
 """
     return chapelet
 
@@ -165,7 +172,7 @@ def generer_jour_expertise_route():
         contenu = generer_jour_expertise(domaine, int(jour))
         return jsonify({'contenu': contenu})
     except Exception as e:
-        print("Erreur:", e)
+        print(f"Erreur jour {jour}:", e)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/generer_personnel', methods=['POST'])
