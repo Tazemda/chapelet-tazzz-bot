@@ -100,7 +100,7 @@
     <!-- Mode Expertise -->
     <div id="expertisePanel" class="mode-panel active-panel">
         <p>🔬 Domaine à maîtriser :</p>
-        <input type="text" id="domaine" placeholder="Ex: Prévention du risque cardiovasculaire">
+        <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
         <button id="startExpertise" class="generate">✨ DÉMARRER L'EXPERTISE ✨</button>
         <div id="jourContainer" style="display:none;">
             <div id="jourContent" class="result"></div>
@@ -136,7 +136,7 @@
     <!-- Mode Consultation -->
     <div id="consultationPanel" class="mode-panel">
         <p>💬 Décrivez votre besoin :</p>
-        <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention du risque cardiovasculaire..."></textarea>
+        <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention du risque thrombo-embolique..."></textarea>
         <button id="generateConsult" class="generate">✨ GÉNÉRER ✨</button>
         <div id="consultResult" class="result"></div>
     </div>
@@ -163,15 +163,14 @@
         });
     });
 
-    // ========== EXPERTISE avec page préliminaire ==========
+    // ========== EXPERTISE ==========
     let domaine = '';
-    let jours = {};    // index 0 = préambule, 1..7 = jours
-    let currentPage = 0; // 0 = intro, 1-7 = jours
-    const totalPages = 8; // 0 à 7
+    let jours = {};
+    let currentPage = 0;
+    const totalPages = 8;
 
-    // Contenu de la page préliminaire (fixe)
-    const preambule = `
-# 📖 Programme des 7 jours
+    function getPreambule() {
+        return `# 📖 Programme des 7 jours
 
 Bienvenue dans votre chapelet d’expertise sur **« ${domaine} »**.
 
@@ -190,13 +189,13 @@ Bienvenue dans votre chapelet d’expertise sur **« ${domaine} »**.
 6. **Jour 6** – Synthèse et liens entre concepts  
 7. **Jour 7** – Auto‑évaluation et perfectionnement  
 
-👉 Cliquez sur **“Suivant”** pour commencer le **Jour 1**.
-    `;
+👉 Cliquez sur **“Suivant”** pour commencer le **Jour 1**.`;
+    }
 
     function afficherPage(page) {
         const contentDiv = document.getElementById('jourContent');
         if (page === 0) {
-            contentDiv.innerHTML = preambule.replace(/\n/g, '<br>').replace('{domaine}', domaine);
+            contentDiv.innerHTML = getPreambule().replace(/\n/g, '<br>');
             document.getElementById('dayCounter').innerText = `Intro / ${totalPages}`;
             document.getElementById('prevDay').disabled = true;
             document.getElementById('nextDay').disabled = false;
@@ -261,7 +260,7 @@ Bienvenue dans votre chapelet d’expertise sur **« ${domaine} »**.
         }
     });
 
-    // Feedback pour expertise (identique)
+    // Feedback expertise
     let currentNoteEx = 0;
     const starsEx = document.querySelectorAll('#starsEx .star');
     starsEx.forEach(star => {
@@ -296,7 +295,7 @@ Bienvenue dans votre chapelet d’expertise sur **« ${domaine} »**.
         } catch (err) { alert('Erreur réseau'); }
     });
 
-    // ========== MODE PERSONNEL ==========
+    // ========== PERSONNEL ==========
     document.getElementById('generatePersonnel').addEventListener('click', async () => {
         let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
         if (defauts.length !== 5) { alert('5 défauts requis'); return; }
@@ -313,7 +312,7 @@ Bienvenue dans votre chapelet d’expertise sur **« ${domaine} »**.
         } catch (err) { alert('Erreur: ' + err.message); }
     });
 
-    // ========== MODE CONSULTATION (redirige vers expertise) ==========
+    // ========== CONSULTATION ==========
     document.getElementById('generateConsult').addEventListener('click', () => {
         let msg = document.getElementById('consultMessage').value.trim();
         if (!msg) { alert('Message requis'); return; }
@@ -324,7 +323,6 @@ Bienvenue dans votre chapelet d’expertise sur **« ${domaine} »**.
         document.getElementById('jourContainer').style.display = 'block';
         document.getElementById('startExpertise').style.display = 'none';
         document.getElementById('consultResult').innerHTML = 'Redirection vers le mode Expertise... (consultez l’onglet Expertise)';
-        // Basculer l'onglet vers expertise
         document.querySelector('.mode-btn[data-mode="expertise"]').click();
     });
 </script>
