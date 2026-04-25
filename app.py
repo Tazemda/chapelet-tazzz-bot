@@ -35,8 +35,6 @@ def clean_markdown(text):
     return text.replace('`', '').strip()
 
 def verifier_et_completer_jour(contenu, domaine, jour_num):
-    """Garantit que le contenu contient 5 dizaines complètes."""
-    # Vérifier le titre
     if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
         objectifs = [
             "Découverte des bases fondamentales",
@@ -48,26 +46,14 @@ def verifier_et_completer_jour(contenu, domaine, jour_num):
             "Auto‑évaluation et perfectionnement"
         ]
         contenu = f"## **JOUR {jour_num} – {objectifs[jour_num-1].upper()}**\n\n{contenu}"
-    
-    # Compter les dizaines
     matches = list(re.finditer(r'\*\*DIZAINE (\d+) – Concept', contenu, re.IGNORECASE))
     found = [int(m.group(1)) for m in matches]
     needed = set(range(1, 6))
     missing = needed - set(found)
-    
     if not missing:
         return contenu
-    
-    # Compléter les dizaines manquantes à la fin
     for m in sorted(missing):
-        contenu += f"""
-
-**DIZAINE {m} – Concept : (concept à définir pour {domaine})**
-**1) Méditation** : (développez ce concept en lien avec {domaine})
-**2) Notre Père** : (question problématique sur ce concept)
-**3) Je vous salue Marie** : (paragraphe synthétique de plusieurs phrases)
-**4) Gloire au Père** : "Le concept est consolidé.""""
-    
+        contenu += f"\n\n**DIZAINE {m} – Concept : (concept à définir pour {domaine})**\n**1) Méditation** : (développez ce concept en lien avec {domaine})\n**2) Notre Père** : (question problématique)\n**3) Je vous salue Marie** : (paragraphe synthétique)\n**4) Gloire au Père** : consolidé."
     return contenu
 
 def init_db():
@@ -82,28 +68,20 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= PROMPT OPTIMISÉ (ÉVITE LA TRONCATURE) =================
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
 Génère le contenu complet du **Jour {jour_num}** (objectif : {titre_objectif}).
 
-**IMPORTANT :** Tu dois produire un texte **complet, non tronqué**. La longueur totale ne doit pas dépasser 3000 tokens (soit environ 2000 mots). Sois exhaustif mais concis. Évite les répétitions.
-
-Commence par le titre :  
+IMPORTANT : Texte complet, non tronqué. Commence par :  
 ## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**
 
-Puis rédige **5 DIZAINES** exactement. Chaque dizaine doit suivre ce modèle :
-
-**DIZAINE 1 – Concept : [nom du concept]**
-**1) Méditation** : (paragraphe dense avec définitions, exemples, points clés – 3 à 5 phrases)
-**2) Notre Père** : (une question problématique, une phrase)
-**3) Je vous salue Marie** : (paragraphe synthétique de 3 à 4 phrases, à mémoriser)
-**4) Gloire au Père** : "Le concept "[nom]" est consolidé."
-
-Répète pour **DIZAINE 2**, **3**, **4**, **5**.
-
-Contenu directement utilisable pour un apprentissage autonome. Ne mets rien avant le titre.
+Puis exactement 5 DIZAINES au format :
+**DIZAINE X – Concept : [nom]**
+**1) Méditation** : (paragraphe dense)
+**2) Notre Père** : (question problématique)
+**3) Je vous salue Marie** : (paragraphe synthétique)
+**4) Gloire au Père** : "Le concept [nom] est consolidé."
 """
 
 def generer_jour_expertise(domaine, jour_num):
@@ -119,31 +97,17 @@ def generer_jour_expertise(domaine, jour_num):
     titre_objectif = objectifs[jour_num-1]
     prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_objectif=titre_objectif)
     try:
-        raw = call_deepseek(prompt, max_tokens=4000)  # Augmenté pour sécurité
+        raw = call_deepseek(prompt, max_tokens=4000)
         contenu = clean_markdown(raw)
         contenu = verifier_et_completer_jour(contenu, domaine, jour_num)
         return contenu
     except Exception as e:
         print(f"Erreur API jour {jour_num}: {e}")
-        fallback = f"""## **JOUR {jour_num} – {titre_objectif.upper()}** (mode dégradé)
-
-**DIZAINE 1 – Introduction à {domaine}**
-**1) Méditation** : (contenu temporaire – veuillez relancer la génération)
-**2) Notre Père** : ?
-**3) Je vous salue Marie** : ...
-**4) Gloire au Père** : consolidé.
-"""
-        for i in range(2, 6):
-            fallback += f"""
-
-**DIZAINE {i} – Concept supplémentaire**
-**1) Méditation** : (à compléter)
-**2) Notre Père** : ?
-**3) Je vous salue Marie** : ...
-**4) Gloire au Père** : consolidé."""
+        fallback = f"## **JOUR {jour_num} – {titre_objectif.upper()}** (mode dégradé)\n\n**DIZAINE 1 – Introduction**\n**1) Méditation** : (contenu temporaire)\n**2) Notre Père** : ?\n**3) Je vous salue Marie** : ...\n**4) Gloire au Père** : consolidé."
+        for i in range(2,6):
+            fallback += f"\n\n**DIZAINE {i} – Concept supplémentaire**\n**1) Méditation** : (à compléter)\n**2) Notre Père** : ?\n**3) Je vous salue Marie** : ...\n**4) Gloire au Père** : consolidé."
         return fallback
 
-# ================= DÉVELOPPEMENT PERSONNEL (simplifié) =================
 def generer_personnel(defauts):
     notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour."
     resultats = []
@@ -156,7 +120,6 @@ def generer_personnel(defauts):
             resultats.append(f"**Mystère {i} – {d}** (version de secours)")
     return "\n\n".join(resultats)
 
-# ================= ROUTES =================
 @app.route('/')
 def index():
     return render_template('index.html')
