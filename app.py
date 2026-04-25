@@ -11,7 +11,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-def call_deepseek(prompt, max_tokens=4000):
+def call_deepseek(prompt, max_tokens=2000):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API manquante")
     headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
@@ -22,7 +22,7 @@ def call_deepseek(prompt, max_tokens=4000):
         "max_tokens": max_tokens
     }
     try:
-        resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=180)
+        resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=150)
         if resp.status_code == 200:
             return resp.json()["choices"][0]["message"]["content"]
         else:
@@ -33,29 +33,6 @@ def call_deepseek(prompt, max_tokens=4000):
 def clean_markdown(text):
     text = re.sub(r'```[\s\S]*?```', '', text)
     return text.replace('`', '').strip()
-
-def verifier_et_completer_jour(contenu, domaine, jour_num):
-    """Garantit que le contenu contient 5 dizaines complètes."""
-    if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
-        objectifs = [
-            "Découverte des bases fondamentales",
-            "Approfondissement des pratiques clés",
-            "Cas complexes et exceptions",
-            "Contrôle qualité et indicateurs",
-            "Gestion des risques et plan d'action",
-            "Synthèse et liens entre concepts",
-            "Auto‑évaluation et perfectionnement"
-        ]
-        contenu = f"## **JOUR {jour_num} – {objectifs[jour_num-1].upper()}**\n\n{contenu}"
-    matches = list(re.finditer(r'\*\*DIZAINE (\d+) – Concept', contenu, re.IGNORECASE))
-    found = [int(m.group(1)) for m in matches]
-    needed = set(range(1, 6))
-    missing = needed - set(found)
-    if not missing:
-        return contenu
-    for m in sorted(missing):
-        contenu += f"\n\n**DIZAINE {m} – Concept : (concept à définir pour {domaine})**\n**1) Méditation** : (développez ce concept en lien avec {domaine})\n**2) Notre Père** : (question problématique)\n**3) Je vous salue Marie** : (paragraphe synthétique)\n**4) Gloire au Père** : consolidé."
-    return contenu
 
 def init_db():
     conn = sqlite3.connect('tazbot.db')
@@ -69,21 +46,28 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= EXPERTISE (inchangé) =================
+# ================= EXPERTISE (7 jours, titres dynamiques) =================
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
-Génère le contenu complet du **Jour {jour_num}** (objectif : {titre_objectif}).
+Génère le contenu complet du **Jour {jour_num}** sur 7 jours.  
+L'objectif général du jour {jour_num} est : {titre_objectif}.
 
-**IMPORTANT :** Texte complet, non tronqué. Commence par :  
+Commence par écrire le **titre du jour** sous la forme (obligatoire) :
 ## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**
 
-Puis exactement 5 DIZAINES au format :
-**DIZAINE X – Concept : [nom]**
-**1) Méditation** : (paragraphe dense)
-**2) Notre Père** : (question problématique)
-**3) Je vous salue Marie** : (paragraphe synthétique)
-**4) Gloire au Père** : "Le concept [nom] est consolidé."
+Puis, rédige exactement **5 DIZAINES** selon le modèle ci‑dessous.  
+Chaque dizaine doit être complète et détaillée.
+
+**DIZAINE 1 – Concept : [nom du concept]**
+**1) Méditation** : (paragraphe dense avec définitions, exemples concrets, points clés)
+**2) Notre Père** : (une question problématique pour faire réfléchir)
+**3) Je vous salue Marie** : (un paragraphe synthétique de plusieurs phrases, à mémoriser)
+**4) Gloire au Père** : "Le concept "[nom]" est consolidé."
+
+Répète pour **DIZAINE 2** à **DIZAINE 5**.
+
+Soigne la qualité et l'exhaustivité. Contenu directement utilisable pour un apprentissage autonome.
 """
 
 def generer_jour_expertise(domaine, jour_num):
@@ -99,72 +83,35 @@ def generer_jour_expertise(domaine, jour_num):
     titre_objectif = objectifs[jour_num-1]
     prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_objectif=titre_objectif)
     try:
-        raw = call_deepseek(prompt, max_tokens=4000)
+        raw = call_deepseek(prompt, max_tokens=2000)
         contenu = clean_markdown(raw)
-        contenu = verifier_et_completer_jour(contenu, domaine, jour_num)
+        # Vérification minimale : si le contenu ne commence pas par "## **JOUR", on ajoute un titre générique
+        if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
+            contenu = f"## **JOUR {jour_num} – {titre_objectif.upper()}**\n\n{contenu}"
         return contenu
     except Exception as e:
-        print(f"Erreur API jour {jour_num}: {e}")
-        fallback = f"## **JOUR {jour_num} – {titre_objectif.upper()}** (mode dégradé)\n\n**DIZAINE 1 – Introduction**\n**1) Méditation** : (contenu temporaire)\n**2) Notre Père** : ?\n**3) Je vous salue Marie** : ...\n**4) Gloire au Père** : consolidé."
-        for i in range(2,6):
-            fallback += f"\n\n**DIZAINE {i} – Concept supplémentaire**\n**1) Méditation** : (à compléter)\n**2) Notre Père** : ?\n**3) Je vous salue Marie** : ...\n**4) Gloire au Père** : consolidé."
-        return fallback
+        print(f"Erreur jour {jour_num}: {e}")
+        return f"""## **JOUR {jour_num} – {titre_objectif.upper()}** (version de secours)
 
-# ================= DÉVELOPPEMENT PERSONNEL (noouveau format + feedback) =================
-PROMPT_PERSONNEL = """
-Génère un **CHAPELET TAZ BOT – DÉVELOPPEMENT PERSONNEL (21 jours)** pour les 5 défauts suivants :
-{defauts}
+**DIZAINE 1 – Introduction à {domaine}**
+**1) Méditation** : (contenu temporaire – veuillez réessayer plus tard)
+**2) Notre Père** : ?
+**3) Je vous salue Marie** : ...
+**4) Gloire au Père** : consolidé.
+(Dizaines 2 à 5 structure similaire)"""
 
-Structure exacte (texte brut) :
-
-## 📿 CHAPELET TAZ BOT – 21 JOURS (STRUCTURE FIXE)
-
-### DÉBUT
-- Signe de croix : "Au nom de mon engagement, de ma lucidité et de ma persévérance."
-- Crucifix (1 grain) : "Je ne subis plus ma vie. Je deviens l'acteur de chaque heure."
-- 3 premiers Ave Maria :
-  1. "Je laisse derrière moi le poids des errances passées."
-  2. "Je choisis la constance dans l'action, si petite soit-elle."
-  3. "Je mérite un travail, une stabilité, une fierté retrouvée."
-- Gloire : "Je rends grâce à la vie pour ce nouveau départ."
-
-### 5 MYSTÈRES (un par défaut, dans l'ordre)
-
-Pour chaque défaut, écris exactement ce format :
-
-**MYSTÈRE X – [nom du défaut]**
-
-**Méditation** : (rappel d'une situation passée où ce défaut a nui, puis visualisation de la nouvelle attitude positive – 3 à 5 phrases)
-
-**Notre Père** : "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité." *(à répéter 1 fois)*
-
-**Je vous salue Marie (10 fois)** : (une phrase courte positive qui corrige spécifiquement ce défaut – à répéter 10 fois)
-
-**Gloire au Père** : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et pour cette transformation profonde." *(à répéter 1 fois)*
-
-Après le 5e mystère, écrire :
-
-### FIN DU CHAPELET
-- Salve Regina : "Ô volonté retrouvée, sois ma lumière et ma force."
-- Mantra final : "Ce chapelet de 21 jours ancre en moi la discipline joyeuse et l'action efficace."
-- Signe de croix final : "Au nom de mon engagement, de ma lucidité et de ma persévérance – ainsi soit-il."
-
-Termine par : "Chapelet Taz Bot – Basé sur la plasticité cérébrale et la répétition rythmée. © Dr Tazemda"
-
-Important : Le "Je vous salue Marie" doit être différent pour chaque défaut. Le "Notre Père" et le "Gloire au Père" sont identiques pour tous les mystères.
-"""
-
+# ================= DÉVELOPPEMENT PERSONNEL (simplifié) =================
 def generer_personnel(defauts):
-    if not defauts or len(defauts) != 5:
-        raise ValueError("5 défauts requis")
-    defauts_str = "\n".join(f"{i+1}. {d}" for i,d in enumerate(defauts))
-    prompt = PROMPT_PERSONNEL.format(defauts=defauts_str)
-    try:
-        raw = call_deepseek(prompt, max_tokens=4000)
-        chapelet = clean_markdown(raw)
-        return chapelet
-    except Exception as e:
-        raise Exception(f"Erreur génération chapelet personnel: {str(e)}")
+    notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour."
+    resultats = []
+    for i, d in enumerate(defauts, 1):
+        prompt = f"Mystère {i} – {d}\n**Méditation** : souvenir d'un échec puis visualisation positive.\n**Notre Père** : {notre_pere} (3 fois)\n**Je vous salue Marie** : phrase courte positive corrigeant {d} (10 fois)\n**Gloire au Père** : Merci (3 fois)"
+        try:
+            raw = call_deepseek(prompt, max_tokens=500)
+            resultats.append(clean_markdown(raw))
+        except:
+            resultats.append(f"**Mystère {i} – {d}** (version de secours)\nMéditation...\nNotre Père...\nAve Maria...")
+    return "\n\n".join(resultats)
 
 # ================= ROUTES =================
 @app.route('/')
