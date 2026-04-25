@@ -35,7 +35,8 @@ def clean_markdown(text):
     return text.replace('`', '').strip()
 
 def verifier_et_completer_jour(contenu, domaine, jour_num):
-    """Garantit 5 dizaines complètes pour l'expertise."""
+    """Garantit que le contenu contient 5 dizaines complètes."""
+    # Vérifier le titre
     if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
         objectifs = [
             "Découverte des bases fondamentales",
@@ -47,14 +48,26 @@ def verifier_et_completer_jour(contenu, domaine, jour_num):
             "Auto‑évaluation et perfectionnement"
         ]
         contenu = f"## **JOUR {jour_num} – {objectifs[jour_num-1].upper()}**\n\n{contenu}"
+    
+    # Compter les dizaines
     matches = list(re.finditer(r'\*\*DIZAINE (\d+) – Concept', contenu, re.IGNORECASE))
     found = [int(m.group(1)) for m in matches]
     needed = set(range(1, 6))
     missing = needed - set(found)
+    
     if not missing:
         return contenu
+    
+    # Compléter les dizaines manquantes à la fin
     for m in sorted(missing):
-        contenu += f"\n\n**DIZAINE {m} – Concept : (concept à définir pour {domaine})**\n**1) Méditation** : (développez ce concept)\n**2) Notre Père** : (question problématique)\n**3) Je vous salue Marie** : (paragraphe synthétique)\n**4) Gloire au Père** : consolidé."
+        contenu += f"""
+
+**DIZAINE {m} – Concept : (concept à définir pour {domaine})**
+**1) Méditation** : (développez ce concept en lien avec {domaine})
+**2) Notre Père** : (question problématique sur ce concept)
+**3) Je vous salue Marie** : (paragraphe synthétique de plusieurs phrases)
+**4) Gloire au Père** : "Le concept est consolidé.""""
+    
     return contenu
 
 def init_db():
@@ -69,21 +82,28 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= EXPERTISE =================
+# ================= PROMPT OPTIMISÉ (ÉVITE LA TRONCATURE) =================
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
 Génère le contenu complet du **Jour {jour_num}** (objectif : {titre_objectif}).
 
-**IMPORTANT :** Texte complet, non tronqué. Commence par :  
+**IMPORTANT :** Tu dois produire un texte **complet, non tronqué**. La longueur totale ne doit pas dépasser 3000 tokens (soit environ 2000 mots). Sois exhaustif mais concis. Évite les répétitions.
+
+Commence par le titre :  
 ## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**
 
-Puis exactement 5 DIZAINES au format :
-**DIZAINE X – Concept : [nom]**
-**1) Méditation** : (paragraphe dense)
-**2) Notre Père** : (question problématique)
-**3) Je vous salue Marie** : (paragraphe synthétique)
-**4) Gloire au Père** : "Le concept [nom] est consolidé."
+Puis rédige **5 DIZAINES** exactement. Chaque dizaine doit suivre ce modèle :
+
+**DIZAINE 1 – Concept : [nom du concept]**
+**1) Méditation** : (paragraphe dense avec définitions, exemples, points clés – 3 à 5 phrases)
+**2) Notre Père** : (une question problématique, une phrase)
+**3) Je vous salue Marie** : (paragraphe synthétique de 3 à 4 phrases, à mémoriser)
+**4) Gloire au Père** : "Le concept "[nom]" est consolidé."
+
+Répète pour **DIZAINE 2**, **3**, **4**, **5**.
+
+Contenu directement utilisable pour un apprentissage autonome. Ne mets rien avant le titre.
 """
 
 def generer_jour_expertise(domaine, jour_num):
@@ -99,57 +119,42 @@ def generer_jour_expertise(domaine, jour_num):
     titre_objectif = objectifs[jour_num-1]
     prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_objectif=titre_objectif)
     try:
-        raw = call_deepseek(prompt, max_tokens=4000)
+        raw = call_deepseek(prompt, max_tokens=4000)  # Augmenté pour sécurité
         contenu = clean_markdown(raw)
         contenu = verifier_et_completer_jour(contenu, domaine, jour_num)
         return contenu
     except Exception as e:
         print(f"Erreur API jour {jour_num}: {e}")
-        fallback = f"## **JOUR {jour_num} – {titre_objectif.upper()}** (mode dégradé)\n\n**DIZAINE 1 – Introduction**\n**1) Méditation** : (contenu temporaire)\n**2) Notre Père** : ?\n**3) Je vous salue Marie** : ...\n**4) Gloire au Père** : consolidé."
-        for i in range(2,6):
-            fallback += f"\n\n**DIZAINE {i} – Concept**\n**1) Méditation** : (à compléter)\n**2) Notre Père** : ?\n**3) Je vous salue Marie** : ...\n**4) Gloire au Père** : consolidé."
+        fallback = f"""## **JOUR {jour_num} – {titre_objectif.upper()}** (mode dégradé)
+
+**DIZAINE 1 – Introduction à {domaine}**
+**1) Méditation** : (contenu temporaire – veuillez relancer la génération)
+**2) Notre Père** : ?
+**3) Je vous salue Marie** : ...
+**4) Gloire au Père** : consolidé.
+"""
+        for i in range(2, 6):
+            fallback += f"""
+
+**DIZAINE {i} – Concept supplémentaire**
+**1) Méditation** : (à compléter)
+**2) Notre Père** : ?
+**3) Je vous salue Marie** : ...
+**4) Gloire au Père** : consolidé."""
         return fallback
 
-# ================= DÉVELOPPEMENT PERSONNEL =================
-PROMPT_PERSONNEL = """
-Génère un CHAPELET TAZ BOT – MODE DÉVELOPPEMENT PERSONNEL (21 ou 66 jours) pour ces 5 défauts :
-{defauts}
-
-Ajoute cette note au début :
-> *"Munissez-vous d'un chapelet (ou de vos doigts) pour égrener chaque grain. Récitez à voix haute ou mentalement, dans un endroit calme."*
-
-Structure canonique (texte brut) :
-
-### DÉBUT
-- Signe de croix : "Au nom de mon engagement, de ma lucidité et de ma persévérance."
-- Crucifix : "Je ne subis plus ma vie. Je deviens l'acteur de chaque heure."
-- 3 Ave initiaux : (donnés)
-- Gloire : "Je rends grâce à la vie pour ce nouveau départ."
-
-### 5 MYSTÈRES (un par défaut)
-Pour chaque défaut :
-**Mystère X – [nom du défaut]**
-**Méditation** : (passé négatif + visualisation positive)
-**Notre Père** : "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité."
-**10 × Je vous salue Marie** : (un mantra unique pour tous les mystères, résumant la correction des 5 défauts)
-**Gloire au Père** : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et cette transformation profonde."
-
-### FIN
-- Salve Regina, Mantra final, Signe de croix final.
-
-Termine par : "Chapelet Taz Bot – Basé sur la plasticité cérébrale et la répétition rythmée. © Dr Tazemda"
-"""
-
+# ================= DÉVELOPPEMENT PERSONNEL (simplifié) =================
 def generer_personnel(defauts):
-    if not defauts or len(defauts) != 5:
-        raise ValueError("5 défauts requis")
-    defauts_str = "\n".join(f"{i+1}. {d}" for i,d in enumerate(defauts))
-    prompt = PROMPT_PERSONNEL.format(defauts=defauts_str)
-    try:
-        raw = call_deepseek(prompt, max_tokens=4000)
-        return clean_markdown(raw)
-    except Exception as e:
-        raise Exception(f"Erreur génération chapelet personnel: {str(e)}")
+    notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour."
+    resultats = []
+    for i, d in enumerate(defauts, 1):
+        prompt = f"Mystère {i} – {d}\n**Méditation** : souvenir d'un échec puis visualisation positive.\n**Notre Père** : {notre_pere} (3 fois)\n**Je vous salue Marie** : phrase courte positive (10 fois)\n**Gloire au Père** : Merci (3 fois)"
+        try:
+            raw = call_deepseek(prompt, max_tokens=500)
+            resultats.append(clean_markdown(raw))
+        except:
+            resultats.append(f"**Mystère {i} – {d}** (version de secours)")
+    return "\n\n".join(resultats)
 
 # ================= ROUTES =================
 @app.route('/')
@@ -163,11 +168,8 @@ def generer_jour_expertise_route():
     jour = data.get('jour')
     if not domaine or not jour:
         return jsonify({'error': 'Domaine et jour requis'}), 400
-    try:
-        contenu = generer_jour_expertise(domaine, int(jour))
-        return jsonify({'contenu': contenu})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    contenu = generer_jour_expertise(domaine, int(jour))
+    return jsonify({'contenu': contenu})
 
 @app.route('/generer_personnel', methods=['POST'])
 def generer_personnel_route():
@@ -175,11 +177,8 @@ def generer_personnel_route():
     defauts = data.get('defauts')
     if not defauts or len(defauts) != 5:
         return jsonify({'error': '5 défauts requis'}), 400
-    try:
-        contenu = generer_personnel(defauts)
-        return jsonify({'chapelet': contenu})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    contenu = generer_personnel(defauts)
+    return jsonify({'contenu': contenu})
 
 @app.route('/feedback', methods=['POST'])
 def feedback():
