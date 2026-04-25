@@ -1,108 +1,301 @@
-// Fonction de chargement optimisée avec retry
-async function chargerJourAvecRetry(jour, maxRetries = 3) {
-    const loader = document.getElementById('expertiseLoader');
-    const contentDiv = document.getElementById('jourContent');
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            loader.style.display = 'block';
-            contentDiv.innerHTML = `<em>Génération du jour ${jour} (tentative ${attempt}/${maxRetries})...</em>`;
-            
-            const response = await fetch('/generer_jour_expertise', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    domaine: domaine, 
-                    jour: jour,
-                    attempt: attempt 
-                })
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            
-            // Vérification de complétude
-            const contenu = data.contenu;
-            const dizainesCount = (contenu.match(/DIZAINE\s+\d/g) || []).length;
-            
-            if (dizainesCount >= 5 || attempt === maxRetries) {
-                jours[jour] = contenu;
-                afficherJour(jour);
-                
-                // Log de qualité
-                console.log(`✅ Jour ${jour} chargé: ${dizainesCount}/5 dizaines`);
-                
-                // Feedback visuel
-                if (dizainesCount < 5) {
-                    contentDiv.innerHTML += '<br><em style="color:orange;">⚠️ Contenu partiel - Rafraîchissez si nécessaire</em>';
-                }
-                
-                return;
-            } else {
-                console.warn(`⚠️ Jour ${jour} incomplet (${dizainesCount}/5), tentative ${attempt}`);
-            }
-            
-        } catch (error) {
-            console.error(`❌ Erreur tentative ${attempt}:`, error);
-            
-            if (attempt === maxRetries) {
-                contentDiv.innerHTML = `
-                    <div style="color: #e74c3c;">
-                        <strong>Erreur de chargement</strong><br>
-                        Détail: ${error.message}<br><br>
-                        <button onclick="chargerJourAvecRetry(${jour})" style="background:#e67e22;color:white;padding:10px 20px;border:none;border-radius:20px;cursor:pointer;">
-                            🔄 Réessayer
-                        </button>
-                    </div>`;
-            }
-        } finally {
-            loader.style.display = 'none';
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 CHAPELET TAZZZ BOT – EXPERTISE 7 JOURS</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e2b3c 0%, #0f1a24 100%);
+            margin: 0;
+            padding: 20px;
+            color: #f0f0f0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        h1 { text-align: center; font-size: 2.2rem; margin-bottom: 5px; }
+        .subtitle { text-align: center; font-size: 1rem; opacity: 0.8; margin-bottom: 25px; }
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .mode-btn {
+            background: #2c3e4e;
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .mode-btn.active { background: #e67e22; box-shadow: 0 0 15px rgba(230,126,34,0.5); }
+        .mode-panel { display: none; animation: fadeIn 0.4s ease; }
+        .mode-panel.active-panel { display: block; }
+        input, textarea {
+            width: 100%; padding: 12px; margin: 10px 0;
+            border-radius: 12px; border: none; background: #f0f0f0; font-size: 1rem;
+        }
+        button {
+            background: #e67e22; border: none; color: white; padding: 12px 24px;
+            border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px;
+        }
+        .result {
+            background: #0b1620;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 550px;
+            overflow-y: auto;
+            border-left: 5px solid #e67e22;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        .nav-buttons button { width: auto; margin: 0; }
+        .day-counter { font-size: 0.9rem; }
+        .feedback-box {
+            margin-top: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stars { display: inline-flex; gap: 5px; margin: 10px; }
+        .star { font-size: 28px; cursor: pointer; color: #555; transition: color 0.2s; }
+        .star.selected { color: gold; }
+        .loader { display: none; text-align: center; margin: 20px; }
+        .footer { text-align: center; margin-top: 30px; font-size: 0.8rem; opacity: 0.8; }
+        .copyright { font-size: 0.7rem; margin-top: 10px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
+    <div class="subtitle">Transforme ta structure mentale</div>
+    <div class="mode-selector">
+        <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
+        <button class="mode-btn" data-mode="personnel">🔥 Développement personnel (21/66j)</button>
+        <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
+    </div>
+
+    <!-- Mode Expertise -->
+    <div id="expertisePanel" class="mode-panel active-panel">
+        <p>🔬 Domaine à maîtriser :</p>
+        <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
+        <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
+        <div id="jourContainer" style="display:none;">
+            <div id="jourContent" class="result"></div>
+            <div class="nav-buttons">
+                <button id="prevDay" disabled>◀ Précédent</button>
+                <span id="dayCounter">Jour 1 / 7</span>
+                <button id="nextDay">Suivant ▶</button>
+            </div>
+            <div id="feedbackBox" class="feedback-box" style="display:none;">
+                <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
+                <div class="stars" id="starsEx">
+                    <span class="star" data-value="1">☆</span>
+                    <span class="star" data-value="2">☆</span>
+                    <span class="star" data-value="3">☆</span>
+                    <span class="star" data-value="4">☆</span>
+                    <span class="star" data-value="5">☆</span>
+                </div>
+                <textarea id="feedbackCommentEx" rows="2" placeholder="Vos remarques (facultatif)"></textarea>
+                <button id="submitFeedbackEx">Envoyer mon avis</button>
+            </div>
+        </div>
+        <div id="expertiseLoader" class="loader">⏳ Génération en cours...</div>
+    </div>
+
+    <!-- Mode Personnel -->
+    <div id="personnelPanel" class="mode-panel">
+        <p>📝 5 défauts (un par ligne) :</p>
+        <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;Je dépense sans compter&#10;Je suis timide&#10;Je manque de motivation"></textarea>
+        <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
+        <div id="personnelResult" class="result"></div>
+    </div>
+
+    <!-- Mode Consultation -->
+    <div id="consultationPanel" class="mode-panel">
+        <p>💬 Décrivez votre besoin :</p>
+        <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention du risque thrombo-embolique..."></textarea>
+        <button id="generateConsult">✨ GÉNÉRER ✨</button>
+        <div id="consultResult" class="result"></div>
+    </div>
+    <div class="footer">
+        <div class="copyright">© Dr Tazemda – Chapelet Tazzz Bot – Plasticité cérébrale & répétition rythmée</div>
+    </div>
+</div>
+
+<script>
+    // Onglets
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    const panels = {
+        expertise: document.getElementById('expertisePanel'),
+        personnel: document.getElementById('personnelPanel'),
+        consultation: document.getElementById('consultationPanel')
+    };
+    modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            modeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const mode = btn.getAttribute('data-mode');
+            Object.values(panels).forEach(p => p.classList.remove('active-panel'));
+            panels[mode].classList.add('active-panel');
+        });
+    });
+
+    // ========== EXPERTISE : navigation jour 1 à 7 (sans page 0) ==========
+    let domaine = '';
+    let jours = {};
+    let currentJour = 1;
+    const totalJours = 7;
+
+    function afficherJour(jour) {
+        const contentDiv = document.getElementById('jourContent');
+        const daySpan = document.getElementById('dayCounter');
+        if (jours[jour]) {
+            contentDiv.innerHTML = jours[jour].replace(/\n/g, '<br>');
+            daySpan.innerText = `Jour ${jour} / 7`;
+            document.getElementById('prevDay').disabled = (jour === 1);
+            document.getElementById('nextDay').disabled = (jour === 7);
+            document.getElementById('feedbackBox').style.display = 'block';
+        } else {
+            contentDiv.innerHTML = '<em>Chargement du jour...</em>';
+            chargerJour(jour);
         }
     }
-}
 
-// Modifiez votre fonction chargerJour existante
-function chargerJour(jour) {
-    chargerJourAvecRetry(jour);
-}
-
-// Ajoutez un indicateur de progression global
-let progressionGlobale = {
-    joursCharges: 0,
-    joursTotal: 7,
-    demarre: false
-};
-
-function mettreAJourProgression() {
-    const joursComplets = Object.values(jours).filter(contenu => 
-        contenu && (contenu.match(/DIZAINE\s+\d/g) || []).length >= 5
-    ).length;
-    
-    console.log(`📊 Progression: ${joursComplets}/7 jours complets`);
-    
-    // Ajoutez cet élément dans votre HTML si souhaité
-    const progElement = document.getElementById('progressionGlobale');
-    if (progElement) {
-        progElement.innerHTML = `
-            <div style="background:#2c3e4e;padding:10px;border-radius:10px;margin:10px 0;">
-                📊 Progression: ${joursComplets}/7 jours générés avec succès
-                <div style="background:#0f1a24;height:10px;border-radius:5px;margin-top:5px;">
-                    <div style="background:#e67e22;height:100%;width:${(joursComplets/7)*100}%;border-radius:5px;transition:width 0.3s;"></div>
-                </div>
-            </div>`;
+    function chargerJour(jour) {
+        const loader = document.getElementById('expertiseLoader');
+        loader.style.display = 'block';
+        fetch('/generer_jour_expertise', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ domaine: domaine, jour: jour })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            jours[jour] = data.contenu;
+            afficherJour(jour);
+        })
+        .catch(err => {
+            console.error(err);
+            jours[jour] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jour}. Rafraîchissez ou réessayez.`;
+            afficherJour(jour);
+        })
+        .finally(() => loader.style.display = 'none');
     }
-}
 
-// Ajoutez l'appel à mettreAJourProgression après chaque chargement
-const afficherJourOriginal = afficherJour;
-afficherJour = function(jour) {
-    afficherJourOriginal(jour);
-    mettreAJourProgression();
-};
+    document.getElementById('startExpertise').addEventListener('click', () => {
+        domaine = document.getElementById('domaine').value.trim();
+        if (!domaine) { alert('Domaine requis'); return; }
+        jours = {};
+        currentJour = 1;
+        chargerJour(1);
+        document.getElementById('jourContainer').style.display = 'block';
+        document.getElementById('startExpertise').style.display = 'none';
+    });
+
+    document.getElementById('prevDay').addEventListener('click', () => {
+        if (currentJour > 1) {
+            currentJour--;
+            afficherJour(currentJour);
+        }
+    });
+    document.getElementById('nextDay').addEventListener('click', () => {
+        if (currentJour < totalJours) {
+            currentJour++;
+            afficherJour(currentJour);
+        }
+    });
+
+    // Feedback Expertise
+    let currentNoteEx = 0;
+    const starsEx = document.querySelectorAll('#starsEx .star');
+    starsEx.forEach(star => {
+        star.addEventListener('click', () => {
+            currentNoteEx = parseInt(star.getAttribute('data-value'));
+            starsEx.forEach(s => {
+                const val = parseInt(s.getAttribute('data-value'));
+                if (val <= currentNoteEx) {
+                    s.textContent = '★';
+                    s.classList.add('selected');
+                } else {
+                    s.textContent = '☆';
+                    s.classList.remove('selected');
+                }
+            });
+        });
+    });
+    document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
+        if (currentNoteEx === 0) { alert('Sélectionnez une note'); return; }
+        const comment = document.getElementById('feedbackCommentEx').value.trim();
+        try {
+            const res = await fetch('/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ note: currentNoteEx, commentaire: comment })
+            });
+            const data = await res.json();
+            if (data.status === 'ok') {
+                alert('Merci pour votre avis !');
+                document.getElementById('feedbackBox').style.display = 'none';
+            } else alert('Erreur');
+        } catch (err) { alert('Erreur réseau'); }
+    });
+
+    // ========== PERSONNEL ==========
+    document.getElementById('generatePersonnel').addEventListener('click', async () => {
+        let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
+        if (defauts.length !== 5) { alert('5 défauts requis'); return; }
+        document.getElementById('personnelResult').innerHTML = '⏳ Génération...';
+        try {
+            const res = await fetch('/generer_personnel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ defauts: defauts })
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            document.getElementById('personnelResult').innerHTML = data.contenu.replace(/\n/g, '<br>');
+        } catch (err) { alert('Erreur: ' + err.message); }
+    });
+
+    // ========== CONSULTATION ==========
+    document.getElementById('generateConsult').addEventListener('click', () => {
+        let msg = document.getElementById('consultMessage').value.trim();
+        if (!msg) { alert('Message requis'); return; }
+        domaine = msg;
+        jours = {};
+        currentJour = 1;
+        chargerJour(1);
+        document.getElementById('jourContainer').style.display = 'block';
+        document.getElementById('startExpertise').style.display = 'none';
+        document.getElementById('consultResult').innerHTML = 'Redirection vers le mode Expertise...';
+        document.querySelector('.mode-btn[data-mode="expertise"]').click();
+    });
+</script>
+</body>
+</html>
