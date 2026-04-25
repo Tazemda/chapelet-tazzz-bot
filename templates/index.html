@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 CHAPELET TAZZZ BOT</title>
+    <title>🧠 CHAPELET TAZZZ BOT – EXPERTISE 7 JOURS</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -124,13 +124,13 @@
                 <button id="submitFeedbackEx">Envoyer mon avis</button>
             </div>
         </div>
-        <div id="expertiseLoader" class="loader">⏳ Génération...</div>
+        <div id="expertiseLoader" class="loader">⏳ Génération en cours...</div>
     </div>
 
     <!-- Mode Personnel -->
     <div id="personnelPanel" class="mode-panel">
         <p>📝 5 défauts (un par ligne) :</p>
-        <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;..."></textarea>
+        <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;Je dépense sans compter&#10;Je suis timide&#10;Je manque de motivation"></textarea>
         <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
         <div id="personnelResult" class="result"></div>
     </div>
@@ -148,7 +148,7 @@
 </div>
 
 <script>
-    // Onglets
+    // Modes
     const modeBtns = document.querySelectorAll('.mode-btn');
     const panels = {
         expertise: document.getElementById('expertisePanel'),
@@ -165,7 +165,7 @@
         });
     });
 
-    // ========== EXPERTISE : navigation jours 1 à 7 ==========
+    // Expertise
     let domaine = '';
     let jours = {};
     let currentJour = 1;
@@ -181,7 +181,7 @@
             document.getElementById('nextDay').disabled = (jour === 7);
             document.getElementById('feedbackBox').style.display = 'block';
         } else {
-            contentDiv.innerHTML = '<em>Chargement...</em>';
+            contentDiv.innerHTML = '<em>Chargement du jour...</em>';
             chargerJour(jour);
         }
     }
@@ -189,7 +189,7 @@
     function chargerJour(jour) {
         const loader = document.getElementById('expertiseLoader');
         loader.style.display = 'block';
-        fetch('/generer_jour', {
+        fetch('/generer_jour_expertise', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ domaine: domaine, jour: jour })
@@ -202,7 +202,7 @@
         })
         .catch(err => {
             console.error(err);
-            jours[jour] = `<strong>Erreur</strong><br>Contenu indisponible pour le jour ${jour}. Réessayez.`;
+            jours[jour] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jour}. Rafraîchissez ou réessayez.`;
             afficherJour(jour);
         })
         .finally(() => loader.style.display = 'none');
@@ -239,9 +239,13 @@
             currentNoteEx = parseInt(star.getAttribute('data-value'));
             starsEx.forEach(s => {
                 const val = parseInt(s.getAttribute('data-value'));
-                s.textContent = val <= currentNoteEx ? '★' : '☆';
-                if (val <= currentNoteEx) s.classList.add('selected');
-                else s.classList.remove('selected');
+                if (val <= currentNoteEx) {
+                    s.textContent = '★';
+                    s.classList.add('selected');
+                } else {
+                    s.textContent = '☆';
+                    s.classList.remove('selected');
+                }
             });
         });
     });
@@ -289,7 +293,7 @@
         chargerJour(1);
         document.getElementById('jourContainer').style.display = 'block';
         document.getElementById('startExpertise').style.display = 'none';
-        document.getElementById('consultResult').innerHTML = 'Redirection vers Expertise...';
+        document.getElementById('consultResult').innerHTML = 'Redirection vers le mode Expertise...';
         document.querySelector('.mode-btn[data-mode="expertise"]').click();
     });
 </script>
