@@ -11,7 +11,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-def call_deepseek(prompt, max_tokens=2000):
+def call_deepseek(prompt, max_tokens=2200):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API manquante")
     headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
@@ -34,6 +34,29 @@ def clean_markdown(text):
     text = re.sub(r'```[\s\S]*?```', '', text)
     return text.replace('`', '').strip()
 
+def verifier_et_completer_jour(contenu, domaine, jour_num):
+    """Garantit que le contenu contient 5 dizaines (DIZAINE 1 à 5)."""
+    # Trouver tous les numéros de dizaine présents
+    matches = list(re.finditer(r'\*\*DIZAINE (\d+) – Concept', contenu, re.IGNORECASE))
+    found = [int(m.group(1)) for m in matches]
+    needed = set(range(1, 6))
+    missing = needed - set(found)
+    
+    if not missing:
+        return contenu
+    
+    # Compléter les dizaines manquantes à la fin
+    for m in sorted(missing):
+        contenu += f"""
+
+**DIZAINE {m} – Concept : (concept à définir pour {domaine})**
+**1) Méditation** : (développez ce concept en lien avec {domaine})
+**2) Notre Père** : (question problématique sur ce concept)
+**3) Je vous salue Marie** : (paragraphe synthétique de plusieurs phrases)
+**4) Gloire au Père** : "Le concept est consolidé.""""
+    
+    return contenu
+
 def init_db():
     conn = sqlite3.connect('tazbot.db')
     c = conn.cursor()
@@ -46,7 +69,7 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= EXPERTISE (7 jours, titres dynamiques) =================
+# ================= EXPERTISE (7 jours) =================
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
@@ -57,7 +80,7 @@ Commence par écrire le **titre du jour** sous la forme (obligatoire) :
 ## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**
 
 Puis, rédige exactement **5 DIZAINES** selon le modèle ci‑dessous.  
-Chaque dizaine doit être complète et détaillée.
+Chaque dizaine doit être complète et détaillée. Ne saute aucune dizaine.
 
 **DIZAINE 1 – Concept : [nom du concept]**
 **1) Méditation** : (paragraphe dense avec définitions, exemples concrets, points clés)
@@ -65,7 +88,7 @@ Chaque dizaine doit être complète et détaillée.
 **3) Je vous salue Marie** : (un paragraphe synthétique de plusieurs phrases, à mémoriser)
 **4) Gloire au Père** : "Le concept "[nom]" est consolidé."
 
-Répète pour **DIZAINE 2** à **DIZAINE 5**.
+Répète pour **DIZAINE 2**, **DIZAINE 3**, **DIZAINE 4**, **DIZAINE 5**.
 
 Soigne la qualité et l'exhaustivité. Contenu directement utilisable pour un apprentissage autonome.
 """
@@ -83,24 +106,36 @@ def generer_jour_expertise(domaine, jour_num):
     titre_objectif = objectifs[jour_num-1]
     prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_objectif=titre_objectif)
     try:
-        raw = call_deepseek(prompt, max_tokens=2000)
+        raw = call_deepseek(prompt, max_tokens=2200)
         contenu = clean_markdown(raw)
-        # Vérification minimale : si le contenu ne commence pas par "## **JOUR", on ajoute un titre générique
+        # Vérifier/ajouter titre si absent
         if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
             contenu = f"## **JOUR {jour_num} – {titre_objectif.upper()}**\n\n{contenu}"
+        # Vérifier/compléter les 5 dizaines
+        contenu = verifier_et_completer_jour(contenu, domaine, jour_num)
         return contenu
     except Exception as e:
         print(f"Erreur jour {jour_num}: {e}")
-        return f"""## **JOUR {jour_num} – {titre_objectif.upper()}** (version de secours)
+        # Fallback avec 5 dizaines
+        fallback = f"""## **JOUR {jour_num} – {titre_objectif.upper()}** (mode dégradé)
 
 **DIZAINE 1 – Introduction à {domaine}**
-**1) Méditation** : (contenu temporaire – veuillez réessayer plus tard)
+**1) Méditation** : (contenu temporaire, veuillez réessayer)
 **2) Notre Père** : ?
 **3) Je vous salue Marie** : ...
 **4) Gloire au Père** : consolidé.
-(Dizaines 2 à 5 structure similaire)"""
+"""
+        for i in range(2, 6):
+            fallback += f"""
 
-# ================= DÉVELOPPEMENT PERSONNEL (simplifié) =================
+**DIZAINE {i} – Concept {i}**
+**1) Méditation** : (à compléter)
+**2) Notre Père** : ?
+**3) Je vous salue Marie** : ...
+**4) Gloire au Père** : consolidé."""
+        return fallback
+
+# ================= DÉVELOPPEMENT PERSONNEL =================
 def generer_personnel(defauts):
     notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour."
     resultats = []
@@ -110,7 +145,7 @@ def generer_personnel(defauts):
             raw = call_deepseek(prompt, max_tokens=500)
             resultats.append(clean_markdown(raw))
         except:
-            resultats.append(f"**Mystère {i} – {d}** (version de secours)\nMéditation...\nNotre Père...\nAve Maria...")
+            resultats.append(f"**Mystère {i} – {d}** (version de secours)")
     return "\n\n".join(resultats)
 
 # ================= ROUTES =================
