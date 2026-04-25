@@ -39,7 +39,8 @@
         }
         button.generate, button.nav-btn {
             background: #e67e22; border: none; color: white; padding: 14px 28px;
-            font-size: 1.2rem; border-radius: 40px; cursor: pointer; width: 100%; margin-top: 20px;
+            font-size: 1.2rem; border-radius: 40px; cursor: pointer;
+            width: 100%; margin-top: 20px;
         }
         .result {
             background: #0b1620;
@@ -99,7 +100,7 @@
     <!-- Mode Expertise -->
     <div id="expertisePanel" class="mode-panel active-panel">
         <p>🔬 Domaine à maîtriser :</p>
-        <input type="text" id="domaine" placeholder="Ex: Prévention des risques thrombo-emboliques">
+        <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
         <button id="startExpertise" class="generate">✨ DÉMARRER L'EXPERTISE ✨</button>
         <div id="jourContainer" style="display:none;">
             <div id="jourContent" class="result"></div>
@@ -135,7 +136,7 @@
     <!-- Mode Consultation -->
     <div id="consultationPanel" class="mode-panel">
         <p>💬 Décrivez votre besoin :</p>
-        <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention des risques thrombo-emboliques..."></textarea>
+        <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention du risque thrombo-embolique..."></textarea>
         <button id="generateConsult" class="generate">✨ GÉNÉRER ✨</button>
         <div id="consultResult" class="result"></div>
     </div>
@@ -166,27 +167,23 @@
     let domaine = '';
     let jours = {};
     let currentPage = 0;
-    const totalPages = 8;
+    const totalPages = 8; // 0 = intro, 1-7 = jours
 
+    // Préambule simplifié, sans plan détaillé (les titres des jours seront dans le contenu)
     function getPreambule() {
-        return `# 📖 Programme des 7 jours
+        return `# 📖 Bienvenue dans votre chapelet d’expertise
 
-Bienvenue dans votre chapelet d’expertise sur **« ${domaine} »**.
+## Domaine : **« ${domaine} »**
 
 ## 🧠 Comment utiliser ce chapelet ?
-- Munissez-vous d’un **vrai chapelet** (ou utilisez vos doigts pour égrener).
-- Chaque jour, récitez le contenu d’un jour à voix haute ou mentalement.
-- Les **5 dizaines** du jour correspondent à 5 concepts clés.
-- Respectez les instructions : tenez le gros grain pour la méditation, répétez 3 fois le Notre Père, 10 fois le Je vous salue Marie, 3 fois le Gloire.
-
-## 📅 Plan des 7 jours
-1. **Jour 1** – Découverte des bases fondamentales  
-2. **Jour 2** – Approfondissement des pratiques clés  
-3. **Jour 3** – Cas complexes et exceptions  
-4. **Jour 4** – Contrôle qualité et indicateurs  
-5. **Jour 5** – Gestion des risques et plan d'action  
-6. **Jour 6** – Synthèse et liens entre concepts  
-7. **Jour 7** – Auto‑évaluation et perfectionnement  
+- **Procurez‑vous un vrai chapelet** (ou utilisez vos doigts pour égrener).
+- Chaque jour, lisez ou récitez à voix haute le contenu du jour.
+- Respectez les **instructions** : 
+  - *Tenez le gros grain* pour la **Méditation**.
+  - *Répétez 3 fois* le **Notre Père**.
+  - *Répétez 10 fois* (5 lectures, 5 sans regarder) le **Je vous salue Marie**.
+  - *Répétez 3 fois* la **Gloire au Père**.
+- Les **5 dizaines** d’un jour correspondent à 5 concepts clés.
 
 👉 Cliquez sur **“Suivant”** pour commencer le **Jour 1**.`;
     }
