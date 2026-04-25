@@ -99,7 +99,7 @@
         <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
     </div>
 
-    <!-- Mode Expertise -->
+    <!-- Mode Expertise : sans page préliminaire -->
     <div id="expertisePanel" class="mode-panel active-panel">
         <p>🔬 Domaine à maîtriser :</p>
         <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
@@ -108,7 +108,7 @@
             <div id="jourContent" class="result"></div>
             <div class="nav-buttons">
                 <button id="prevDay" disabled>◀ Précédent</button>
-                <span id="dayCounter">Intro / 8</span>
+                <span id="dayCounter">Jour 1 / 7</span>
                 <button id="nextDay">Suivant ▶</button>
             </div>
             <div id="feedbackBox" class="feedback-box" style="display:none;">
@@ -165,71 +165,45 @@
         });
     });
 
-    // ========== EXPERTISE ==========
-    // Page intro fixe (définitive)
-    const PAGE0 = `# 📖 Bienvenue dans votre chapelet d’expertise
-
-## 🧠 COMMENT UTILISER LE CHAPELET TAZZZ BOT ?
-- **Procurez‑vous un vrai chapelet** que vous égrènerez durant vos lectures et récitations.
-- Chaque jour, lisez ou récitez à voix haute le contenu du jour.
-- Respectez les **instructions** :
-  - *Tenez le gros grain correspondant* pour la **Méditation du Mystère**. Chaque Mystère correspond à une grande fiche synthétique sur l'un des 5 sujets du jour. Vous pouvez consulter vos notes ou d'autres sources.
-  - *Répétez 3 fois* le contenu qui est à la place du **Notre Père**.
-  - *Répétez 10 fois* (5 lectures, 5 sans regarder) le contenu à la place du **Je vous salue Marie**.
-  - *Répétez 3 fois* le contenu à la place de **Gloire au Père**.
-- Les **5 dizaines** d’un jour correspondent à 5 concepts clés.
-
-👉 Nous vous suggérons dans un premier temps d'ouvrir les 7 journées pour avoir un aperçu global du travail à faire durant la semaine.
-
-👉 Cliquez sur **“Suivant”** pour commencer le **Jour 1**.`;
-
+    // ========== EXPERTISE (sans page 0) ==========
     let domaine = '';
     let jours = {};
-    let currentPage = 0; // 0 = intro, 1..7 = jours
-    const totalPages = 8;
+    let currentJour = 1;
+    const totalJours = 7;
 
-    function afficherPage(page) {
+    function afficherJour(jour) {
         const contentDiv = document.getElementById('jourContent');
         const daySpan = document.getElementById('dayCounter');
-        if (page === 0) {
-            contentDiv.innerHTML = PAGE0.replace(/\n/g, '<br>');
-            daySpan.innerText = 'Intro / 8';
-            document.getElementById('prevDay').disabled = true;
-            document.getElementById('nextDay').disabled = false;
-            document.getElementById('feedbackBox').style.display = 'none';
+        if (jours[jour]) {
+            contentDiv.innerHTML = jours[jour].replace(/\n/g, '<br>');
+            daySpan.innerText = `Jour ${jour} / 7`;
+            document.getElementById('prevDay').disabled = (jour === 1);
+            document.getElementById('nextDay').disabled = (jour === 7);
+            document.getElementById('feedbackBox').style.display = 'block';
         } else {
-            const jourNum = page;
-            if (jours[jourNum]) {
-                contentDiv.innerHTML = jours[jourNum].replace(/\n/g, '<br>');
-                daySpan.innerText = `Jour ${jourNum} / 7`;
-                document.getElementById('prevDay').disabled = false;
-                document.getElementById('nextDay').disabled = (jourNum === 7);
-                document.getElementById('feedbackBox').style.display = 'block';
-            } else {
-                contentDiv.innerHTML = '<em>Chargement du jour...</em>';
-                chargerJour(jourNum);
-            }
+            contentDiv.innerHTML = '<em>Chargement du jour...</em>';
+            chargerJour(jour);
         }
     }
 
-    function chargerJour(jourNum) {
+    function chargerJour(jour) {
         const loader = document.getElementById('expertiseLoader');
         loader.style.display = 'block';
         fetch('/generer_jour_expertise', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ domaine: domaine, jour: jourNum })
+            body: JSON.stringify({ domaine: domaine, jour: jour })
         })
         .then(res => res.json())
         .then(data => {
             if (data.error) throw new Error(data.error);
-            jours[jourNum] = data.contenu;
-            afficherPage(jourNum);
+            jours[jour] = data.contenu;
+            afficherJour(jour);
         })
         .catch(err => {
             console.error(err);
-            jours[jourNum] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jourNum}. Réessayez plus tard.`;
-            afficherPage(jourNum);
+            jours[jour] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jour}. Réessayez plus tard.`;
+            afficherJour(jour);
         })
         .finally(() => loader.style.display = 'none');
     }
@@ -238,26 +212,26 @@
         domaine = document.getElementById('domaine').value.trim();
         if (!domaine) { alert('Domaine requis'); return; }
         jours = {};
-        currentPage = 0;
-        afficherPage(0);
+        currentJour = 1;
+        chargerJour(1);
         document.getElementById('jourContainer').style.display = 'block';
         document.getElementById('startExpertise').style.display = 'none';
     });
 
     document.getElementById('prevDay').addEventListener('click', () => {
-        if (currentPage > 0) {
-            currentPage--;
-            afficherPage(currentPage);
+        if (currentJour > 1) {
+            currentJour--;
+            afficherJour(currentJour);
         }
     });
     document.getElementById('nextDay').addEventListener('click', () => {
-        if (currentPage < totalPages-1) {
-            currentPage++;
-            afficherPage(currentPage);
+        if (currentJour < totalJours) {
+            currentJour++;
+            afficherJour(currentJour);
         }
     });
 
-    // Feedback (expertise)
+    // Feedback
     let currentNoteEx = 0;
     const starsEx = document.querySelectorAll('#starsEx .star');
     starsEx.forEach(star => {
@@ -315,8 +289,8 @@
         if (!msg) { alert('Message requis'); return; }
         domaine = msg;
         jours = {};
-        currentPage = 0;
-        afficherPage(0);
+        currentJour = 1;
+        chargerJour(1);
         document.getElementById('jourContainer').style.display = 'block';
         document.getElementById('startExpertise').style.display = 'none';
         document.getElementById('consultResult').innerHTML = 'Redirection vers le mode Expertise...';
