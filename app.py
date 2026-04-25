@@ -35,7 +35,7 @@ def clean_markdown(text):
     return text.replace('`', '').strip()
 
 def verifier_et_completer_jour(contenu, domaine, jour_num):
-    # expertise (inchangé)
+    """Garantit que le contenu contient 5 dizaines complètes."""
     if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
         objectifs = [
             "Découverte des bases fondamentales",
@@ -54,7 +54,7 @@ def verifier_et_completer_jour(contenu, domaine, jour_num):
     if not missing:
         return contenu
     for m in sorted(missing):
-        contenu += f"\n\n**DIZAINE {m} – Concept : (concept à définir pour {domaine})**\n**1) Méditation** : (développez ce concept)\n**2) Notre Père** : (question problématique)\n**3) Je vous salue Marie** : (paragraphe)\n**4) Gloire au Père** : consolidé."
+        contenu += f"\n\n**DIZAINE {m} – Concept : (concept à définir pour {domaine})**\n**1) Méditation** : (développez ce concept en lien avec {domaine})\n**2) Notre Père** : (question problématique)\n**3) Je vous salue Marie** : (paragraphe synthétique)\n**4) Gloire au Père** : consolidé."
     return contenu
 
 def init_db():
@@ -75,7 +75,7 @@ Tu es un expert pédagogique. Domaine : "{domaine}".
 
 Génère le contenu complet du **Jour {jour_num}** (objectif : {titre_objectif}).
 
-IMPORTANT : Texte complet, non tronqué. Commence par :  
+**IMPORTANT :** Texte complet, non tronqué. Commence par :  
 ## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**
 
 Puis exactement 5 DIZAINES au format :
@@ -110,7 +110,7 @@ def generer_jour_expertise(domaine, jour_num):
             fallback += f"\n\n**DIZAINE {i} – Concept supplémentaire**\n**1) Méditation** : (à compléter)\n**2) Notre Père** : ?\n**3) Je vous salue Marie** : ...\n**4) Gloire au Père** : consolidé."
         return fallback
 
-# ================= DÉVELOPPEMENT PERSONNEL (format exact) =================
+# ================= DÉVELOPPEMENT PERSONNEL (noouveau format + feedback) =================
 PROMPT_PERSONNEL = """
 Génère un **CHAPELET TAZ BOT – DÉVELOPPEMENT PERSONNEL (21 jours)** pour les 5 défauts suivants :
 {defauts}
@@ -130,15 +130,15 @@ Structure exacte (texte brut) :
 
 ### 5 MYSTÈRES (un par défaut, dans l'ordre)
 
-Pour chaque défaut, écris :
+Pour chaque défaut, écris exactement ce format :
 
-**MYSTÈRE X – [nom du défaut]**  
+**MYSTÈRE X – [nom du défaut]**
 
-**Méditation** : (visualisation : rappel d'une situation négative, puis nouvelle attitude positive)
+**Méditation** : (rappel d'une situation passée où ce défaut a nui, puis visualisation de la nouvelle attitude positive – 3 à 5 phrases)
 
 **Notre Père** : "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité." *(à répéter 1 fois)*
 
-**Je vous salue Marie (10 fois)** : (une phrase courte positive qui corrige ce défaut spécifique) *(à répéter 10 fois)*
+**Je vous salue Marie (10 fois)** : (une phrase courte positive qui corrige spécifiquement ce défaut – à répéter 10 fois)
 
 **Gloire au Père** : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et pour cette transformation profonde." *(à répéter 1 fois)*
 
@@ -151,7 +151,7 @@ Après le 5e mystère, écrire :
 
 Termine par : "Chapelet Taz Bot – Basé sur la plasticité cérébrale et la répétition rythmée. © Dr Tazemda"
 
-Important : Le "Je vous salue Marie" doit être spécifique à chaque défaut. Le "Notre Père" et le "Gloire au Père" sont identiques pour tous les mystères.
+Important : Le "Je vous salue Marie" doit être différent pour chaque défaut. Le "Notre Père" et le "Gloire au Père" sont identiques pour tous les mystères.
 """
 
 def generer_personnel(defauts):
