@@ -27,8 +27,13 @@
         .subtitle { text-align: center; font-size: 1rem; opacity: 0.8; margin-bottom: 25px; }
         .mode-selector { display: flex; gap: 15px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
         .mode-btn {
-            background: #2c3e4e; border: none; color: white; padding: 12px 24px;
-            border-radius: 40px; cursor: pointer; font-weight: bold;
+            background: #2c3e4e;
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
         }
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 15px rgba(230,126,34,0.5); }
         .mode-panel { display: none; animation: fadeIn 0.4s ease; }
@@ -166,7 +171,7 @@
         });
     });
 
-    // ========== EXPERTISE : navigation jour 1 à 7 ==========
+    // ========== EXPERTISE ==========
     let expertiseDomaine = '';
     let jours = {};
     let currentJour = 1;
