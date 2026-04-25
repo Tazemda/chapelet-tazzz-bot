@@ -202,7 +202,7 @@
         })
         .catch(err => {
             console.error(err);
-            jours[jour] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jour}. Rafraîchissez ou réessayez.`;
+            jours[jour] = `<strong>Erreur de génération</strong><br>${err.message}<br>Vérifiez votre clé API et votre crédit DeepSeek.`;
             afficherJour(jour);
         })
         .finally(() => loader.style.display = 'none');
