@@ -46,20 +46,19 @@ def init_db():
     conn.close()
 init_db()
 
-def generer_jour(domaine, jour_num):
-    # Objectifs neutres (sans référence au médicament)
-    objectifs = [
-        "Découverte des bases fondamentales",
-        "Approfondissement des pratiques clés",
-        "Cas complexes et exceptions",
-        "Contrôle qualité et indicateurs",
-        "Gestion des risques et plan d'action",
-        "Synthèse et liens entre concepts",
-        "Auto‑évaluation et perfectionnement"
-    ]
-    titre_jour = objectifs[jour_num-1]
-    prompt = f"""
-Génère le contenu du **Jour {jour_num}** d'un chapelet d'apprentissage sur le domaine : "{domaine}".
+# ------------------ EXPERTISE (génération jour par jour) ------------------
+OBJECTIFS_JOURS = [
+    "Découverte des bases fondamentales",
+    "Approfondissement des pratiques clés",
+    "Cas complexes et exceptions",
+    "Contrôle qualité et indicateurs",
+    "Gestion des risques et plan d'action",
+    "Synthèse et liens entre concepts",
+    "Auto‑évaluation et perfectionnement"
+]
+
+PROMPT_JOUR = """
+Génère le contenu du **Jour {jour_num}** d’un chapelet d’apprentissage sur le domaine : « {domaine} ».
 Objectif de ce jour : {titre_jour}.
 
 Pour ce jour, invente **5 concepts** (DIZAINE 1 à 5). Pour chaque concept, écris exactement ce format :
@@ -80,61 +79,88 @@ Pour ce jour, invente **5 concepts** (DIZAINE 1 à 5). Pour chaque concept, écr
 
 **4) Gloire au Père**  
 *Récitez cette phrase 3 fois.*  
-« Le concept "[nom]" est connu et consolidé. »
+« Le concept “[nom]” est connu et consolidé. »
 
-Le contenu doit être adapté au domaine "{domaine}". Commence directement par "**DIZAINE 1**". N'ajoute pas de titre général avant.
+Le contenu doit être adapté au domaine « {domaine} ». Commence directement par "**DIZAINE 1**". N’ajoute pas de titre général avant.
 """
-    raw = call_deepseek(prompt, max_tokens=2500)
+
+def generer_jour_expertise(domaine, jour_num):
+    titre_jour = OBJECTIFS_JOURS[jour_num-1]
+    prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_jour=titre_jour)
+    raw = call_deepseek(prompt, max_tokens=2800)
     raw = clean_markdown(raw)
     return f"--- Jour {jour_num} – {titre_jour} ---\n\n{raw}"
 
+# ------------------ DÉVELOPPEMENT PERSONNEL (5 mystères, Ave Maria différents) ------------------
 def generer_personnel(defauts):
-    mantra = "Je me lève tôt, je termine ce que je commence, je sors chaque jour, je structure ma vie, j'attire un travail stable."
-    texte = f"""
+    # Notre Père commun
+    notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité."
+    
+    # Construction des 5 mystères
+    mysteres = []
+    for i, defaut in enumerate(defauts, 1):
+        prompt_mystere = f"""
+Génère le **Mystère {i} – {defaut}** d’un chapelet de développement personnel.
+
+Structure exacte :
+
+**Méditation** :  
+(une courte visualisation qui : rappelle une situation passée où ce défaut a nui, puis décrit la nouvelle attitude positive, concrète, en agissant contrairement au défaut.)
+
+**Notre Père** : {notre_pere} *(à répéter 3 fois)*
+
+**Je vous salue Marie** :  
+(une phrase courte, positive, qui corrige spécifiquement ce défaut. Exemple pour “je me lève tard” : “Je me lève tôt et je lance ma journée avec énergie.”) *(à répéter 10 fois)*
+
+**Gloire au Père** : “Je remercie Dieu et l’univers pour cette transformation profonde.” *(à répéter 3 fois)*
+
+Ne mets que le contenu du mystère, sans commentaire.
+"""
+        raw = call_deepseek(prompt_mystere, max_tokens=800)
+        mysteres.append(clean_markdown(raw))
+    
+    # Assemblage complet
+    chapelet = f"""
 **CHAPELET TAZZZ BOT – MODE DÉVELOPPEMENT PERSONNEL (21/66 jours)**
 
-> *Munissez-vous d'un chapelet pour égrener chaque grain...*
+> *Munissez-vous d'un chapelet pour égrener chaque grain correspondant en récitant à voix haute ou mentalement, dans un endroit calme.*
 
 ### DÉBUT
 - Signe de croix : "Au nom de mon engagement, de ma lucidité et de ma persévérance."
 - Crucifix : "Je ne subis plus ma vie. Je deviens l'acteur de chaque heure."
-- 3 Ave initiaux : "Je laisse derrière moi le poids des errances passées." / "Je choisis la constance..." / "Je mérite un travail stable."
-- Gloire : "Je rends grâce pour ce nouveau départ."
+- 3 Ave initiaux :  
+  1. "Je laisse derrière moi le poids des errances passées."  
+  2. "Je choisis la constance dans l'action, si petite soit-elle."  
+  3. "Je mérite un travail, une stabilité, une fierté retrouvée."
+- Gloire : "Je rends grâce à la vie pour ce nouveau départ."
 
 ### 5 MYSTÈRES
-"""
-    for i, d in enumerate(defauts, 1):
-        texte += f"""
-**Mystère {i} – {d}**  
-**Méditation** : (souvenir d’un échec passé) … Aujourd’hui, visualisation du comportement opposé réussi.  
-**Notre Père** (×3) : "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention."  
-**Je vous salue Marie** (×10) : {mantra}  
-**Gloire au Père** (×3) : "Je remercie Dieu et l'univers pour cette transformation."
-"""
-    texte += """
+""" + "\n\n".join(mysteres) + """
+
 ### FIN
-- Salve Regina : "Ô volonté retrouvée, sois ma lumière."
-- Mantra final : "Ce chapelet ancre la discipline joyeuse."
+- Salve Regina : "Ô volonté retrouvée, sois ma lumière et ma force."
+- Mantra final : "Ce chapelet de 21 jours ancre en moi la discipline joyeuse et l'action efficace."
 - Signe de croix final.
 
-Chapelet Tazzz Bot – © Dr Tazemda
+Chapelet Tazzz Bot – Basé sur la plasticité cérébrale et la répétition rythmée.
+© Dr Tazemda
 """
-    return texte
+    return chapelet
 
-# ---------- Routes ----------
+# ------------------ ROUTES ------------------
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/generer_jour', methods=['POST'])
-def generer_jour_route():
+@app.route('/generer_jour_expertise', methods=['POST'])
+def generer_jour_expertise_route():
     data = request.get_json()
     domaine = data.get('domaine')
     jour = data.get('jour')
     if not domaine or not jour:
         return jsonify({'error': 'Domaine et jour requis'}), 400
     try:
-        contenu = generer_jour(domaine, int(jour))
+        contenu = generer_jour_expertise(domaine, int(jour))
         return jsonify({'contenu': contenu})
     except Exception as e:
         print(f"Erreur jour {jour}:", e)
@@ -146,8 +172,11 @@ def generer_personnel_route():
     defauts = data.get('defauts')
     if not defauts or len(defauts) != 5:
         return jsonify({'error': '5 défauts requis'}), 400
-    contenu = generer_personnel(defauts)
-    return jsonify({'contenu': contenu})
+    try:
+        contenu = generer_personnel(defauts)
+        return jsonify({'contenu': contenu})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/feedback', methods=['POST'])
 def feedback():
