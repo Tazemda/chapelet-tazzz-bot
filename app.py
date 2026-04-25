@@ -35,6 +35,7 @@ def clean_markdown(text):
     return text.replace('`', '').strip()
 
 def verifier_et_completer_jour(contenu, domaine, jour_num):
+    # expertise (inchangé)
     if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
         objectifs = [
             "Découverte des bases fondamentales",
@@ -53,7 +54,7 @@ def verifier_et_completer_jour(contenu, domaine, jour_num):
     if not missing:
         return contenu
     for m in sorted(missing):
-        contenu += f"\n\n**DIZAINE {m} – Concept : (concept à définir pour {domaine})**\n**1) Méditation** : (développez ce concept en lien avec {domaine})\n**2) Notre Père** : (question problématique)\n**3) Je vous salue Marie** : (paragraphe synthétique)\n**4) Gloire au Père** : consolidé."
+        contenu += f"\n\n**DIZAINE {m} – Concept : (concept à définir pour {domaine})**\n**1) Méditation** : (développez ce concept)\n**2) Notre Père** : (question problématique)\n**3) Je vous salue Marie** : (paragraphe)\n**4) Gloire au Père** : consolidé."
     return contenu
 
 def init_db():
@@ -68,6 +69,7 @@ def init_db():
     conn.close()
 init_db()
 
+# ================= EXPERTISE (inchangé) =================
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
@@ -108,18 +110,63 @@ def generer_jour_expertise(domaine, jour_num):
             fallback += f"\n\n**DIZAINE {i} – Concept supplémentaire**\n**1) Méditation** : (à compléter)\n**2) Notre Père** : ?\n**3) Je vous salue Marie** : ...\n**4) Gloire au Père** : consolidé."
         return fallback
 
-def generer_personnel(defauts):
-    notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour."
-    resultats = []
-    for i, d in enumerate(defauts, 1):
-        prompt = f"Mystère {i} – {d}\n**Méditation** : souvenir d'un échec puis visualisation positive.\n**Notre Père** : {notre_pere} (3 fois)\n**Je vous salue Marie** : phrase courte positive (10 fois)\n**Gloire au Père** : Merci (3 fois)"
-        try:
-            raw = call_deepseek(prompt, max_tokens=500)
-            resultats.append(clean_markdown(raw))
-        except:
-            resultats.append(f"**Mystère {i} – {d}** (version de secours)")
-    return "\n\n".join(resultats)
+# ================= DÉVELOPPEMENT PERSONNEL (format exact) =================
+PROMPT_PERSONNEL = """
+Génère un **CHAPELET TAZ BOT – DÉVELOPPEMENT PERSONNEL (21 jours)** pour les 5 défauts suivants :
+{defauts}
 
+Structure exacte (texte brut) :
+
+## 📿 CHAPELET TAZ BOT – 21 JOURS (STRUCTURE FIXE)
+
+### DÉBUT
+- Signe de croix : "Au nom de mon engagement, de ma lucidité et de ma persévérance."
+- Crucifix (1 grain) : "Je ne subis plus ma vie. Je deviens l'acteur de chaque heure."
+- 3 premiers Ave Maria :
+  1. "Je laisse derrière moi le poids des errances passées."
+  2. "Je choisis la constance dans l'action, si petite soit-elle."
+  3. "Je mérite un travail, une stabilité, une fierté retrouvée."
+- Gloire : "Je rends grâce à la vie pour ce nouveau départ."
+
+### 5 MYSTÈRES (un par défaut, dans l'ordre)
+
+Pour chaque défaut, écris :
+
+**MYSTÈRE X – [nom du défaut]**  
+
+**Méditation** : (visualisation : rappel d'une situation négative, puis nouvelle attitude positive)
+
+**Notre Père** : "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité." *(à répéter 1 fois)*
+
+**Je vous salue Marie (10 fois)** : (une phrase courte positive qui corrige ce défaut spécifique) *(à répéter 10 fois)*
+
+**Gloire au Père** : "Je remercie Dieu et l'univers pour ses réalisations dans ma vie et pour cette transformation profonde." *(à répéter 1 fois)*
+
+Après le 5e mystère, écrire :
+
+### FIN DU CHAPELET
+- Salve Regina : "Ô volonté retrouvée, sois ma lumière et ma force."
+- Mantra final : "Ce chapelet de 21 jours ancre en moi la discipline joyeuse et l'action efficace."
+- Signe de croix final : "Au nom de mon engagement, de ma lucidité et de ma persévérance – ainsi soit-il."
+
+Termine par : "Chapelet Taz Bot – Basé sur la plasticité cérébrale et la répétition rythmée. © Dr Tazemda"
+
+Important : Le "Je vous salue Marie" doit être spécifique à chaque défaut. Le "Notre Père" et le "Gloire au Père" sont identiques pour tous les mystères.
+"""
+
+def generer_personnel(defauts):
+    if not defauts or len(defauts) != 5:
+        raise ValueError("5 défauts requis")
+    defauts_str = "\n".join(f"{i+1}. {d}" for i,d in enumerate(defauts))
+    prompt = PROMPT_PERSONNEL.format(defauts=defauts_str)
+    try:
+        raw = call_deepseek(prompt, max_tokens=4000)
+        chapelet = clean_markdown(raw)
+        return chapelet
+    except Exception as e:
+        raise Exception(f"Erreur génération chapelet personnel: {str(e)}")
+
+# ================= ROUTES =================
 @app.route('/')
 def index():
     return render_template('index.html')
