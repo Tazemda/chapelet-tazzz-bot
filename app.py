@@ -11,17 +11,13 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-def call_deepseek(prompt, max_tokens=4000, system_message=""):
+def call_deepseek(prompt, max_tokens=4000):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API manquante")
     headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
-    messages = []
-    if system_message:
-        messages.append({"role": "system", "content": system_message})
-    messages.append({"role": "user", "content": prompt})
     payload = {
         "model": "deepseek-chat",
-        "messages": messages,
+        "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.7,
         "max_tokens": max_tokens
     }
@@ -39,7 +35,7 @@ def clean_markdown(text):
     return text.replace('`', '').strip()
 
 def verifier_et_completer_jour(contenu, domaine, jour_num):
-    """Garantit que le contenu contient 5 dizaines complètes."""
+    """Garantit 5 dizaines complètes pour l'expertise."""
     if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
         objectifs = [
             "Découverte des bases fondamentales",
@@ -51,7 +47,6 @@ def verifier_et_completer_jour(contenu, domaine, jour_num):
             "Auto‑évaluation et perfectionnement"
         ]
         contenu = f"## **JOUR {jour_num} – {objectifs[jour_num-1].upper()}**\n\n{contenu}"
-    
     matches = list(re.finditer(r'\*\*DIZAINE (\d+) – Concept', contenu, re.IGNORECASE))
     found = [int(m.group(1)) for m in matches]
     needed = set(range(1, 6))
@@ -59,7 +54,7 @@ def verifier_et_completer_jour(contenu, domaine, jour_num):
     if not missing:
         return contenu
     for m in sorted(missing):
-        contenu += f"\n\n**DIZAINE {m} – Concept : (concept à définir pour {domaine})**\n**1) Méditation** : (développez ce concept)\n**2) Notre Père** : (question)\n**3) Je vous salue Marie** : (synthèse)\n**4) Gloire au Père** : consolidé."
+        contenu += f"\n\n**DIZAINE {m} – Concept : (concept à définir pour {domaine})**\n**1) Méditation** : (développez ce concept)\n**2) Notre Père** : (question problématique)\n**3) Je vous salue Marie** : (paragraphe synthétique)\n**4) Gloire au Père** : consolidé."
     return contenu
 
 def init_db():
@@ -74,16 +69,16 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= PROMPT EXPERTISE (inchangé) =================
+# ================= EXPERTISE =================
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
 Génère le contenu complet du **Jour {jour_num}** (objectif : {titre_objectif}).
 
 **IMPORTANT :** Texte complet, non tronqué. Commence par :  
-## **JOUR {jour_num} – [TITRE EN MAJUSCULES, ADAPTÉ AU DOMAINE]**
+## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**
 
-Puis 5 DIZAINES exactement au format :
+Puis exactement 5 DIZAINES au format :
 **DIZAINE X – Concept : [nom]**
 **1) Méditation** : (paragraphe dense)
 **2) Notre Père** : (question problématique)
@@ -115,7 +110,7 @@ def generer_jour_expertise(domaine, jour_num):
             fallback += f"\n\n**DIZAINE {i} – Concept**\n**1) Méditation** : (à compléter)\n**2) Notre Père** : ?\n**3) Je vous salue Marie** : ...\n**4) Gloire au Père** : consolidé."
         return fallback
 
-# ================= DÉVELOPPEMENT PERSONNEL (VERSION COMPLÈTE) =================
+# ================= DÉVELOPPEMENT PERSONNEL =================
 PROMPT_PERSONNEL = """
 Génère un CHAPELET TAZ BOT – MODE DÉVELOPPEMENT PERSONNEL (21 ou 66 jours) pour ces 5 défauts :
 {defauts}
@@ -151,9 +146,8 @@ def generer_personnel(defauts):
     defauts_str = "\n".join(f"{i+1}. {d}" for i,d in enumerate(defauts))
     prompt = PROMPT_PERSONNEL.format(defauts=defauts_str)
     try:
-        raw = call_deepseek(prompt, max_tokens=4000, system_message="Tu es un assistant spécialisé dans les chapelets de développement personnel.")
-        chapelet = clean_markdown(raw)
-        return chapelet
+        raw = call_deepseek(prompt, max_tokens=4000)
+        return clean_markdown(raw)
     except Exception as e:
         raise Exception(f"Erreur génération chapelet personnel: {str(e)}")
 
@@ -183,7 +177,7 @@ def generer_personnel_route():
         return jsonify({'error': '5 défauts requis'}), 400
     try:
         contenu = generer_personnel(defauts)
-        return jsonify({'contenu': contenu})
+        return jsonify({'chapelet': contenu})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
