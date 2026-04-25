@@ -23,10 +23,17 @@ def call_deepseek(prompt, max_tokens=3500, timeout=240):
     }
     try:
         resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()["choices"][0]["message"]["content"]
-        else:
-            raise Exception(f"API error {resp.status_code}: {resp.text[:200]}")
+        # Vérifier si la réponse est du JSON
+        if resp.status_code != 200:
+            # Essayer de lire le message d'erreur (DeepSeek renvoie parfois du JSON d'erreur)
+            try:
+                error_data = resp.json()
+                error_msg = error_data.get("error", {}).get("message", "Erreur inconnue")
+                raise Exception(f"❌ API error {resp.status_code}: {error_msg}")
+            except:
+                # Si ce n'est pas du JSON, on renvoie le texte brut (probablement HTML)
+                raise Exception(f"❌ Réponse non-JSON. Code {resp.status_code}. Brut: {resp.text[:500]}")
+        return resp.json()["choices"][0]["message"]["content"]
     except requests.exceptions.Timeout:
         raise Exception("⏱️ Timeout : DeepSeek n'a pas répondu dans le temps imparti. Réessayez plus tard.")
     except Exception as e:
@@ -48,7 +55,7 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= PROMPT POUR EXPERTISE (libellés exacts) =================
+# ================= PROMPT POUR EXPERTISE =================
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
@@ -56,7 +63,7 @@ Génère le contenu complet du **Jour {jour_num}** (objectif : {titre_objectif})
 
 **RÈGLES STRICTES** :
 - Commence par le titre : `## **JOUR {jour_num} – [TITRE EN MAJUSCULES, ADAPTÉ AU DOMAINE]**`
-- Ensuite, EXACTEMENT 5 DIZAINES (DIZAINE 1 à 5). Chaque DIZAINE doit suivre ce format (sans mention "à répéter" ni "graines") :
+- Ensuite, EXACTEMENT 5 DIZAINES (DIZAINE 1 à 5). Chaque DIZAINE doit suivre ce format :
 
 **DIZAINE X – Concept : [nom du concept]**
 
@@ -86,14 +93,13 @@ def generer_jour_expertise(domaine, jour_num):
     try:
         raw = call_deepseek(prompt, max_tokens=3500, timeout=240)
         contenu = clean_markdown(raw)
-        # Vérifie que le titre est présent
         if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
             contenu = f"## **JOUR {jour_num} – {titre_objectif.upper()}**\n\n{contenu}"
         return contenu
     except Exception as e:
-        return f"❌ **Erreur de génération** : {str(e)}\n\nVeuillez vérifier votre clé API et votre crédit DeepSeek."
+        return f"❌ **Erreur de génération** : {str(e)}"
 
-# ================= MODE PERSONNEL (simplifié mais utilisant DeepSeek) =================
+# ================= MODE PERSONNEL (identique) =================
 def generer_personnel(defauts):
     notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes."
     resultats = []
