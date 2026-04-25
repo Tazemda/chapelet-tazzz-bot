@@ -1,200 +1,301 @@
-import os
-import re
-import sqlite3
-from datetime import datetime
-from flask import Flask, request, jsonify, render_template
-import requests
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 CHAPELET TAZZZ BOT – EXPERTISE 7 JOURS</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e2b3c 0%, #0f1a24 100%);
+            margin: 0;
+            padding: 20px;
+            color: #f0f0f0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        h1 { text-align: center; font-size: 2.2rem; margin-bottom: 5px; }
+        .subtitle { text-align: center; font-size: 1rem; opacity: 0.8; margin-bottom: 25px; }
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .mode-btn {
+            background: #2c3e4e;
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .mode-btn.active { background: #e67e22; box-shadow: 0 0 15px rgba(230,126,34,0.5); }
+        .mode-panel { display: none; animation: fadeIn 0.4s ease; }
+        .mode-panel.active-panel { display: block; }
+        input, textarea {
+            width: 100%; padding: 12px; margin: 10px 0;
+            border-radius: 12px; border: none; background: #f0f0f0; font-size: 1rem;
+        }
+        button {
+            background: #e67e22; border: none; color: white; padding: 12px 24px;
+            border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px;
+        }
+        .result {
+            background: #0b1620;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 550px;
+            overflow-y: auto;
+            border-left: 5px solid #e67e22;
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        .nav-buttons button { width: auto; margin: 0; }
+        .day-counter { font-size: 0.9rem; }
+        .feedback-box {
+            margin-top: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stars { display: inline-flex; gap: 5px; margin: 10px; }
+        .star { font-size: 28px; cursor: pointer; color: #555; transition: color 0.2s; }
+        .star.selected { color: gold; }
+        .loader { display: none; text-align: center; margin: 20px; }
+        .footer { text-align: center; margin-top: 30px; font-size: 0.8rem; opacity: 0.8; }
+        .copyright { font-size: 0.7rem; margin-top: 10px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
+    <div class="subtitle">Transforme ta structure mentale</div>
+    <div class="mode-selector">
+        <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
+        <button class="mode-btn" data-mode="personnel">🔥 Développement personnel (21/66j)</button>
+        <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
+    </div>
 
-app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
+    <!-- Mode Expertise -->
+    <div id="expertisePanel" class="mode-panel active-panel">
+        <p>🔬 Domaine à maîtriser :</p>
+        <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
+        <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
+        <div id="jourContainer" style="display:none;">
+            <div id="jourContent" class="result"></div>
+            <div class="nav-buttons">
+                <button id="prevDay" disabled>◀ Précédent</button>
+                <span id="dayCounter">Jour 1 / 7</span>
+                <button id="nextDay">Suivant ▶</button>
+            </div>
+            <div id="feedbackBox" class="feedback-box" style="display:none;">
+                <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
+                <div class="stars" id="starsEx">
+                    <span class="star" data-value="1">☆</span>
+                    <span class="star" data-value="2">☆</span>
+                    <span class="star" data-value="3">☆</span>
+                    <span class="star" data-value="4">☆</span>
+                    <span class="star" data-value="5">☆</span>
+                </div>
+                <textarea id="feedbackCommentEx" rows="2" placeholder="Vos remarques (facultatif)"></textarea>
+                <button id="submitFeedbackEx">Envoyer mon avis</button>
+            </div>
+        </div>
+        <div id="expertiseLoader" class="loader">⏳ Génération en cours...</div>
+    </div>
 
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
-DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
+    <!-- Mode Personnel -->
+    <div id="personnelPanel" class="mode-panel">
+        <p>📝 5 défauts (un par ligne) :</p>
+        <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;Je dépense sans compter&#10;Je suis timide&#10;Je manque de motivation"></textarea>
+        <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
+        <div id="personnelResult" class="result"></div>
+    </div>
 
-def call_deepseek(prompt, max_tokens=4000):
-    if not DEEPSEEK_API_KEY:
-        raise Exception("Clé API manquante")
-    headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
-    payload = {
-        "model": "deepseek-chat",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.7,
-        "max_tokens": max_tokens
+    <!-- Mode Consultation -->
+    <div id="consultationPanel" class="mode-panel">
+        <p>💬 Décrivez votre besoin :</p>
+        <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention du risque thrombo-embolique..."></textarea>
+        <button id="generateConsult">✨ GÉNÉRER ✨</button>
+        <div id="consultResult" class="result"></div>
+    </div>
+    <div class="footer">
+        <div class="copyright">© Dr Tazemda – Chapelet Tazzz Bot – Plasticité cérébrale & répétition rythmée</div>
+    </div>
+</div>
+
+<script>
+    // Onglets
+    const modeBtns = document.querySelectorAll('.mode-btn');
+    const panels = {
+        expertise: document.getElementById('expertisePanel'),
+        personnel: document.getElementById('personnelPanel'),
+        consultation: document.getElementById('consultationPanel')
+    };
+    modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            modeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const mode = btn.getAttribute('data-mode');
+            Object.values(panels).forEach(p => p.classList.remove('active-panel'));
+            panels[mode].classList.add('active-panel');
+        });
+    });
+
+    // ========== EXPERTISE : navigation jour 1 à 7 ==========
+    let domaine = '';
+    let jours = {};
+    let currentJour = 1;
+    const totalJours = 7;
+
+    function afficherJour(jour) {
+        const contentDiv = document.getElementById('jourContent');
+        const daySpan = document.getElementById('dayCounter');
+        if (jours[jour]) {
+            contentDiv.innerHTML = jours[jour].replace(/\n/g, '<br>');
+            daySpan.innerText = `Jour ${jour} / 7`;
+            document.getElementById('prevDay').disabled = (jour === 1);
+            document.getElementById('nextDay').disabled = (jour === 7);
+            document.getElementById('feedbackBox').style.display = 'block';
+        } else {
+            contentDiv.innerHTML = '<em>Chargement du jour...</em>';
+            chargerJour(jour);
+        }
     }
-    try:
-        resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=180)
-        if resp.status_code == 200:
-            return resp.json()["choices"][0]["message"]["content"]
-        else:
-            raise Exception(f"API error {resp.status_code}: {resp.text[:200]}")
-    except Exception as e:
-        raise Exception(f"Erreur API: {str(e)}")
 
-def clean_markdown(text):
-    text = re.sub(r'```[\s\S]*?```', '', text)
-    return text.replace('`', '').strip()
+    function chargerJour(jour) {
+        const loader = document.getElementById('expertiseLoader');
+        loader.style.display = 'block';
+        fetch('/generer_jour_expertise', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ domaine: domaine, jour: jour })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) throw new Error(data.error);
+            jours[jour] = data.contenu;
+            afficherJour(jour);
+        })
+        .catch(err => {
+            console.error(err);
+            jours[jour] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jour}. Rafraîchissez ou réessayez.`;
+            afficherJour(jour);
+        })
+        .finally(() => loader.style.display = 'none');
+    }
 
-def verifier_et_completer_jour(contenu, domaine, jour_num):
-    """Garantit que le contenu contient 5 dizaines complètes."""
-    # Vérifier le titre
-    if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
-        objectifs = [
-            "Découverte des bases fondamentales",
-            "Approfondissement des pratiques clés",
-            "Cas complexes et exceptions",
-            "Contrôle qualité et indicateurs",
-            "Gestion des risques et plan d'action",
-            "Synthèse et liens entre concepts",
-            "Auto‑évaluation et perfectionnement"
-        ]
-        contenu = f"## **JOUR {jour_num} – {objectifs[jour_num-1].upper()}**\n\n{contenu}"
-    
-    # Compter les dizaines
-    matches = list(re.finditer(r'\*\*DIZAINE (\d+) – Concept', contenu, re.IGNORECASE))
-    found = [int(m.group(1)) for m in matches]
-    needed = set(range(1, 6))
-    missing = needed - set(found)
-    
-    if not missing:
-        return contenu
-    
-    # Compléter les dizaines manquantes à la fin
-    for m in sorted(missing):
-        contenu += f"""
+    document.getElementById('startExpertise').addEventListener('click', () => {
+        domaine = document.getElementById('domaine').value.trim();
+        if (!domaine) { alert('Domaine requis'); return; }
+        jours = {};
+        currentJour = 1;
+        chargerJour(1);
+        document.getElementById('jourContainer').style.display = 'block';
+        document.getElementById('startExpertise').style.display = 'none';
+    });
 
-**DIZAINE {m} – Concept : (concept à définir pour {domaine})**
-**1) Méditation** : (développez ce concept en lien avec {domaine})
-**2) Notre Père** : (question problématique sur ce concept)
-**3) Je vous salue Marie** : (paragraphe synthétique de plusieurs phrases)
-**4) Gloire au Père** : "Le concept est consolidé.""""
-    
-    return contenu
+    document.getElementById('prevDay').addEventListener('click', () => {
+        if (currentJour > 1) {
+            currentJour--;
+            afficherJour(currentJour);
+        }
+    });
+    document.getElementById('nextDay').addEventListener('click', () => {
+        if (currentJour < totalJours) {
+            currentJour++;
+            afficherJour(currentJour);
+        }
+    });
 
-def init_db():
-    conn = sqlite3.connect('tazbot.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS feedback
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  date TEXT,
-                  note INTEGER,
-                  commentaire TEXT)''')
-    conn.commit()
-    conn.close()
-init_db()
+    // Feedback Expertise
+    let currentNoteEx = 0;
+    const starsEx = document.querySelectorAll('#starsEx .star');
+    starsEx.forEach(star => {
+        star.addEventListener('click', () => {
+            currentNoteEx = parseInt(star.getAttribute('data-value'));
+            starsEx.forEach(s => {
+                const val = parseInt(s.getAttribute('data-value'));
+                if (val <= currentNoteEx) {
+                    s.textContent = '★';
+                    s.classList.add('selected');
+                } else {
+                    s.textContent = '☆';
+                    s.classList.remove('selected');
+                }
+            });
+        });
+    });
+    document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
+        if (currentNoteEx === 0) { alert('Sélectionnez une note'); return; }
+        const comment = document.getElementById('feedbackCommentEx').value.trim();
+        try {
+            const res = await fetch('/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ note: currentNoteEx, commentaire: comment })
+            });
+            const data = await res.json();
+            if (data.status === 'ok') {
+                alert('Merci pour votre avis !');
+                document.getElementById('feedbackBox').style.display = 'none';
+            } else alert('Erreur');
+        } catch (err) { alert('Erreur réseau'); }
+    });
 
-# ================= PROMPT OPTIMISÉ (ÉVITE LA TRONCATURE) =================
-PROMPT_JOUR = """
-Tu es un expert pédagogique. Domaine : "{domaine}".
+    // ========== PERSONNEL ==========
+    document.getElementById('generatePersonnel').addEventListener('click', async () => {
+        let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
+        if (defauts.length !== 5) { alert('5 défauts requis'); return; }
+        document.getElementById('personnelResult').innerHTML = '⏳ Génération...';
+        try {
+            const res = await fetch('/generer_personnel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ defauts: defauts })
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            document.getElementById('personnelResult').innerHTML = data.contenu.replace(/\n/g, '<br>');
+        } catch (err) { alert('Erreur: ' + err.message); }
+    });
 
-Génère le contenu complet du **Jour {jour_num}** (objectif : {titre_objectif}).
-
-**IMPORTANT :** Tu dois produire un texte **complet, non tronqué**. La longueur totale ne doit pas dépasser 3000 tokens (soit environ 2000 mots). Sois exhaustif mais concis. Évite les répétitions.
-
-Commence par le titre :  
-## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**
-
-Puis rédige **5 DIZAINES** exactement. Chaque dizaine doit suivre ce modèle :
-
-**DIZAINE 1 – Concept : [nom du concept]**
-**1) Méditation** : (paragraphe dense avec définitions, exemples, points clés – 3 à 5 phrases)
-**2) Notre Père** : (une question problématique, une phrase)
-**3) Je vous salue Marie** : (paragraphe synthétique de 3 à 4 phrases, à mémoriser)
-**4) Gloire au Père** : "Le concept "[nom]" est consolidé."
-
-Répète pour **DIZAINE 2**, **3**, **4**, **5**.
-
-Contenu directement utilisable pour un apprentissage autonome. Ne mets rien avant le titre.
-"""
-
-def generer_jour_expertise(domaine, jour_num):
-    objectifs = [
-        "Découverte des bases fondamentales",
-        "Approfondissement des pratiques clés",
-        "Cas complexes et exceptions",
-        "Contrôle qualité et indicateurs",
-        "Gestion des risques et plan d'action",
-        "Synthèse et liens entre concepts",
-        "Auto‑évaluation et perfectionnement"
-    ]
-    titre_objectif = objectifs[jour_num-1]
-    prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_objectif=titre_objectif)
-    try:
-        raw = call_deepseek(prompt, max_tokens=4000)  # Augmenté pour sécurité
-        contenu = clean_markdown(raw)
-        contenu = verifier_et_completer_jour(contenu, domaine, jour_num)
-        return contenu
-    except Exception as e:
-        print(f"Erreur API jour {jour_num}: {e}")
-        fallback = f"""## **JOUR {jour_num} – {titre_objectif.upper()}** (mode dégradé)
-
-**DIZAINE 1 – Introduction à {domaine}**
-**1) Méditation** : (contenu temporaire – veuillez relancer la génération)
-**2) Notre Père** : ?
-**3) Je vous salue Marie** : ...
-**4) Gloire au Père** : consolidé.
-"""
-        for i in range(2, 6):
-            fallback += f"""
-
-**DIZAINE {i} – Concept supplémentaire**
-**1) Méditation** : (à compléter)
-**2) Notre Père** : ?
-**3) Je vous salue Marie** : ...
-**4) Gloire au Père** : consolidé."""
-        return fallback
-
-# ================= DÉVELOPPEMENT PERSONNEL (simplifié) =================
-def generer_personnel(defauts):
-    notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour."
-    resultats = []
-    for i, d in enumerate(defauts, 1):
-        prompt = f"Mystère {i} – {d}\n**Méditation** : souvenir d'un échec puis visualisation positive.\n**Notre Père** : {notre_pere} (3 fois)\n**Je vous salue Marie** : phrase courte positive (10 fois)\n**Gloire au Père** : Merci (3 fois)"
-        try:
-            raw = call_deepseek(prompt, max_tokens=500)
-            resultats.append(clean_markdown(raw))
-        except:
-            resultats.append(f"**Mystère {i} – {d}** (version de secours)")
-    return "\n\n".join(resultats)
-
-# ================= ROUTES =================
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/generer_jour_expertise', methods=['POST'])
-def generer_jour_expertise_route():
-    data = request.get_json()
-    domaine = data.get('domaine')
-    jour = data.get('jour')
-    if not domaine or not jour:
-        return jsonify({'error': 'Domaine et jour requis'}), 400
-    contenu = generer_jour_expertise(domaine, int(jour))
-    return jsonify({'contenu': contenu})
-
-@app.route('/generer_personnel', methods=['POST'])
-def generer_personnel_route():
-    data = request.get_json()
-    defauts = data.get('defauts')
-    if not defauts or len(defauts) != 5:
-        return jsonify({'error': '5 défauts requis'}), 400
-    contenu = generer_personnel(defauts)
-    return jsonify({'contenu': contenu})
-
-@app.route('/feedback', methods=['POST'])
-def feedback():
-    data = request.get_json()
-    note = data.get('note')
-    commentaire = data.get('commentaire')
-    if note is None or commentaire is None:
-        return jsonify({'error': 'Note et commentaire requis'}), 400
-    conn = sqlite3.connect('tazbot.db')
-    c = conn.cursor()
-    c.execute("INSERT INTO feedback (date, note, commentaire) VALUES (?, ?, ?)",
-              (str(datetime.now()), note, commentaire))
-    conn.commit()
-    conn.close()
-    return jsonify({'status': 'ok'})
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    // ========== CONSULTATION ==========
+    document.getElementById('generateConsult').addEventListener('click', () => {
+        let msg = document.getElementById('consultMessage').value.trim();
+        if (!msg) { alert('Message requis'); return; }
+        domaine = msg;
+        jours = {};
+        currentJour = 1;
+        chargerJour(1);
+        document.getElementById('jourContainer').style.display = 'block';
+        document.getElementById('startExpertise').style.display = 'none';
+        document.getElementById('consultResult').innerHTML = 'Redirection vers le mode Expertise...';
+        document.querySelector('.mode-btn[data-mode="expertise"]').click();
+    });
+</script>
+</body>
+</html>
