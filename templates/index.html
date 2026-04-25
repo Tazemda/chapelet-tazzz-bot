@@ -111,7 +111,7 @@
                 <span id="dayCounter">Jour 1 / 7</span>
                 <button id="nextDay">Suivant ▶</button>
             </div>
-            <div id="feedbackBox" class="feedback-box" style="display:none;">
+            <div id="feedbackBoxEx" class="feedback-box" style="display:none;">
                 <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
                 <div class="stars" id="starsEx">
                     <span class="star" data-value="1">☆</span>
@@ -127,12 +127,25 @@
         <div id="expertiseLoader" class="loader">⏳ Génération en cours...</div>
     </div>
 
-    <!-- Mode Personnel -->
+    <!-- Mode Personnel (avec feedback) -->
     <div id="personnelPanel" class="mode-panel">
         <p>📝 5 défauts (un par ligne) :</p>
         <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;Je dépense sans compter&#10;Je suis timide&#10;Je manque de motivation"></textarea>
         <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
         <div id="personnelResult" class="result"></div>
+        <!-- Bloc feedback pour le développement personnel -->
+        <div id="feedbackBoxPerso" class="feedback-box" style="display:none;">
+            <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
+            <div class="stars" id="starsPerso">
+                <span class="star" data-value="1">☆</span>
+                <span class="star" data-value="2">☆</span>
+                <span class="star" data-value="3">☆</span>
+                <span class="star" data-value="4">☆</span>
+                <span class="star" data-value="5">☆</span>
+            </div>
+            <textarea id="feedbackCommentPerso" rows="2" placeholder="Vos remarques..."></textarea>
+            <button id="submitFeedbackPerso">Envoyer mon avis</button>
+        </div>
     </div>
 
     <!-- Mode Consultation -->
@@ -179,7 +192,7 @@
             daySpan.innerText = `Jour ${jour} / 7`;
             document.getElementById('prevDay').disabled = (jour === 1);
             document.getElementById('nextDay').disabled = (jour === 7);
-            document.getElementById('feedbackBox').style.display = 'block';
+            document.getElementById('feedbackBoxEx').style.display = 'block';
         } else {
             contentDiv.innerHTML = '<em>Chargement du jour...</em>';
             chargerJour(jour);
@@ -231,7 +244,7 @@
         }
     });
 
-    // Feedback Expertise
+    // Feedback pour l'expertise
     let currentNoteEx = 0;
     const starsEx = document.querySelectorAll('#starsEx .star');
     starsEx.forEach(star => {
@@ -261,16 +274,54 @@
             const data = await res.json();
             if (data.status === 'ok') {
                 alert('Merci pour votre avis !');
-                document.getElementById('feedbackBox').style.display = 'none';
+                document.getElementById('feedbackBoxEx').style.display = 'none';
             } else alert('Erreur');
         } catch (err) { alert('Erreur réseau'); }
     });
 
-    // ========== PERSONNEL ==========
+    // ========== DÉVELOPPEMENT PERSONNEL ==========
+    // Éléments de feedback pour le personnel
+    let currentNotePerso = 0;
+    const starsPerso = document.querySelectorAll('#starsPerso .star');
+    starsPerso.forEach(star => {
+        star.addEventListener('click', () => {
+            currentNotePerso = parseInt(star.getAttribute('data-value'));
+            starsPerso.forEach(s => {
+                const val = parseInt(s.getAttribute('data-value'));
+                if (val <= currentNotePerso) {
+                    s.textContent = '★';
+                    s.classList.add('selected');
+                } else {
+                    s.textContent = '☆';
+                    s.classList.remove('selected');
+                }
+            });
+        });
+    });
+    document.getElementById('submitFeedbackPerso').addEventListener('click', async () => {
+        if (currentNotePerso === 0) { alert('Sélectionnez une note'); return; }
+        const comment = document.getElementById('feedbackCommentPerso').value.trim();
+        try {
+            const res = await fetch('/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ note: currentNotePerso, commentaire: comment })
+            });
+            const data = await res.json();
+            if (data.status === 'ok') {
+                alert('Merci pour votre avis !');
+                document.getElementById('feedbackBoxPerso').style.display = 'none';
+            } else alert('Erreur');
+        } catch (err) { alert('Erreur réseau'); }
+    });
+
     document.getElementById('generatePersonnel').addEventListener('click', async () => {
         let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
         if (defauts.length !== 5) { alert('5 défauts requis'); return; }
-        document.getElementById('personnelResult').innerHTML = '⏳ Génération...';
+        const resultDiv = document.getElementById('personnelResult');
+        resultDiv.innerHTML = '⏳ Génération...';
+        const feedbackDiv = document.getElementById('feedbackBoxPerso');
+        feedbackDiv.style.display = 'none';
         try {
             const res = await fetch('/generer_personnel', {
                 method: 'POST',
@@ -279,7 +330,8 @@
             });
             const data = await res.json();
             if (data.error) throw new Error(data.error);
-            document.getElementById('personnelResult').innerHTML = data.contenu.replace(/\n/g, '<br>');
+            resultDiv.innerHTML = data.contenu.replace(/\n/g, '<br>');
+            feedbackDiv.style.display = 'block';
         } catch (err) { alert('Erreur: ' + err.message); }
     });
 
