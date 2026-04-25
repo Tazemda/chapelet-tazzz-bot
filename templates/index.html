@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 CHAPELET TAZZZ BOT</title>
+    <title>🧠 CHAPELET TAZZZ BOT – EXPERTISE 7 JOURS</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -99,7 +99,7 @@
         <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
     </div>
 
-    <!-- Mode Expertise : sans page préliminaire -->
+    <!-- Mode Expertise -->
     <div id="expertisePanel" class="mode-panel active-panel">
         <p>🔬 Domaine à maîtriser :</p>
         <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
@@ -165,7 +165,7 @@
         });
     });
 
-    // ========== EXPERTISE (sans page 0) ==========
+    // ========== EXPERTISE : navigation jour 1 à 7 (sans page 0) ==========
     let domaine = '';
     let jours = {};
     let currentJour = 1;
@@ -202,7 +202,7 @@
         })
         .catch(err => {
             console.error(err);
-            jours[jour] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jour}. Réessayez plus tard.`;
+            jours[jour] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jour}. Rafraîchissez ou réessayez.`;
             afficherJour(jour);
         })
         .finally(() => loader.style.display = 'none');
@@ -231,7 +231,7 @@
         }
     });
 
-    // Feedback
+    // Feedback Expertise
     let currentNoteEx = 0;
     const starsEx = document.querySelectorAll('#starsEx .star');
     starsEx.forEach(star => {
