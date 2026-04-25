@@ -33,24 +33,23 @@
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 15px rgba(230,126,34,0.5); }
         .mode-panel { display: none; animation: fadeIn 0.4s ease; }
         .mode-panel.active-panel { display: block; }
-        textarea, input[type="text"] {
+        input, textarea {
             width: 100%; padding: 12px; margin: 10px 0;
             border-radius: 12px; border: none; background: #f0f0f0; font-size: 1rem;
         }
-        button.generate, button.nav-btn {
-            background: #e67e22; border: none; color: white; padding: 14px 28px;
-            font-size: 1.2rem; border-radius: 40px; cursor: pointer;
-            width: 100%; margin-top: 20px;
+        button {
+            background: #e67e22; border: none; color: white; padding: 12px 24px;
+            border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px;
         }
         .result {
             background: #0b1620;
             border-radius: 20px;
             padding: 20px;
-            margin-top: 30px;
+            margin-top: 20px;
             white-space: pre-wrap;
             font-family: monospace;
             font-size: 0.9rem;
-            max-height: 500px;
+            max-height: 550px;
             overflow-y: auto;
             border-left: 5px solid #e67e22;
         }
@@ -61,7 +60,7 @@
             margin-top: 20px;
             gap: 10px;
         }
-        .nav-buttons button { background: #2c3e4e; padding: 8px 16px; font-size: 1rem; width: auto; margin: 0; }
+        .nav-buttons button { width: auto; margin: 0; }
         .day-counter { font-size: 0.9rem; }
         .feedback-box {
             margin-top: 20px;
@@ -74,16 +73,8 @@
         .star { font-size: 28px; cursor: pointer; color: #555; transition: color 0.2s; }
         .star.selected { color: gold; }
         .loader { display: none; text-align: center; margin: 20px; }
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            font-size: 0.8rem;
-            opacity: 0.8;
-        }
-        .copyright {
-            font-size: 0.7rem;
-            margin-top: 10px;
-        }
+        .footer { text-align: center; margin-top: 30px; font-size: 0.8rem; opacity: 0.8; }
+        .copyright { font-size: 0.7rem; margin-top: 10px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -101,12 +92,12 @@
     <div id="expertisePanel" class="mode-panel active-panel">
         <p>🔬 Domaine à maîtriser :</p>
         <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
-        <button id="startExpertise" class="generate">✨ DÉMARRER L'EXPERTISE ✨</button>
+        <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
         <div id="jourContainer" style="display:none;">
             <div id="jourContent" class="result"></div>
             <div class="nav-buttons">
                 <button id="prevDay" disabled>◀ Précédent</button>
-                <span id="dayCounter">Intro / 8</span>
+                <span id="dayCounter">Page 0 / 8</span>
                 <button id="nextDay">Suivant ▶</button>
             </div>
             <div id="feedbackBox" class="feedback-box" style="display:none;">
@@ -125,11 +116,11 @@
         <div id="expertiseLoader" class="loader">⏳ Génération en cours...</div>
     </div>
 
-    <!-- Mode Personnel -->
+    <!-- Mode Personnel (simplifié) -->
     <div id="personnelPanel" class="mode-panel">
         <p>📝 5 défauts (un par ligne) :</p>
         <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;Je dépense sans compter&#10;Je suis timide&#10;Je manque de motivation"></textarea>
-        <button id="generatePersonnel" class="generate">✨ GÉNÉRER MON CHAPELET ✨</button>
+        <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
         <div id="personnelResult" class="result"></div>
     </div>
 
@@ -137,7 +128,7 @@
     <div id="consultationPanel" class="mode-panel">
         <p>💬 Décrivez votre besoin :</p>
         <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention du risque thrombo-embolique..."></textarea>
-        <button id="generateConsult" class="generate">✨ GÉNÉRER ✨</button>
+        <button id="generateConsult">✨ GÉNÉRER ✨</button>
         <div id="consultResult" class="result"></div>
     </div>
     <div class="footer">
@@ -146,7 +137,7 @@
 </div>
 
 <script>
-    // ========== GESTION DES MODES ==========
+    // Onglets
     const modeBtns = document.querySelectorAll('.mode-btn');
     const panels = {
         expertise: document.getElementById('expertisePanel'),
@@ -164,35 +155,31 @@
     });
 
     // ========== EXPERTISE ==========
-    let domaine = '';
-    let jours = {};
-    let currentPage = 0;
-    const totalPages = 8; // 0 = intro, 1-7 = jours
+    const PAGE0 = `# 📖 Bienvenue dans votre chapelet d’expertise
 
-    // Préambule simplifié, sans plan détaillé (les titres des jours seront dans le contenu)
-    function getPreambule() {
-        return `# 📖 Bienvenue dans votre chapelet d’expertise
-
-## Domaine : **« ${domaine} »**
-
-## 🧠 Comment utiliser ce chapelet ?
-- **Procurez‑vous un vrai chapelet** (ou utilisez vos doigts pour égrener).
+## 🧠 COMMENT UTILISER LE CHAPELET TAZZZ BOT ?
+- **Procurez‑vous un vrai chapelet** que vous égrènerez durant vos lectures et récitations.
 - Chaque jour, lisez ou récitez à voix haute le contenu du jour.
 - Respectez les **instructions** : 
-  - *Tenez le gros grain* pour la **Méditation**.
-  - *Répétez 3 fois* le **Notre Père**.
-  - *Répétez 10 fois* (5 lectures, 5 sans regarder) le **Je vous salue Marie**.
-  - *Répétez 3 fois* la **Gloire au Père**.
+  - *Tenez le gros grain correspondant* pour la **Méditation du Mystère**. Chaque Mystère correspond tout simplement à une grande fiche synthétique sur l'un des 5 sujets du jour. Vous devrez lire simplement chaque mystère et si nécessaire vous pouvez consulter vos notes ou d'autres sources.
+  - *Répétez 3 fois* le contenu qui est à la place du **Notre Père**. 
+  - *Répétez 10 fois* (5 lectures, 5 sans regarder) le contenu à la place du **Je vous salue Marie**.
+  - *Répétez 3 fois* le contenu à la place de **Gloire au Père**.
 - Les **5 dizaines** d’un jour correspondent à 5 concepts clés.
 
 👉 Cliquez sur **“Suivant”** pour commencer le **Jour 1**.`;
-    }
+
+    let domaine = '';
+    let jours = {};
+    let currentPage = 0; // 0 = page intro, 1..7 = jours
+    const totalPages = 8;
 
     function afficherPage(page) {
         const contentDiv = document.getElementById('jourContent');
+        const daySpan = document.getElementById('dayCounter');
         if (page === 0) {
-            contentDiv.innerHTML = getPreambule().replace(/\n/g, '<br>');
-            document.getElementById('dayCounter').innerText = `Intro / ${totalPages}`;
+            contentDiv.innerHTML = PAGE0.replace(/\n/g, '<br>');
+            daySpan.innerText = 'Intro / 8';
             document.getElementById('prevDay').disabled = true;
             document.getElementById('nextDay').disabled = false;
             document.getElementById('feedbackBox').style.display = 'none';
@@ -200,12 +187,12 @@
             const jourNum = page;
             if (jours[jourNum]) {
                 contentDiv.innerHTML = jours[jourNum].replace(/\n/g, '<br>');
-                document.getElementById('dayCounter').innerText = `Jour ${jourNum} / 7`;
+                daySpan.innerText = `Jour ${jourNum} / 7`;
                 document.getElementById('prevDay').disabled = false;
                 document.getElementById('nextDay').disabled = (jourNum === 7);
                 document.getElementById('feedbackBox').style.display = 'block';
             } else {
-                contentDiv.innerHTML = '<em>Chargement du jour en cours...</em>';
+                contentDiv.innerHTML = '<em>Chargement du jour...</em>';
                 chargerJour(jourNum);
             }
         }
@@ -227,7 +214,7 @@
         })
         .catch(err => {
             console.error(err);
-            jours[jourNum] = `--- Jour ${jourNum} (erreur) ---\nImpossible de générer le contenu pour le moment. Veuillez réessayer plus tard.`;
+            jours[jourNum] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jourNum}. Réessayez plus tard.`;
             afficherPage(jourNum);
         })
         .finally(() => loader.style.display = 'none');
@@ -256,7 +243,7 @@
         }
     });
 
-    // Feedback expertise
+    // Feedback
     let currentNoteEx = 0;
     const starsEx = document.querySelectorAll('#starsEx .star');
     starsEx.forEach(star => {
@@ -287,7 +274,7 @@
             if (data.status === 'ok') {
                 alert('Merci pour votre avis !');
                 document.getElementById('feedbackBox').style.display = 'none';
-            } else alert('Erreur d’envoi');
+            } else alert('Erreur');
         } catch (err) { alert('Erreur réseau'); }
     });
 
@@ -318,7 +305,7 @@
         afficherPage(0);
         document.getElementById('jourContainer').style.display = 'block';
         document.getElementById('startExpertise').style.display = 'none';
-        document.getElementById('consultResult').innerHTML = 'Redirection vers le mode Expertise... (consultez l’onglet Expertise)';
+        document.getElementById('consultResult').innerHTML = 'Redirection vers le mode Expertise...';
         document.querySelector('.mode-btn[data-mode="expertise"]').click();
     });
 </script>
