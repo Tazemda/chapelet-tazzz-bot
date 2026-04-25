@@ -101,7 +101,7 @@
         <button class="mode-btn" data-mode="consultation">💬 Consultation guidée</button>
     </div>
 
-    <!-- Mode Expertise : navigation jour par jour avec page intro -->
+    <!-- ================= MODE EXPERTISE ================= -->
     <div id="expertisePanel" class="mode-panel active-panel">
         <p>🔬 Domaine à maîtriser :</p>
         <input type="text" id="domaine" placeholder="Ex: Prévention du risque cardio-vasculaire">
@@ -110,10 +110,10 @@
             <div id="expertiseContent" class="result"></div>
             <div class="nav-buttons">
                 <button id="prevDay" disabled>◀ Précédent</button>
-                <span id="dayCounter">Page intro / 8</span>
+                <span id="dayCounter">Intro / 8</span>
                 <button id="nextDay">Suivant ▶</button>
             </div>
-            <div id="feedbackBox" class="feedback-box" style="display:none;">
+            <div id="feedbackBoxEx" class="feedback-box" style="display:none;">
                 <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
                 <div class="stars" id="starsEx">
                     <span class="star" data-value="1">☆</span>
@@ -122,22 +122,35 @@
                     <span class="star" data-value="4">☆</span>
                     <span class="star" data-value="5">☆</span>
                 </div>
-                <textarea id="feedbackComment" rows="2" placeholder="Vos remarques..."></textarea>
-                <button id="submitFeedback">Envoyer mon avis</button>
+                <textarea id="feedbackCommentEx" rows="2" placeholder="Vos remarques..."></textarea>
+                <button id="submitFeedbackEx">Envoyer mon avis</button>
             </div>
         </div>
         <div id="expertiseLoader" class="loader">⏳ Génération en cours...</div>
     </div>
 
-    <!-- Mode Personnel : 5 défauts -->
+    <!-- ================= MODE DÉVELOPPEMENT PERSONNEL ================= -->
     <div id="personnelPanel" class="mode-panel">
         <p>📝 5 défauts (un par ligne) :</p>
         <div class="defauts-group" id="defauts-list"></div>
         <button id="generatePersonnel" class="generate">✨ GÉNÉRER MON CHAPELET ✨</button>
         <div id="personnelResult" class="result" style="margin-top:20px;"></div>
+        <!-- Bloc de feedback pour le développement personnel -->
+        <div id="feedbackBoxPersonnel" class="feedback-box" style="display:none;">
+            <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
+            <div class="stars" id="starsPerso">
+                <span class="star" data-value="1">☆</span>
+                <span class="star" data-value="2">☆</span>
+                <span class="star" data-value="3">☆</span>
+                <span class="star" data-value="4">☆</span>
+                <span class="star" data-value="5">☆</span>
+            </div>
+            <textarea id="feedbackCommentPerso" rows="2" placeholder="Vos remarques..."></textarea>
+            <button id="submitFeedbackPerso">Envoyer mon avis</button>
+        </div>
     </div>
 
-    <!-- Mode Consultation -->
+    <!-- ================= MODE CONSULTATION ================= -->
     <div id="consultationPanel" class="mode-panel">
         <p>💬 Décrivez votre situation ou votre besoin :</p>
         <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention du risque cardio-vasculaire..."></textarea>
@@ -165,7 +178,7 @@
         });
     });
 
-    // ========== MODE EXPERTISE (navigation jour par jour) ==========
+    // ========== EXPERTISE (navigation jour par jour) ==========
     let domaine = '';
     let jours = {};
     let currentPage = 0; // 0 = intro, 1-7 = jours
@@ -200,7 +213,7 @@
             document.getElementById('dayCounter').innerText = 'Intro / 8';
             document.getElementById('prevDay').disabled = true;
             document.getElementById('nextDay').disabled = false;
-            document.getElementById('feedbackBox').style.display = 'none';
+            document.getElementById('feedbackBoxEx').style.display = 'none';
         } else {
             const jourNum = page;
             if (jours[jourNum]) {
@@ -208,7 +221,7 @@
                 document.getElementById('dayCounter').innerText = `Jour ${jourNum} / 7`;
                 document.getElementById('prevDay').disabled = false;
                 document.getElementById('nextDay').disabled = (jourNum === 7);
-                document.getElementById('feedbackBox').style.display = 'block';
+                document.getElementById('feedbackBoxEx').style.display = 'block';
             } else {
                 contentDiv.innerHTML = '<em>Chargement du jour...</em>';
                 chargerJour(jourNum);
@@ -279,9 +292,9 @@
             });
         });
     });
-    document.getElementById('submitFeedback').addEventListener('click', async () => {
+    document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
         if (currentNoteEx === 0) { alert('Sélectionnez une note'); return; }
-        const comment = document.getElementById('feedbackComment').value.trim();
+        const comment = document.getElementById('feedbackCommentEx').value.trim();
         try {
             const res = await fetch('/feedback', {
                 method: 'POST',
@@ -291,12 +304,12 @@
             const data = await res.json();
             if (data.status === 'ok') {
                 alert('Merci pour votre avis !');
-                document.getElementById('feedbackBox').style.display = 'none';
+                document.getElementById('feedbackBoxEx').style.display = 'none';
             } else alert('Erreur');
         } catch (err) { alert('Erreur réseau'); }
     });
 
-    // ========== MODE DÉVELOPPEMENT PERSONNEL ==========
+    // ========== DÉVELOPPEMENT PERSONNEL ==========
     // Créer 5 champs
     const defautsContainer = document.getElementById('defauts-list');
     for (let i = 1; i <= 5; i++) {
@@ -307,14 +320,51 @@
         defautsContainer.appendChild(inp);
     }
 
+    // Éléments de feedback pour personnel
+    const personnelResultDiv = document.getElementById('personnelResult');
+    const feedbackBoxPerso = document.getElementById('feedbackBoxPersonnel');
+    let currentNotePerso = 0;
+    const starsPerso = document.querySelectorAll('#starsPerso .star');
+    starsPerso.forEach(star => {
+        star.addEventListener('click', () => {
+            currentNotePerso = parseInt(star.getAttribute('data-value'));
+            starsPerso.forEach(s => {
+                const val = parseInt(s.getAttribute('data-value'));
+                if (val <= currentNotePerso) {
+                    s.textContent = '★';
+                    s.classList.add('selected');
+                } else {
+                    s.textContent = '☆';
+                    s.classList.remove('selected');
+                }
+            });
+        });
+    });
+    document.getElementById('submitFeedbackPerso').addEventListener('click', async () => {
+        if (currentNotePerso === 0) { alert('Sélectionnez une note'); return; }
+        const comment = document.getElementById('feedbackCommentPerso').value.trim();
+        try {
+            const res = await fetch('/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ note: currentNotePerso, commentaire: comment })
+            });
+            const data = await res.json();
+            if (data.status === 'ok') {
+                alert('Merci pour votre avis !');
+                feedbackBoxPerso.style.display = 'none';
+            } else alert('Erreur');
+        } catch (err) { alert('Erreur réseau'); }
+    });
+
     document.getElementById('generatePersonnel').addEventListener('click', async () => {
         let defauts = Array.from(document.querySelectorAll('#personnelPanel .defaut-input')).map(i => i.value.trim()).filter(v => v);
         if (defauts.length !== 5) {
             alert('Veuillez remplir les 5 défauts.');
             return;
         }
-        const resultDiv = document.getElementById('personnelResult');
-        resultDiv.innerHTML = '⏳ Génération en cours...';
+        personnelResultDiv.innerHTML = '⏳ Génération en cours...';
+        feedbackBoxPerso.style.display = 'none';
         try {
             const res = await fetch('/generer_personnel', {
                 method: 'POST',
@@ -323,10 +373,11 @@
             });
             const data = await res.json();
             if (data.error) throw new Error(data.error);
-            resultDiv.innerHTML = data.chapelet.replace(/\n/g, '<br>');
+            personnelResultDiv.innerHTML = data.contenu.replace(/\n/g, '<br>');
+            feedbackBoxPerso.style.display = 'block';
         } catch (err) {
             alert('Erreur: ' + err.message);
-            resultDiv.innerHTML = '';
+            personnelResultDiv.innerHTML = '';
         }
     });
 
@@ -337,7 +388,7 @@
         const resultDiv = document.getElementById('consultResult');
         resultDiv.innerHTML = '⏳ Analyse...';
         try {
-            // Redirige simplement vers l'expertise avec le message comme domaine
+            // Redirige vers l'expertise avec le message comme domaine
             domaine = msg;
             jours = {};
             currentPage = 0;
