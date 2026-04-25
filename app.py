@@ -11,7 +11,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-def call_deepseek(prompt, max_tokens=1500):
+def call_deepseek(prompt, max_tokens=2000):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API manquante")
     headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
@@ -22,7 +22,7 @@ def call_deepseek(prompt, max_tokens=1500):
         "max_tokens": max_tokens
     }
     try:
-        resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=120)
+        resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=150)
         if resp.status_code == 200:
             return resp.json()["choices"][0]["message"]["content"]
         else:
@@ -46,23 +46,32 @@ def init_db():
     conn.close()
 init_db()
 
-# ---------- PROMPT COURT POUR UN JOUR (5 dizaines) ----------
+# ================= EXPERTISE (7 jours, titres dynamiques) =================
 PROMPT_JOUR = """
-Domaine: "{domaine}". Jour {jour_num} – {titre_jour}.
-Génère 5 DIZAINES (concepts) exactement au format ci-dessous. Sois concis mais complet.
+Tu es un expert pédagogique. Domaine : "{domaine}".
 
-**DIZAINE 1 – Concept : [nom]**
-**1) Méditation** : (définition, exemple, point clé)
-**2) Notre Père** : (question problématique)
-**3) Je vous salue Marie** : (synthèse en 2-3 phrases)
-**4) Gloire au Père** : "Le concept [nom] est consolidé."
+Génère le contenu complet du **Jour {jour_num}** sur 7 jours.  
+L'objectif général du jour {jour_num} est : {titre_objectif}.
 
-(répète pour DIZAINE 2 à 5)
-Commence directement par "**DIZAINE 1**". Pas de titre avant.
+Commence par écrire le **titre du jour** sous la forme (obligatoire) :
+## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**
+
+Puis, rédige exactement **5 DIZAINES** selon le modèle ci‑dessous.  
+Chaque dizaine doit être complète et détaillée.
+
+**DIZAINE 1 – Concept : [nom du concept]**
+**1) Méditation** : (paragraphe dense avec définitions, exemples concrets, points clés)
+**2) Notre Père** : (une question problématique pour faire réfléchir)
+**3) Je vous salue Marie** : (un paragraphe synthétique de plusieurs phrases, à mémoriser)
+**4) Gloire au Père** : "Le concept "[nom]" est consolidé."
+
+Répète pour **DIZAINE 2** à **DIZAINE 5**.
+
+Soigne la qualité et l'exhaustivité. Contenu directement utilisable pour un apprentissage autonome.
 """
 
 def generer_jour_expertise(domaine, jour_num):
-    titres_jours = [
+    objectifs = [
         "Découverte des bases fondamentales",
         "Approfondissement des pratiques clés",
         "Cas complexes et exceptions",
@@ -71,37 +80,40 @@ def generer_jour_expertise(domaine, jour_num):
         "Synthèse et liens entre concepts",
         "Auto‑évaluation et perfectionnement"
     ]
-    titre = titres_jours[jour_num-1]
-    prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_jour=titre)
+    titre_objectif = objectifs[jour_num-1]
+    prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_objectif=titre_objectif)
     try:
-        raw = call_deepseek(prompt, max_tokens=1500)
+        raw = call_deepseek(prompt, max_tokens=2000)
         contenu = clean_markdown(raw)
-        return f"## **JOUR {jour_num} – {titre.upper()}**\n\n{contenu}"
+        # Vérification minimale : si le contenu ne commence pas par "## **JOUR", on ajoute un titre générique
+        if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
+            contenu = f"## **JOUR {jour_num} – {titre_objectif.upper()}**\n\n{contenu}"
+        return contenu
     except Exception as e:
         print(f"Erreur jour {jour_num}: {e}")
-        return f"""## **JOUR {jour_num} – {titre.upper()}** (mode dégradé)
+        return f"""## **JOUR {jour_num} – {titre_objectif.upper()}** (version de secours)
 
 **DIZAINE 1 – Introduction à {domaine}**
-**1) Méditation** : (contenu temporaire – vérifiez votre connexion API)
+**1) Méditation** : (contenu temporaire – veuillez réessayer plus tard)
 **2) Notre Père** : ?
 **3) Je vous salue Marie** : ...
 **4) Gloire au Père** : consolidé.
-(Dizaines 2 à 5 similaires)"""
+(Dizaines 2 à 5 structure similaire)"""
 
-# ---------- MODE PERSONNEL (simplifié) ----------
+# ================= DÉVELOPPEMENT PERSONNEL (simplifié) =================
 def generer_personnel(defauts):
     notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour."
     resultats = []
     for i, d in enumerate(defauts, 1):
-        prompt = f"Mystère {i} – {d}\n**Méditation** : souvenir d'échec puis visualisation positive.\n**Notre Père** : {notre_pere} (3 fois)\n**Je vous salue Marie** : phrase courte positive (10 fois)\n**Gloire au Père** : Merci (3 fois)"
+        prompt = f"Mystère {i} – {d}\n**Méditation** : souvenir d'un échec puis visualisation positive.\n**Notre Père** : {notre_pere} (3 fois)\n**Je vous salue Marie** : phrase courte positive corrigeant {d} (10 fois)\n**Gloire au Père** : Merci (3 fois)"
         try:
-            raw = call_deepseek(prompt, max_tokens=400)
+            raw = call_deepseek(prompt, max_tokens=500)
             resultats.append(clean_markdown(raw))
         except:
-            resultats.append(f"**Mystère {i} – {d}**\nMéditation...\nNotre Père...\nAve Maria...")
+            resultats.append(f"**Mystère {i} – {d}** (version de secours)\nMéditation...\nNotre Père...\nAve Maria...")
     return "\n\n".join(resultats)
 
-# ---------- ROUTES ----------
+# ================= ROUTES =================
 @app.route('/')
 def index():
     return render_template('index.html')
