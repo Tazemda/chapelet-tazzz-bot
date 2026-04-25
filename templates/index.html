@@ -25,10 +25,21 @@
         }
         h1 { text-align: center; font-size: 2.2rem; margin-bottom: 5px; }
         .subtitle { text-align: center; font-size: 1rem; opacity: 0.8; margin-bottom: 25px; }
-        .mode-selector { display: flex; gap: 15px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap; }
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
         .mode-btn {
-            background: #2c3e4e; border: none; color: white; padding: 12px 24px;
-            border-radius: 40px; cursor: pointer; font-weight: bold;
+            background: #2c3e4e;
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
         }
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 15px rgba(230,126,34,0.5); }
         .mode-panel { display: none; animation: fadeIn 0.4s ease; }
@@ -97,7 +108,7 @@
             <div id="jourContent" class="result"></div>
             <div class="nav-buttons">
                 <button id="prevDay" disabled>◀ Précédent</button>
-                <span id="dayCounter">Page 0 / 8</span>
+                <span id="dayCounter">Intro / 8</span>
                 <button id="nextDay">Suivant ▶</button>
             </div>
             <div id="feedbackBox" class="feedback-box" style="display:none;">
@@ -116,7 +127,7 @@
         <div id="expertiseLoader" class="loader">⏳ Génération en cours...</div>
     </div>
 
-    <!-- Mode Personnel (simplifié) -->
+    <!-- Mode Personnel -->
     <div id="personnelPanel" class="mode-panel">
         <p>📝 5 défauts (un par ligne) :</p>
         <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;Je dépense sans compter&#10;Je suis timide&#10;Je manque de motivation"></textarea>
@@ -155,23 +166,26 @@
     });
 
     // ========== EXPERTISE ==========
+    // Page intro fixe (définitive)
     const PAGE0 = `# 📖 Bienvenue dans votre chapelet d’expertise
 
 ## 🧠 COMMENT UTILISER LE CHAPELET TAZZZ BOT ?
 - **Procurez‑vous un vrai chapelet** que vous égrènerez durant vos lectures et récitations.
 - Chaque jour, lisez ou récitez à voix haute le contenu du jour.
-- Respectez les **instructions** : 
-  - *Tenez le gros grain correspondant* pour la **Méditation du Mystère**. Chaque Mystère correspond tout simplement à une grande fiche synthétique sur l'un des 5 sujets du jour. Vous devrez lire simplement chaque mystère et si nécessaire vous pouvez consulter vos notes ou d'autres sources.
-  - *Répétez 3 fois* le contenu qui est à la place du **Notre Père**. 
+- Respectez les **instructions** :
+  - *Tenez le gros grain correspondant* pour la **Méditation du Mystère**. Chaque Mystère correspond à une grande fiche synthétique sur l'un des 5 sujets du jour. Vous pouvez consulter vos notes ou d'autres sources.
+  - *Répétez 3 fois* le contenu qui est à la place du **Notre Père**.
   - *Répétez 10 fois* (5 lectures, 5 sans regarder) le contenu à la place du **Je vous salue Marie**.
   - *Répétez 3 fois* le contenu à la place de **Gloire au Père**.
 - Les **5 dizaines** d’un jour correspondent à 5 concepts clés.
+
+👉 Nous vous suggérons dans un premier temps d'ouvrir les 7 journées pour avoir un aperçu global du travail à faire durant la semaine.
 
 👉 Cliquez sur **“Suivant”** pour commencer le **Jour 1**.`;
 
     let domaine = '';
     let jours = {};
-    let currentPage = 0; // 0 = page intro, 1..7 = jours
+    let currentPage = 0; // 0 = intro, 1..7 = jours
     const totalPages = 8;
 
     function afficherPage(page) {
@@ -243,7 +257,7 @@
         }
     });
 
-    // Feedback
+    // Feedback (expertise)
     let currentNoteEx = 0;
     const starsEx = document.querySelectorAll('#starsEx .star');
     starsEx.forEach(star => {
