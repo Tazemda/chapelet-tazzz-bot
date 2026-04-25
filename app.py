@@ -3,9 +3,38 @@ import re
 import sqlite3
 from datetime import datetime
 from flask import Flask, request, jsonify, render_template
+import requests
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
+
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
+DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
+
+def call_deepseek(prompt, max_tokens=3000, timeout=180):
+    if not DEEPSEEK_API_KEY:
+        raise Exception("❌ Clé API DeepSeek manquante. Ajoutez DEEPSEEK_API_KEY dans les variables d'environnement.")
+    headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
+    payload = {
+        "model": "deepseek-chat",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.7,
+        "max_tokens": max_tokens
+    }
+    try:
+        resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=timeout)
+        if resp.status_code == 200:
+            return resp.json()["choices"][0]["message"]["content"]
+        else:
+            raise Exception(f"API error {resp.status_code}: {resp.text[:200]}")
+    except requests.exceptions.Timeout:
+        raise Exception("⏱️ Timeout : DeepSeek n'a pas répondu dans les 180 secondes.")
+    except Exception as e:
+        raise Exception(f"❌ Erreur API: {str(e)}")
+
+def clean_markdown(text):
+    text = re.sub(r'```[\s\S]*?```', '', text)
+    return text.replace('`', '').strip()
 
 def init_db():
     conn = sqlite3.connect('tazbot.db')
@@ -19,67 +48,71 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= GÉNÉRATION LOCALE (sans API) =================
-def generer_contenu_jour(domaine, jour_num):
-    """Génère un contenu pédagogique complet de 5 dizaines sans appel externe."""
-    titres_jours = [
+# ================= PROMPT POUR DEEPSEEK (structure exigeante mais concise) =================
+PROMPT_JOUR = """
+Tu es un expert pédagogique. Domaine : "{domaine}".
+
+Génère le contenu du **Jour {jour_num}** (objectif : {titre_objectif}) pour un chapelet d’apprentissage.
+
+**RÈGLES STRICTES** :
+- Commence par écrire le titre : `## **JOUR {jour_num} – [TITRE EN MAJUSCULES, ADAPTÉ]`
+- Ensuite, EXACTEMENT 5 DIZAINES (DIZAINE 1 à 5), chacune au format suivant :
+
+**DIZAINE X – Concept : [nom du concept]**
+
+**1) Méditation (gros grain)** : 3 à 5 phrases denses, avec un exemple clair (comme pour le PICO : définition, rôle, application).
+
+**2) Notre Père** : une seule phrase, question centrale qui résout un problème clé.
+
+**3) Je vous salue Marie** (à répéter 10 fois) : 4 à 6 phrases synthétiques, mémorisables, qui résument le concept.
+
+**4) Gloire au Père** (à répéter 3 fois) : "Le concept [nom] est consolidé."
+
+Ne dépasse pas 2500 tokens au total. Soigne la qualité et l’adaptation au domaine.
+"""
+
+def generer_jour_expertise(domaine, jour_num):
+    objectifs = [
         "Découverte des bases fondamentales",
         "Approfondissement des pratiques clés",
         "Cas complexes et exceptions",
         "Contrôle qualité et indicateurs",
         "Gestion des risques et plan d'action",
-        "Synthese et liens entre concepts",
+        "Synthèse et liens entre concepts",
         "Auto‑évaluation et perfectionnement"
     ]
-    titre_jour = titres_jours[jour_num-1]
-    
-    # Concepts génériques adaptables
-    concepts = [
-        f"Introduction à {domaine}",
-        f"Principes clés de {domaine}",
-        f"Méthodologie pour {domaine}",
-        f"Outils essentiels en {domaine}",
-        f"Indicateurs de succès pour {domaine}"
-    ]
-    
-    contenu = f"## **JOUR {jour_num} – {titre_jour.upper()}**\n\n"
-    for i, concept in enumerate(concepts, 1):
-        contenu += f"""
-**DIZAINE {i} – Concept : {concept}**
+    titre_objectif = objectifs[jour_num-1]
+    prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_objectif=titre_objectif)
+    try:
+        raw = call_deepseek(prompt, max_tokens=3000, timeout=180)
+        contenu = clean_markdown(raw)
+        # Vérification que le titre est présent
+        if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
+            contenu = f"## **JOUR {jour_num} – {titre_objectif.upper()}**\n\n{contenu}"
+        return contenu
+    except Exception as e:
+        # On renvoie l'erreur directement pour que l'utilisateur voie le vrai problème
+        return f"❌ **Erreur DeepSeek** : {str(e)}\n\nVeuillez vérifier votre clé API, votre crédit, ou réessayer plus tard."
 
-**1) Méditation (gros grain)**  
-{domaine} est un domaine vaste. Par exemple, dans la pratique quotidienne, on rencontre des situations où {concept.lower()} est déterminant.  
-Pour illustrer : un professionnel doit maîtriser les règles de base, éviter les erreurs fréquentes, et appliquer des solutions éprouvées.  
-La connaissance de {concept.lower()} permet d’améliorer la qualité et la sécurité.
-
-**2) Notre Père**  
-« Quelle est la première action à mener pour bien appliquer {concept.lower()} dans une situation réelle ? »
-
-**3) Je vous salue Marie** (à répéter 10 fois)  
-Je retiens que {concept.lower()} repose sur trois piliers : la prévention, la réactivité et l’amélioration continue.  
-En cas de doute, je me réfère aux recommandations officielles.  
-La répétition régulière rend ces gestes automatiques.  
-Je pratique chaque jour pour ancrer ces connaissances.  
-Ainsi, je deviens compétent et fiable dans {domaine}.
-
-**4) Gloire au Père** (à répéter 3 fois)  
-« Le concept "{concept}" est consolidé. »
-
-"""
-    return contenu
-
-# ================= MODE PERSONNEL (local) =================
+# ================= MODE PERSONNEL (utilise aussi DeepSeek) =================
 def generer_personnel(defauts):
-    notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour."
+    notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes."
     resultats = []
     for i, d in enumerate(defauts, 1):
-        resultats.append(f"""
-**Mystère {i} – {d}**  
-**Méditation** : Je me souviens d’un moment où ce défaut m’a nui. Aujourd’hui, je visualise le comportement opposé : je me lève tôt, je range, je termine mes projets, je sors et je mène une action concrète chaque jour.  
-**Notre Père** : {notre_pere} *(à répéter 3 fois)*  
-**Je vous salue Marie** : Je transforme {d} en force par la répétition positive. *(10 fois)*  
-**Gloire au Père** : Je remercie Dieu et l’univers pour cette transformation. *(3 fois)*
-""")
+        prompt = f"""
+Génère un **Mystère {i}** pour le défaut : "{d}".
+Structure :
+**Mystère {i} – {d}**
+**Méditation** : (rappel d’un échec passé + visualisation positive, 2-3 phrases)
+**Notre Père** : "{notre_pere}" (à répéter 3 fois)
+**Je vous salue Marie** : (une phrase courte positive qui corrige ce défaut, à répéter 10 fois)
+**Gloire au Père** : "Je remercie Dieu et l'univers pour cette transformation." (à répéter 3 fois)
+"""
+        try:
+            raw = call_deepseek(prompt, max_tokens=600, timeout=90)
+            resultats.append(clean_markdown(raw))
+        except Exception as e:
+            resultats.append(f"❌ **Erreur pour le défaut {i}** : {str(e)}")
     return "\n\n".join(resultats)
 
 # ================= ROUTES =================
@@ -94,7 +127,7 @@ def generer_jour_expertise_route():
     jour = data.get('jour')
     if not domaine or not jour:
         return jsonify({'error': 'Domaine et jour requis'}), 400
-    contenu = generer_contenu_jour(domaine, int(jour))
+    contenu = generer_jour_expertise(domaine, int(jour))
     return jsonify({'contenu': contenu})
 
 @app.route('/generer_personnel', methods=['POST'])
