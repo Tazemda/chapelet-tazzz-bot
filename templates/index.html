@@ -148,7 +148,7 @@
 </div>
 
 <script>
-    // Modes
+    // Gestion des onglets
     const modeBtns = document.querySelectorAll('.mode-btn');
     const panels = {
         expertise: document.getElementById('expertisePanel'),
@@ -165,11 +165,10 @@
         });
     });
 
-    // Expertise
+    // ========== EXPERTISE ==========
     let domaine = '';
     let jours = {};
     let currentJour = 1;
-    const totalJours = 7;
 
     function afficherJour(jour) {
         const contentDiv = document.getElementById('jourContent');
@@ -225,7 +224,7 @@
         }
     });
     document.getElementById('nextDay').addEventListener('click', () => {
-        if (currentJour < totalJours) {
+        if (currentJour < 7) {
             currentJour++;
             afficherJour(currentJour);
         }
