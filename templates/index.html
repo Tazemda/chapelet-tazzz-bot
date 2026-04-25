@@ -37,7 +37,6 @@
             width: 100%; padding: 12px; margin: 10px 0;
             border-radius: 12px; border: none; background: #f0f0f0; font-size: 1rem;
         }
-        .defauts-group { display: flex; flex-direction: column; gap: 10px; margin: 15px 0; }
         button.generate, button.nav-btn {
             background: #e67e22; border: none; color: white; padding: 14px 28px;
             font-size: 1.2rem; border-radius: 40px; cursor: pointer; width: 100%; margin-top: 20px;
@@ -100,7 +99,7 @@
     <!-- Mode Expertise -->
     <div id="expertisePanel" class="mode-panel active-panel">
         <p>🔬 Domaine à maîtriser :</p>
-        <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
+        <input type="text" id="domaine" placeholder="Ex: Prévention des risques thrombo-emboliques">
         <button id="startExpertise" class="generate">✨ DÉMARRER L'EXPERTISE ✨</button>
         <div id="jourContainer" style="display:none;">
             <div id="jourContent" class="result"></div>
@@ -136,7 +135,7 @@
     <!-- Mode Consultation -->
     <div id="consultationPanel" class="mode-panel">
         <p>💬 Décrivez votre besoin :</p>
-        <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention du risque thrombo-embolique..."></textarea>
+        <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention des risques thrombo-emboliques..."></textarea>
         <button id="generateConsult" class="generate">✨ GÉNÉRER ✨</button>
         <div id="consultResult" class="result"></div>
     </div>
