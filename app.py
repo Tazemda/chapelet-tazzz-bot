@@ -11,7 +11,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-def call_deepseek(prompt, max_tokens=1800):
+def call_deepseek(prompt, max_tokens=2200):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API manquante")
     headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
@@ -46,64 +46,55 @@ def init_db():
     conn.close()
 init_db()
 
-# PROMPT COURT pour générer uniquement les 5 dizaines d'un jour
+# PROMPT avec titre dynamique en majuscules
 PROMPT_JOUR = """
-Tu es un expert pédagogique. Domaine: "{domaine}". Jour {jour_num}: {titre_jour}.
+Tu es un expert pédagogique. Domaine: "{domaine}". Jour {jour_num}.
 
-Génère 5 DIZAINES exactement comme suit (ne mets pas de titre général) :
+Génère d'abord le **titre du jour** en MAJUSCULES et en GRAS, sur une ligne seule, par exemple:
+**JOUR 1 – DÉCOUVERTE DES BASES FONDAMENTALES**
 
-**DIZAINE 1 – Concept : [nom]**
-**1) Méditation** : (un paragraphe dense avec définitions, exemples, points clés)
+Puis génère **exactement 5 DIZAINES** (DIZAINE 1 à 5). Pour chaque dizaine, utilise ce format:
+
+**DIZAINE X – Concept : [nom du concept]**
+
+**1) Méditation** : (paragraphe dense avec définitions, exemples, points clés)
 **2) Notre Père** : (une question problématique)
-**3) Je vous salue Marie** : (un paragraphe synthétique de plusieurs phrases)
+**3) Je vous salue Marie** : (paragraphe synthétique de plusieurs phrases)
 **4) Gloire au Père** : "Le concept [nom] est consolidé."
 
-(répète pour DIZAINE 2 à 5)
-
-Contenu adapté au domaine. Commence par "**DIZAINE 1**". Pas de texte avant.
+Important : ne coupe pas la dernière dizaine. Le contenu doit être complet et adapté au domaine "{domaine}". Commence par le titre en majuscules.
 """
 
 def generer_jour_expertise(domaine, jour_num):
-    titres_jours = [
-        "Découverte des bases fondamentales",
-        "Approfondissement des pratiques clés",
-        "Cas complexes et exceptions",
-        "Contrôle qualité et indicateurs",
-        "Gestion des risques et plan d'action",
-        "Synthèse et liens entre concepts",
-        "Auto‑évaluation et perfectionnement"
-    ]
-    titre_jour = titres_jours[jour_num-1]
     try:
-        prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_jour=titre_jour)
-        raw = call_deepseek(prompt, max_tokens=1800)
+        prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num)
+        raw = call_deepseek(prompt, max_tokens=2400)  # légère augmentation
         contenu = clean_markdown(raw)
-        return f"## {titre_jour}\n\n{contenu}"
+        return contenu
     except Exception as e:
         print(f"Erreur jour {jour_num}: {e}")
-        return f"""## {titre_jour}
-**DIZAINE 1 – Introduction à {domaine}**
-**1) Méditation** : {domaine} nécessite une prévention adaptée. Exemple : triade de Virchow.
-**2) Notre Père** : Quels sont les trois facteurs de risque ?
-**3) Je vous salue Marie** : Je retiens les piliers de la prévention.
+        return f"""**JOUR {jour_num} – APERÇU GÉNÉRIQUE**
+*Contenu non disponible via API.*
+
+**DIZAINE 1 – Aperçu de {domaine}**
+**1) Méditation** : Introduction aux bases de {domaine}...
+**2) Notre Père** : Question clé...
+**3) Je vous salue Marie** : Synthèse...
 **4) Gloire au Père** : Consolidé.
+(Suite non générée suite à une erreur technique – veuillez réessayer plus tard.)"""
 
-(Dizaines 2 à 5 similaires – contenu généré par API normalement.)"""
-
-# ---------- PERSONNEL (inchangé, peut être simplifié) ----------
 def generer_personnel(defauts):
     notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour."
     mysteres = []
     for i, d in enumerate(defauts, 1):
         prompt = f"Mystère {i} – {d}\n**Méditation** : souvenir d'échec + visualisation positive.\n**Notre Père** : {notre_pere} (3 fois)\n**Je vous salue Marie** : phrase courte corrigeant {d} (10 fois)\n**Gloire au Père** : Merci (3 fois)"
         try:
-            raw = call_deepseek(prompt, max_tokens=400)
+            raw = call_deepseek(prompt, max_tokens=500)
             mysteres.append(clean_markdown(raw))
         except:
             mysteres.append(f"**Mystère {i} – {d}**\nMéditation ...\nNotre Père ...\nAve Maria ...")
     return "\n\n".join(mysteres)
 
-# ---------- ROUTES ----------
 @app.route('/')
 def index():
     return render_template('index.html')
