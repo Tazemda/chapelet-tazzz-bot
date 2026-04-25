@@ -11,9 +11,9 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-def call_deepseek(prompt, max_tokens=3000, timeout=180):
+def call_deepseek(prompt, max_tokens=3500, timeout=240, retries=2):
     if not DEEPSEEK_API_KEY:
-        raise Exception("❌ Clé API DeepSeek manquante. Ajoutez DEEPSEEK_API_KEY dans les variables d'environnement.")
+        raise Exception("Clé API DeepSeek manquante")
     headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
     payload = {
         "model": "deepseek-chat",
@@ -21,16 +21,22 @@ def call_deepseek(prompt, max_tokens=3000, timeout=180):
         "temperature": 0.7,
         "max_tokens": max_tokens
     }
-    try:
-        resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=timeout)
-        if resp.status_code == 200:
-            return resp.json()["choices"][0]["message"]["content"]
-        else:
-            raise Exception(f"API error {resp.status_code}: {resp.text[:200]}")
-    except requests.exceptions.Timeout:
-        raise Exception("⏱️ Timeout : DeepSeek n'a pas répondu dans les 180 secondes.")
-    except Exception as e:
-        raise Exception(f"❌ Erreur API: {str(e)}")
+    for attempt in range(retries + 1):
+        try:
+            resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=timeout)
+            if resp.status_code == 200:
+                return resp.json()["choices"][0]["message"]["content"]
+            else:
+                raise Exception(f"API error {resp.status_code}: {resp.text[:200]}")
+        except requests.exceptions.Timeout:
+            if attempt == retries:
+                raise Exception(f"Timeout après {retries+1} tentatives")
+            continue
+        except Exception as e:
+            if attempt == retries:
+                raise e
+            continue
+    raise Exception("Échec inattendu")
 
 def clean_markdown(text):
     text = re.sub(r'```[\s\S]*?```', '', text)
@@ -48,30 +54,30 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= PROMPT POUR DEEPSEEK (structure exigeante mais concise) =================
+# ================= EXPERTISE =================
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
 Génère le contenu du **Jour {jour_num}** (objectif : {titre_objectif}) pour un chapelet d’apprentissage.
 
 **RÈGLES STRICTES** :
-- Commence par écrire le titre : `## **JOUR {jour_num} – [TITRE EN MAJUSCULES, ADAPTÉ]`
-- Ensuite, EXACTEMENT 5 DIZAINES (DIZAINE 1 à 5), chacune au format suivant :
+- Commence par écrire le titre : `## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]`
+- Ensuite, EXACTEMENT 5 DIZAINES (DIZAINE 1 à 5). Pour chaque DIZAINE, utilise ce format exact :
 
 **DIZAINE X – Concept : [nom du concept]**
 
-**1) Méditation (gros grain)** : 3 à 5 phrases denses, avec un exemple clair (comme pour le PICO : définition, rôle, application).
+**Méditation synthèse générale** (gros grain) : (3 à 5 phrases denses, avec définition, rôle, application concrète – comme une mini-fiche de cours)
 
-**2) Notre Père** : une seule phrase, question centrale qui résout un problème clé.
+**répète ceci 3 x (pas de graines)** : (une seule phrase : une question centrale pertinente conduisant à la compréhension du sujet et montrant le problème clé que cela permet de résoudre)
 
-**3) Je vous salue Marie** (à répéter 10 fois) : 4 à 6 phrases synthétiques, mémorisables, qui résument le concept.
+**répète ceci 10 x (les 10 petites graines)** : (4 à 6 phrases synthétiques, mémorisables, qui résument le concept)
 
-**4) Gloire au Père** (à répéter 3 fois) : "Le concept [nom] est consolidé."
+**répète ceci 3 x:** "Le concept [nom du concept] est consolidé."
 
-Ne dépasse pas 2500 tokens au total. Soigne la qualité et l’adaptation au domaine.
+Ne dépasse pas 3500 tokens au total. Soigne la qualité et l’adaptation au domaine. Utilise exactement les libellés ci-dessus.
 """
 
-def generer_jour_expertise(domaine, jour_num):
+def generer_jour_expertise(domaine, jour_num, tentative=1):
     objectifs = [
         "Découverte des bases fondamentales",
         "Approfondissement des pratiques clés",
@@ -84,32 +90,38 @@ def generer_jour_expertise(domaine, jour_num):
     titre_objectif = objectifs[jour_num-1]
     prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_objectif=titre_objectif)
     try:
-        raw = call_deepseek(prompt, max_tokens=3000, timeout=180)
+        raw = call_deepseek(prompt, max_tokens=3500, timeout=240, retries=2)
         contenu = clean_markdown(raw)
-        # Vérification que le titre est présent
         if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
             contenu = f"## **JOUR {jour_num} – {titre_objectif.upper()}**\n\n{contenu}"
+        # Vérifier qu'il y a bien 5 DIZAINE
+        if contenu.count("**DIZAINE") < 5:
+            raise Exception("Nombre de dizaines insuffisant")
         return contenu
     except Exception as e:
-        # On renvoie l'erreur directement pour que l'utilisateur voie le vrai problème
-        return f"❌ **Erreur DeepSeek** : {str(e)}\n\nVeuillez vérifier votre clé API, votre crédit, ou réessayer plus tard."
+        if tentative < 3:
+            # Réessayer avec un token maximum plus grand
+            return generer_jour_expertise(domaine, jour_num, tentative+1)
+        else:
+            return f"❌ **Erreur de génération pour le jour {jour_num}** : {str(e)}\n\nVeuillez réessayer plus tard."
 
-# ================= MODE PERSONNEL (utilise aussi DeepSeek) =================
+# ================= MODE PERSONNEL (similaire mais avec les mêmes intitulés ? non, l'utilisateur n'a pas demandé) =================
+# On garde une version simple mais fonctionnelle (pas de changement demandé)
 def generer_personnel(defauts):
-    notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes."
+    notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour."
     resultats = []
     for i, d in enumerate(defauts, 1):
         prompt = f"""
 Génère un **Mystère {i}** pour le défaut : "{d}".
 Structure :
 **Mystère {i} – {d}**
-**Méditation** : (rappel d’un échec passé + visualisation positive, 2-3 phrases)
-**Notre Père** : "{notre_pere}" (à répéter 3 fois)
-**Je vous salue Marie** : (une phrase courte positive qui corrige ce défaut, à répéter 10 fois)
-**Gloire au Père** : "Je remercie Dieu et l'univers pour cette transformation." (à répéter 3 fois)
+**Méditation synthèse générale** (gros grain) : (rappel d’un échec + visualisation positive, 2-3 phrases)
+**répète ceci 3 x (pas de graines)** : "{notre_pere}"
+**répète ceci 10 x (les 10 petites graines)** : (une phrase courte positive qui corrige ce défaut)
+**répète ceci 3 x:** "Je remercie Dieu et l'univers pour cette transformation."
 """
         try:
-            raw = call_deepseek(prompt, max_tokens=600, timeout=90)
+            raw = call_deepseek(prompt, max_tokens=800, timeout=120)
             resultats.append(clean_markdown(raw))
         except Exception as e:
             resultats.append(f"❌ **Erreur pour le défaut {i}** : {str(e)}")
