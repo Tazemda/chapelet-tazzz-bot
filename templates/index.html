@@ -24,20 +24,27 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.2);
             position: relative;
         }
+        h1 { text-align: center; font-size: 2.2rem; margin-bottom: 5px; }
+        .subtitle {
+            text-align: center;
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-bottom: 35px;
+            margin-top: 5px;
+            position: relative;
+        }
         .history-link {
             position: absolute;
-            top: 20px;
-            left: 25px;
+            left: 0;
+            bottom: -30px;   /* décalé plus bas sous le sous-titre */
             background: #2c3e4e;
-            padding: 5px 12px;
+            padding: 4px 12px;
             border-radius: 30px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             cursor: pointer;
             transition: 0.2s;
         }
         .history-link:hover { background: #e67e22; }
-        h1 { text-align: center; font-size: 2.2rem; margin-bottom: 5px; }
-        .subtitle { text-align: center; font-size: 1rem; opacity: 0.8; margin-bottom: 25px; margin-top: 5px; }
         .mode-selector {
             display: flex;
             gap: 15px;
@@ -88,30 +95,27 @@
         .day-counter { font-size: 0.9rem; }
         .progress-segments {
             display: flex;
-            gap: 8px;
+            gap: 6px;
             justify-content: center;
             margin: 15px 0;
             flex-wrap: wrap;
         }
         .segment {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
             background-color: #2c3e4e;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 0.8rem;
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
         }
         .segment.completed {
             background-color: #aa00ff;
-            box-shadow: 0 0 8px #aa00ff;
-        }
-        .segment.disabled {
-            cursor: not-allowed;
-            opacity: 0.5;
+            box-shadow: 0 0 6px #aa00ff;
         }
         .progress-container {
             margin: 15px 0 10px 0;
@@ -180,32 +184,28 @@
             max-height: 80%;
             overflow-y: auto;
         }
-        .history-item, .badge-item {
+        .history-item {
             background: #2c3e4e;
             margin: 10px 0;
             padding: 10px;
             border-radius: 12px;
             cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
-        .share-badge-btn {
-            background: #e67e22;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
+        .badge-text {
+            font-size: 0.8rem;
+            color: #e67e22;
+            margin-top: 4px;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 <div class="container">
-    <!-- Lien Historique (en haut à gauche) -->
-    <div class="history-link" id="historyLink">📜 Historique</div>
-
     <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
-    <div class="subtitle">Transforme ta structure mentale</div>
+    <div class="subtitle">
+        Transforme ta structure mentale
+        <div class="history-link" id="historyLink">📜 Historique</div>
+    </div>
     <div class="mode-selector">
         <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
         <button class="mode-btn" data-mode="personnel">🔥 Développement personnel (21/66j)</button>
@@ -218,7 +218,6 @@
         <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
         <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
         <div id="jourContainer" style="display:none;">
-            <!-- Barre segmentée horizontale (apparaît ici) -->
             <div id="segmentsContainer" class="progress-segments"></div>
             <div id="jourContent" class="result"></div>
             <div class="nav-buttons">
@@ -243,7 +242,7 @@
         </div>
     </div>
 
-    <!-- Mode Personnel (simplifié, sans barre segmentée) -->
+    <!-- Mode Personnel -->
     <div id="personnelPanel" class="mode-panel">
         <p>📝 5 défauts (un par ligne) :</p>
         <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;..."></textarea>
@@ -276,102 +275,106 @@
     </div>
 </div>
 
-<!-- MODALE HISTORIQUE + BADGES -->
+<!-- MODALE HISTORIQUE -->
 <div id="historyModal" class="modal">
     <div class="modal-content">
         <h3>📜 Historique des formations</h3>
         <div id="historyList"></div>
-        <h3>🏅 Badges obtenus</h3>
-        <div id="badgesList"></div>
         <button id="closeHistoryModal" style="margin-top:15px;">Fermer</button>
     </div>
 </div>
 
 <script>
-    // ======================== GESTION DES ONGLETS ========================
-    const modeBtns = document.querySelectorAll('.mode-btn');
-    const panels = {
-        expertise: document.getElementById('expertisePanel'),
-        personnel: document.getElementById('personnelPanel'),
-        consultation: document.getElementById('consultationPanel')
-    };
-    modeBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            modeBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const mode = btn.getAttribute('data-mode');
-            Object.values(panels).forEach(p => p.classList.remove('active-panel'));
-            panels[mode].classList.add('active-panel');
-        });
-    });
-
-    // ======================== LOCALSTORAGE (PROGRESSION, BADGES, HISTORIQUE) ========================
-    let progression = JSON.parse(localStorage.getItem('progression')) || [false,false,false,false,false,false,false]; // 7 jours
-    let badges = JSON.parse(localStorage.getItem('badges')) || [];
-    let historique = JSON.parse(localStorage.getItem('historique')) || []; // { domaine, date, progressionSauvegardee }
-
-    function sauvegarderTout() {
-        localStorage.setItem('progression', JSON.stringify(progression));
-        localStorage.setItem('badges', JSON.stringify(badges));
-        localStorage.setItem('historique', JSON.stringify(historique));
-    }
-
-    // ======================== BARRE SEGMENTÉE (expertise) ========================
-    function afficherBarreSegments() {
-        const container = document.getElementById('segmentsContainer');
-        if (!container) return;
-        container.innerHTML = '';
-        for (let i=0; i<7; i++) {
-            const seg = document.createElement('div');
-            seg.className = 'segment';
-            if (progression[i]) seg.classList.add('completed');
-            seg.innerText = `J${i+1}`;
-            seg.onclick = (function(idx) { return () => cocherSegment(idx); })(i);
-            container.appendChild(seg);
+    (function() {
+        // Nettoyer l'ancien localStorage des badges indésirables (ex: "1 semaine d'expertise")
+        let anciensBadges = JSON.parse(localStorage.getItem('badges')) || [];
+        if (anciensBadges.length > 0) {
+            // Garder seulement les badges qui ne sont pas "1 semaine d'expertise" (supprimer également d'éventuels trophées)
+            const nouveauxBadges = anciensBadges.filter(b => !b.includes("1 semaine") && !b.includes("trophée") && !b.includes("🏆"));
+            localStorage.setItem('badges', JSON.stringify(nouveauxBadges));
+        } else {
+            localStorage.setItem('badges', JSON.stringify([]));
         }
-    }
 
-    function cocherSegment(idx) {
-        // Vérifier l'ordre : on ne peut cocher que si tous les précédents sont cochés
-        for (let i=0; i<idx; i++) {
-            if (!progression[i]) {
-                alert(`Veuillez d'abord valider le jour ${i+1} avant le jour ${idx+1}.`);
-                return;
+        // Onglets
+        const modeBtns = document.querySelectorAll('.mode-btn');
+        const panels = {
+            expertise: document.getElementById('expertisePanel'),
+            personnel: document.getElementById('personnelPanel'),
+            consultation: document.getElementById('consultationPanel')
+        };
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const mode = btn.getAttribute('data-mode');
+                Object.values(panels).forEach(p => p.classList.remove('active-panel'));
+                panels[mode].classList.add('active-panel');
+            });
+        });
+
+        // Variables globales
+        let progression = JSON.parse(localStorage.getItem('progression')) || [false,false,false,false,false,false,false];
+        let historique = JSON.parse(localStorage.getItem('historique')) || [];
+
+        function sauvegarderTout() {
+            localStorage.setItem('progression', JSON.stringify(progression));
+            localStorage.setItem('historique', JSON.stringify(historique));
+        }
+
+        // Barre segmentée
+        function afficherBarreSegments() {
+            const container = document.getElementById('segmentsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            for (let i=0; i<7; i++) {
+                const seg = document.createElement('div');
+                seg.className = 'segment' + (progression[i] ? ' completed' : '');
+                seg.innerText = `${i+1}`;
+                seg.onclick = (function(idx) { return () => cocherSegment(idx); })(i);
+                container.appendChild(seg);
             }
         }
-        if (!progression[idx]) {
-            progression[idx] = true;
-            sauvegarderTout();
-            afficherBarreSegments();
-            // Message de félicitations
-            if (idx+1 === 7) {
-                alert(`🎉 Toutes mes félicitations ! Vous avez achevé votre expertise. Badge "Expert en ${currentDomaine}" débloqué.`);
-                const badgeExpert = `🏆 Expert en ${currentDomaine}`;
-                if (!badges.includes(badgeExpert)) {
-                    badges.push(badgeExpert);
+
+        function cocherSegment(idx) {
+            for (let i=0; i<idx; i++) {
+                if (!progression[i]) {
+                    alert(`Veuillez d'abord valider le jour ${i+1} avant le jour ${idx+1}.`);
+                    return;
+                }
+            }
+            if (!progression[idx]) {
+                progression[idx] = true;
+                sauvegarderTout();
+                afficherBarreSegments();
+                if (idx+1 === 7) {
+                    alert(`🎉 Félicitations ! Vous avez achevé votre expertise. Badge "Expert en ${currentDomaine}" débloqué.`);
+                    const histEntry = historique.find(h => h.domaine === currentDomaine);
+                    if (histEntry) {
+                        histEntry.dateFin = new Date().toISOString();
+                        histEntry.progression = progression.slice();
+                        sauvegarderTout();
+                    }
+                } else {
+                    alert(`🎊 Bravo ! Vous venez de valider le jour ${idx+1}/7. Continue ainsi !`);
+                }
+                // Mettre à jour la progression dans l'historique
+                const histEntry = historique.find(h => h.domaine === currentDomaine);
+                if (histEntry) {
+                    histEntry.progression = progression.slice();
                     sauvegarderTout();
                 }
-            } else {
-                alert(`🎊 Bravo ! Vous venez de valider le jour ${idx+1}/7.`);
-            }
-            // Mettre à jour l'historique (sauvegarder la progression)
-            const hist = historique.find(h => h.domaine === currentDomaine);
-            if (hist) {
-                hist.progression = progression.slice();
-                hist.date = new Date().toISOString();
-                sauvegarderTout();
             }
         }
-    }
 
-    // ======================== PARTIE EXPERTISE (génération, navigation) ========================
-    let currentDomaine = '';
-    let jours = {};
-    let currentPage = 0;
-    const totalPages = 8; // 1 intro + 7 jours
-    let currentExpertiseInterval = null;
+        // Partie Expertise
+        let currentDomaine = '';
+        let jours = {};
+        let currentPage = 0;
+        const totalPages = 8;
+        let currentExpertiseInterval = null;
 
-    const PAGE0 = `# 📖 Bienvenue dans votre chapelet d’expertise
+        const PAGE0 = `# 📖 Bienvenue dans votre chapelet d’expertise
 
 ## 🧠 COMMENT UTILISER LE CHAPELET TAZZZ BOT ?
 - **Procurez‑vous un vrai chapelet** que vous égrènerez durant vos lectures et récitations.
@@ -382,278 +385,279 @@
   - *Répétez 10 fois* (5 lectures, 5 sans regarder) le **Je vous salue Marie**.
 - Les **5 dizaines** d’un jour correspondent à 5 concepts clés.
 
+👉 **N'oubliez pas de cocher la barre de progression à la fin de chaque journée !**
+
 👉 Cliquez sur **“Suivant”** pour commencer le **Jour 1**.`;
 
-    function startExpertiseProgress() {
-        const area = document.getElementById('expertiseProgressArea');
-        const fill = document.getElementById('expertiseProgressFill');
-        const text = document.getElementById('expertiseProgressText');
-        if (!area) return null;
-        area.style.display = 'block';
-        let percent = 0;
-        const interval = setInterval(() => {
-            if (percent < 90) { percent += 2; if (percent > 90) percent = 90;
-                fill.style.width = percent + '%';
-                text.innerText = percent + '%';
-            }
-        }, 150);
-        return interval;
-    }
-    function stopExpertiseProgress(interval, complete) {
-        const area = document.getElementById('expertiseProgressArea');
-        const fill = document.getElementById('expertiseProgressFill');
-        const text = document.getElementById('expertiseProgressText');
-        if (interval) clearInterval(interval);
-        if (complete && fill) {
-            fill.style.width = '100%';
-            text.innerText = '100%';
-            setTimeout(() => { if(area) area.style.display = 'none'; fill.style.width = '0%'; text.innerText = '0%'; }, 300);
-        } else {
-            if(area) area.style.display = 'none';
-            if(fill) fill.style.width = '0%';
-            if(text) text.innerText = '0%';
+        function startExpertiseProgress() {
+            const area = document.getElementById('expertiseProgressArea');
+            const fill = document.getElementById('expertiseProgressFill');
+            const text = document.getElementById('expertiseProgressText');
+            if (!area) return null;
+            area.style.display = 'block';
+            let percent = 0;
+            const interval = setInterval(() => {
+                if (percent < 90) { percent += 2; if (percent > 90) percent = 90;
+                    fill.style.width = percent + '%';
+                    text.innerText = percent + '%';
+                }
+            }, 150);
+            return interval;
         }
-    }
-
-    function afficherPage(page) {
-        const contentDiv = document.getElementById('jourContent');
-        const daySpan = document.getElementById('dayCounter');
-        const prevBtn = document.getElementById('prevDay');
-        const nextBtn = document.getElementById('nextDay');
-        const feedbackBox = document.getElementById('feedbackBox');
-        if (page === 0) {
-            contentDiv.innerHTML = PAGE0.replace(/\n/g, '<br>');
-            daySpan.innerText = 'Intro / 8';
-            prevBtn.disabled = true;
-            nextBtn.disabled = false;
-            feedbackBox.style.display = 'none';
-        } else {
-            const jourNum = page;
-            if (jours[jourNum]) {
-                contentDiv.innerHTML = jours[jourNum].replace(/\n/g, '<br>');
-                daySpan.innerText = `Jour ${jourNum} / 7`;
-                prevBtn.disabled = (jourNum === 1);
-                nextBtn.disabled = (jourNum === 7);
-                feedbackBox.style.display = 'block';
+        function stopExpertiseProgress(interval, complete) {
+            const area = document.getElementById('expertiseProgressArea');
+            const fill = document.getElementById('expertiseProgressFill');
+            const text = document.getElementById('expertiseProgressText');
+            if (interval) clearInterval(interval);
+            if (complete && fill) {
+                fill.style.width = '100%';
+                text.innerText = '100%';
+                setTimeout(() => { if(area) area.style.display = 'none'; fill.style.width = '0%'; text.innerText = '0%'; }, 300);
             } else {
-                contentDiv.innerHTML = '<em>Chargement du jour...</em>';
-                chargerJour(jourNum);
+                if(area) area.style.display = 'none';
+                if(fill) fill.style.width = '0%';
+                if(text) text.innerText = '0%';
             }
         }
-    }
 
-    function chargerJour(jourNum) {
-        if (currentExpertiseInterval) clearInterval(currentExpertiseInterval);
-        currentExpertiseInterval = startExpertiseProgress();
-        fetch('/generer_jour_expertise', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ domaine: currentDomaine, jour: jourNum })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) throw new Error(data.error);
-            jours[jourNum] = data.contenu;
-            stopExpertiseProgress(currentExpertiseInterval, true);
-            afficherPage(jourNum);
-        })
-        .catch(err => {
-            console.error(err);
-            jours[jourNum] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jourNum}. Rafraîchissez ou réessayez.`;
-            stopExpertiseProgress(currentExpertiseInterval, false);
-            afficherPage(jourNum);
-        });
-    }
+        function afficherPage(page) {
+            const contentDiv = document.getElementById('jourContent');
+            const daySpan = document.getElementById('dayCounter');
+            const prevBtn = document.getElementById('prevDay');
+            const nextBtn = document.getElementById('nextDay');
+            const feedbackBox = document.getElementById('feedbackBox');
+            if (page === 0) {
+                contentDiv.innerHTML = PAGE0.replace(/\n/g, '<br>');
+                daySpan.innerText = 'Intro / 8';
+                prevBtn.disabled = true;
+                nextBtn.disabled = false;
+                feedbackBox.style.display = 'none';
+            } else {
+                const jourNum = page;
+                if (jours[jourNum]) {
+                    contentDiv.innerHTML = jours[jourNum].replace(/\n/g, '<br>');
+                    daySpan.innerText = `Jour ${jourNum} / 7`;
+                    prevBtn.disabled = (jourNum === 1);
+                    nextBtn.disabled = (jourNum === 7);
+                    feedbackBox.style.display = 'block';
+                } else {
+                    contentDiv.innerHTML = '<em>Chargement du jour...</em>';
+                    chargerJour(jourNum);
+                }
+            }
+        }
 
-    document.getElementById('startExpertise').addEventListener('click', () => {
-        currentDomaine = document.getElementById('domaine').value.trim();
-        if (!currentDomaine) { alert('Domaine requis'); return; }
-        // Vérifier si déjà dans historique
-        let hist = historique.find(h => h.domaine === currentDomaine);
-        if (!hist) {
-            hist = { domaine: currentDomaine, date: new Date().toISOString(), progression: [false,false,false,false,false,false,false] };
-            historique.push(hist);
-            sauvegarderTout();
-        } else {
-            progression = hist.progression.slice();
+        function chargerJour(jourNum) {
+            if (currentExpertiseInterval) clearInterval(currentExpertiseInterval);
+            currentExpertiseInterval = startExpertiseProgress();
+            fetch('/generer_jour_expertise', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domaine: currentDomaine, jour: jourNum })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                jours[jourNum] = data.contenu;
+                stopExpertiseProgress(currentExpertiseInterval, true);
+                afficherPage(jourNum);
+            })
+            .catch(err => {
+                console.error(err);
+                jours[jourNum] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jourNum}. Rafraîchissez ou réessayez.`;
+                stopExpertiseProgress(currentExpertiseInterval, false);
+                afficherPage(jourNum);
+            });
+        }
+
+        document.getElementById('startExpertise').addEventListener('click', () => {
+            currentDomaine = document.getElementById('domaine').value.trim();
+            if (!currentDomaine) { alert('Domaine requis'); return; }
+            let histEntry = historique.find(h => h.domaine === currentDomaine);
+            if (!histEntry) {
+                histEntry = {
+                    domaine: currentDomaine,
+                    dateDebut: new Date().toISOString(),
+                    dateFin: null,
+                    progression: [false,false,false,false,false,false,false]
+                };
+                historique.push(histEntry);
+                sauvegarderTout();
+                progression = histEntry.progression;
+            } else {
+                progression = histEntry.progression.slice();
+            }
+            jours = {};
+            currentPage = 0;
+            afficherPage(0);
+            document.getElementById('jourContainer').style.display = 'block';
+            document.getElementById('startExpertise').style.display = 'none';
             afficherBarreSegments();
-        }
-        jours = {};
-        currentPage = 0;
-        afficherPage(0);
-        document.getElementById('jourContainer').style.display = 'block';
-        document.getElementById('startExpertise').style.display = 'none';
-        // Afficher les segments
-        afficherBarreSegments();
-    });
+        });
 
-    document.getElementById('prevDay').addEventListener('click', () => {
-        if (currentPage > 0) { currentPage--; afficherPage(currentPage); }
-    });
-    document.getElementById('nextDay').addEventListener('click', () => {
-        if (currentPage < totalPages - 1) { currentPage++; afficherPage(currentPage); }
-    });
+        document.getElementById('prevDay').addEventListener('click', () => {
+            if (currentPage > 0) { currentPage--; afficherPage(currentPage); }
+        });
+        document.getElementById('nextDay').addEventListener('click', () => {
+            if (currentPage < totalPages - 1) { currentPage++; afficherPage(currentPage); }
+        });
 
-    // Feedback expertise
-    let currentNoteEx = 0;
-    document.querySelectorAll('#starsEx .star').forEach(star => {
-        star.addEventListener('click', () => {
-            currentNoteEx = parseInt(star.getAttribute('data-value'));
-            document.querySelectorAll('#starsEx .star').forEach((s, idx) => {
-                if (idx < currentNoteEx) { s.textContent = '★'; s.classList.add('selected'); }
-                else { s.textContent = '☆'; s.classList.remove('selected'); }
+        // Feedback
+        let currentNoteEx = 0;
+        document.querySelectorAll('#starsEx .star').forEach(star => {
+            star.addEventListener('click', () => {
+                currentNoteEx = parseInt(star.getAttribute('data-value'));
+                document.querySelectorAll('#starsEx .star').forEach((s, idx) => {
+                    if (idx < currentNoteEx) { s.textContent = '★'; s.classList.add('selected'); }
+                    else { s.textContent = '☆'; s.classList.remove('selected'); }
+                });
             });
         });
-    });
-    document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
-        if (currentNoteEx === 0) { alert('Sélectionnez une note'); return; }
-        const comment = document.getElementById('feedbackCommentEx').value.trim();
-        try {
-            await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) });
-            alert('Merci pour votre avis !');
-            document.getElementById('feedbackBox').style.display = 'none';
-        } catch(err) { alert('Erreur réseau'); }
-    });
+        document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
+            if (currentNoteEx === 0) { alert('Sélectionnez une note'); return; }
+            const comment = document.getElementById('feedbackCommentEx').value.trim();
+            try {
+                await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) });
+                alert('Merci pour votre avis !');
+                document.getElementById('feedbackBox').style.display = 'none';
+            } catch(err) { alert('Erreur réseau'); }
+        });
 
-    // ======================== MODE PERSONNEL ========================
-    let currentPersonnelInterval = null;
-    function startGenericProgress(areaId, fillId, textId) {
-        const area = document.getElementById(areaId);
-        if (!area) return null;
-        area.style.display = 'block';
-        let percent = 0;
-        const interval = setInterval(() => {
-            if (percent < 90) { percent += 2; if (percent > 90) percent = 90;
-                document.getElementById(fillId).style.width = percent + '%';
-                document.getElementById(textId).innerText = percent + '%';
+        // Mode Personnel
+        let currentPersonnelInterval = null;
+        function startGenericProgress(areaId, fillId, textId) {
+            const area = document.getElementById(areaId);
+            if (!area) return null;
+            area.style.display = 'block';
+            let percent = 0;
+            const interval = setInterval(() => {
+                if (percent < 90) { percent += 2; if (percent > 90) percent = 90;
+                    document.getElementById(fillId).style.width = percent + '%';
+                    document.getElementById(textId).innerText = percent + '%';
+                }
+            }, 150);
+            return interval;
+        }
+        function stopGenericProgress(areaId, fillId, textId, interval, complete) {
+            const area = document.getElementById(areaId);
+            const fill = document.getElementById(fillId);
+            const txt = document.getElementById(textId);
+            if (interval) clearInterval(interval);
+            if (complete && fill) {
+                fill.style.width = '100%';
+                txt.innerText = '100%';
+                setTimeout(() => { if(area) area.style.display = 'none'; fill.style.width = '0%'; txt.innerText = '0%'; }, 300);
+            } else {
+                if(area) area.style.display = 'none';
+                if(fill) fill.style.width = '0%';
+                if(txt) txt.innerText = '0%';
             }
-        }, 150);
-        return interval;
-    }
-    function stopGenericProgress(areaId, fillId, textId, interval, complete) {
-        const area = document.getElementById(areaId);
-        const fill = document.getElementById(fillId);
-        const txt = document.getElementById(textId);
-        if (interval) clearInterval(interval);
-        if (complete && fill) {
-            fill.style.width = '100%';
-            txt.innerText = '100%';
-            setTimeout(() => { if(area) area.style.display = 'none'; fill.style.width = '0%'; txt.innerText = '0%'; }, 300);
-        } else {
-            if(area) area.style.display = 'none';
-            if(fill) fill.style.width = '0%';
-            if(txt) txt.innerText = '0%';
         }
-    }
-    document.getElementById('generatePersonnel').addEventListener('click', async () => {
-        let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
-        if (defauts.length !== 5) { alert('5 défauts requis'); return; }
-        document.getElementById('personnelResult').innerHTML = '';
-        if (currentPersonnelInterval) clearInterval(currentPersonnelInterval);
-        currentPersonnelInterval = startGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText');
-        try {
-            const res = await fetch('/generer_personnel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ defauts: defauts }) });
-            const data = await res.json();
-            if (data.error) throw new Error(data.error);
-            stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText', currentPersonnelInterval, true);
-            document.getElementById('personnelResult').innerHTML = data.contenu.replace(/\n/g, '<br>');
-        } catch(err) { stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText', currentPersonnelInterval, false); alert('Erreur: ' + err.message); }
-    });
+        document.getElementById('generatePersonnel').addEventListener('click', async () => {
+            let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
+            if (defauts.length !== 5) { alert('5 défauts requis'); return; }
+            document.getElementById('personnelResult').innerHTML = '';
+            if (currentPersonnelInterval) clearInterval(currentPersonnelInterval);
+            currentPersonnelInterval = startGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText');
+            try {
+                const res = await fetch('/generer_personnel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ defauts: defauts }) });
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+                stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText', currentPersonnelInterval, true);
+                document.getElementById('personnelResult').innerHTML = data.contenu.replace(/\n/g, '<br>');
+            } catch(err) { stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText', currentPersonnelInterval, false); alert('Erreur: ' + err.message); }
+        });
 
-    // ======================== MODE CONSULTATION ========================
-    document.getElementById('generateConsult').addEventListener('click', () => {
-        let msg = document.getElementById('consultMessage').value.trim();
-        if (!msg) { alert('Message requis'); return; }
-        currentDomaine = msg;
-        jours = {};
-        currentPage = 0;
-        afficherPage(0);
-        document.getElementById('jourContainer').style.display = 'block';
-        document.getElementById('startExpertise').style.display = 'none';
-        document.querySelector('.mode-btn[data-mode="expertise"]').click();
-        afficherBarreSegments();
-    });
-
-    // ======================== HISTORIQUE & BADGES (MODALE) ========================
-    const historyModal = document.getElementById('historyModal');
-    const historyList = document.getElementById('historyList');
-    const badgesList = document.getElementById('badgesList');
-
-    function afficherHistoriqueEtBadges() {
-        // Historique
-        historyList.innerHTML = '';
-        historique.forEach((item, idx) => {
-            const div = document.createElement('div');
-            div.className = 'history-item';
-            div.innerHTML = `<strong>${item.domaine}</strong><br><small>${new Date(item.date).toLocaleDateString()}</small>`;
-            div.onclick = () => {
-                // Recharger cette formation
-                currentDomaine = item.domaine;
-                progression = item.progression.slice();
-                jours = {};
-                currentPage = 0;
-                afficherPage(0);
-                document.getElementById('jourContainer').style.display = 'block';
-                document.getElementById('startExpertise').style.display = 'none';
-                afficherBarreSegments();
-                historyModal.style.display = 'none';
-                // Changer d'onglet vers expertise
-                document.querySelector('.mode-btn[data-mode="expertise"]').click();
+        // Consultation
+        document.getElementById('generateConsult').addEventListener('click', () => {
+            let msg = document.getElementById('consultMessage').value.trim();
+            if (!msg) { alert('Message requis'); return; }
+            currentDomaine = msg;
+            historique = historique.filter(h => h.domaine !== currentDomaine);
+            progression = [false,false,false,false,false,false,false];
+            const newEntry = {
+                domaine: currentDomaine,
+                dateDebut: new Date().toISOString(),
+                dateFin: null,
+                progression: progression.slice()
             };
-            historyList.appendChild(div);
+            historique.push(newEntry);
+            sauvegarderTout();
+            jours = {};
+            currentPage = 0;
+            afficherPage(0);
+            document.getElementById('jourContainer').style.display = 'block';
+            document.getElementById('startExpertise').style.display = 'none';
+            document.querySelector('.mode-btn[data-mode="expertise"]').click();
+            afficherBarreSegments();
         });
-        // Badges
-        badgesList.innerHTML = '';
-        badges.forEach((badge, idx) => {
-            const div = document.createElement('div');
-            div.className = 'badge-item';
-            div.innerHTML = `<span>🏅 ${badge}</span>
-                            <button class="share-badge-btn" data-badge="${badge}">Partager</button>`;
-            badgesList.appendChild(div);
-        });
-        // Ajouter les événements de partage
-        document.querySelectorAll('.share-badge-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const badgeText = btn.getAttribute('data-badge');
-                partagerBadge(badgeText);
+
+        // Affichage Historique
+        const historyModal = document.getElementById('historyModal');
+        const historyList = document.getElementById('historyList');
+
+        function formaterDate(isoString) {
+            if (!isoString) return 'en cours';
+            const d = new Date(isoString);
+            return d.toLocaleDateString();
+        }
+
+        function afficherHistorique() {
+            historyList.innerHTML = '';
+            historique.forEach((item) => {
+                const nbCompleted = item.progression.filter(v => v).length;
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                let statusText = '';
+                if (nbCompleted === 7) {
+                    const dateFin = formaterDate(item.dateFin);
+                    statusText = `Expertise en ${item.domaine} du ${formaterDate(item.dateDebut)} au ${dateFin}`;
+                } else {
+                    statusText = `Expertise inachevée (${nbCompleted}/7) – ${item.domaine}`;
+                }
+                div.innerHTML = `<strong>${statusText}</strong><br><small>Début: ${formaterDate(item.dateDebut)}</small>`;
+                if (nbCompleted === 7) {
+                    const badgeSpan = document.createElement('div');
+                    badgeSpan.className = 'badge-text';
+                    badgeSpan.innerHTML = `🏅 Expert en ${item.domaine}`;
+                    div.appendChild(badgeSpan);
+                }
+                div.onclick = () => {
+                    currentDomaine = item.domaine;
+                    progression = item.progression.slice();
+                    jours = {};
+                    currentPage = 0;
+                    afficherPage(0);
+                    document.getElementById('jourContainer').style.display = 'block';
+                    document.getElementById('startExpertise').style.display = 'none';
+                    afficherBarreSegments();
+                    historyModal.style.display = 'none';
+                    document.querySelector('.mode-btn[data-mode="expertise"]').click();
+                };
+                historyList.appendChild(div);
             });
+        }
+
+        document.getElementById('historyLink').addEventListener('click', () => {
+            afficherHistorique();
+            historyModal.style.display = 'flex';
         });
-    }
+        document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
 
-    async function partagerBadge(badgeName) {
-        const text = `Je viens de gagner le badge "${badgeName}" sur Chapelet Tazzz Bot ! 🎉`;
-        if (navigator.share) {
-            try {
-                await navigator.share({ title: 'Mon badge', text: text });
-            } catch(e) { if(e.name !== 'AbortError') alert('Partage annulé'); }
-        } else {
-            try {
-                await navigator.clipboard.writeText(text);
-                alert('Texte copié ! Partagez-le manuellement.');
-            } catch(err) { alert('Impossible de copier'); }
-        }
-    }
-
-    document.getElementById('historyLink').addEventListener('click', () => {
-        afficherHistoriqueEtBadges();
-        historyModal.style.display = 'flex';
-    });
-    document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
-
-    // Partager le lien
-    document.getElementById('shareButton').addEventListener('click', async () => {
-        const url = window.location.href;
-        if (navigator.share) {
-            try {
-                await navigator.share({ title: 'Chapelet Tazzz Bot', text: 'Découvrez l’outil qui transforme votre structure mentale !', url: url });
-            } catch(err) { if(err.name !== 'AbortError') alert('Partage annulé'); }
-        } else {
-            try { await navigator.clipboard.writeText(url); alert('Lien copié !'); }
-            catch(err) { alert('Impossible de copier'); }
-        }
-    });
-    document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 L'abonnement n'est pas encore actif.\nPour l'instant, l'accès est gratuit."));
+        // Partage de lien
+        document.getElementById('shareButton').addEventListener('click', async () => {
+            const url = window.location.href;
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: 'Chapelet Tazzz Bot', text: 'Découvrez l’outil qui transforme votre structure mentale !', url: url });
+                } catch(err) { if(err.name !== 'AbortError') alert('Partage annulé'); }
+            } else {
+                try { await navigator.clipboard.writeText(url); alert('Lien copié !'); }
+                catch(err) { alert('Impossible de copier'); }
+            }
+        });
+        document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 L'abonnement n'est pas encore actif.\nPour l'instant, l'accès est gratuit."));
+    })();
 </script>
 </body>
 </html>
