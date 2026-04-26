@@ -46,7 +46,7 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= EXPERTISE (7 jours, libellés corrigés) =================
+# ================= EXPERTISE (7 jours, titres dynamiques) =================
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
@@ -59,15 +59,11 @@ Commence par écrire le **titre du jour** sous la forme (obligatoire) :
 Puis, rédige exactement **5 DIZAINES** selon le modèle ci‑dessous.  
 Chaque dizaine doit être complète et détaillée.
 
-**DIZAINE X – Concept : [nom du concept]**
-
-**Méditation synthèse générale (gros grain)** : (paragraphe dense avec définitions, exemples concrets, points clés)
-
-**Notre Père** (répète ceci 3 x – pas de graines) : (une seule phrase : une question centrale pertinente qui montre le problème clé que ce concept résout)
-
-**Je vous salue Marie** (répète ceci 10 x – les 10 petites graines) : (un paragraphe de 5 à 8 phrases, synthétique et mémorisable)
-
-**Gloire au Père** (répète ceci 3 x) : (une phrase courte de consolidation : "Le concept [nom] est consolidé.")
+**DIZAINE 1 – Concept : [nom du concept]**
+**1) Méditation** : (paragraphe dense avec définitions, exemples concrets, points clés)
+**2) Notre Père** : (une question problématique pour faire réfléchir)
+**3) Je vous salue Marie** : (un paragraphe synthétique de plusieurs phrases, à mémoriser)
+**4) Gloire au Père** : "Le concept "[nom]" est consolidé."
 
 Répète pour **DIZAINE 2** à **DIZAINE 5**.
 
@@ -98,13 +94,13 @@ def generer_jour_expertise(domaine, jour_num):
         return f"""## **JOUR {jour_num} – {titre_objectif.upper()}** (version de secours)
 
 **DIZAINE 1 – Introduction à {domaine}**
-**Méditation synthèse générale (gros grain)** : (contenu temporaire – veuillez réessayer plus tard)
-**Notre Père** (répète ceci 3 x – pas de graines) : ?
-**Je vous salue Marie** (répète ceci 10 x – les 10 petites graines) : ...
-**Gloire au Père** (répète ceci 3 x) : consolidé.
+**1) Méditation** : (contenu temporaire – veuillez réessayer plus tard)
+**2) Notre Père** : ?
+**3) Je vous salue Marie** : ...
+**4) Gloire au Père** : consolidé.
 (Dizaines 2 à 5 structure similaire)"""
 
-# ================= DÉVELOPPEMENT PERSONNEL (simplifié, libellés non modifiés pour l'instant) =================
+# ================= DÉVELOPPEMENT PERSONNEL (simplifié) =================
 def generer_personnel(defauts):
     notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour."
     resultats = []
