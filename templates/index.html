@@ -117,7 +117,6 @@
         }
         .nav-buttons button { width: auto; margin: 0; }
         .day-counter { font-size: 0.9rem; }
-        /* Zone d'information avec doigt pointé */
         .progress-header {
             text-align: center;
             font-size: 0.9rem;
@@ -167,7 +166,6 @@
             opacity: 0.5;
             pointer-events: none;
         }
-        /* Clignotement pour case non cochée mais jour ouvert */
         .segment.blink {
             animation: blinkWarning 1.2s infinite;
             box-shadow: 0 0 6px #e67e22;
@@ -176,29 +174,6 @@
             0% { background-color: #2c3e4e; box-shadow: 0 0 0px #e67e22; }
             50% { background-color: #e67e22; box-shadow: 0 0 12px #e67e22; }
             100% { background-color: #2c3e4e; box-shadow: 0 0 0px #e67e22; }
-        }
-        .progress-container {
-            margin: 15px 0 10px 0;
-            width: 100%;
-        }
-        .progress-bar {
-            width: 100%;
-            background-color: #2c3e4e;
-            border-radius: 10px;
-            overflow: hidden;
-            height: 20px;
-        }
-        .progress-fill {
-            width: 0%;
-            height: 100%;
-            background-color: #2ecc71;
-            transition: width 0.2s ease;
-        }
-        .progress-text {
-            text-align: center;
-            margin-top: 5px;
-            font-size: 0.8rem;
-            color: #2ecc71;
         }
         .feedback-box {
             margin-top: 20px;
@@ -225,8 +200,8 @@
         }
         .footer { text-align: center; margin-top: 30px; font-size: 0.8rem; opacity: 0.8; }
         .copyright { font-size: 0.7rem; margin-top: 10px; }
-        /* Barre audio */
-        .audio-bar {
+        /* Barre audio pour l'accueil */
+        .audio-bar, .audio-bar-days {
             position: fixed;
             bottom: 20px;
             left: 50%;
@@ -241,7 +216,10 @@
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255,255,255,0.2);
         }
-        .audio-bar button {
+        .audio-bar-days {
+            bottom: 90px; /* pour ne pas chevaucher l'autre sur mobile */
+        }
+        .audio-bar button, .audio-bar-days button {
             background: #2c3e4e;
             border: none;
             color: white;
@@ -253,7 +231,7 @@
             margin: 0;
             padding: 0;
         }
-        .audio-bar button:hover { background: #e67e22; }
+        .audio-bar button:hover, .audio-bar-days button:hover { background: #e67e22; }
         .modal {
             display: none;
             position: fixed;
@@ -306,14 +284,13 @@
         <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
         <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
         <div id="jourContainer" style="display:none;">
-            <!-- Nouvel en-tête avec doigt pointé vers le bas -->
             <div class="progress-header">
                 <span class="finger-icon">👇</span> Cliquez sur le jour après l'avoir lu pour valider <span class="finger-icon">👇</span>
             </div>
             <div id="segmentsContainer" class="progress-segments"></div>
             <div id="jourContentContainer" style="position: relative;">
                 <div id="jourContent" class="result"></div>
-                <button id="playAudioBtn" class="play-button" style="display: none;">🔊</button>
+                <button id="playAudioDaysBtn" class="play-button" style="display: none;">🔊</button>
             </div>
             <div class="nav-buttons">
                 <button id="prevDay" disabled>◀ Précédent</button>
@@ -370,11 +347,18 @@
     </div>
 </div>
 
-<!-- Mini barre audio commune -->
-<div id="audioBar" class="audio-bar" style="display: none;">
-    <button id="audioPlayBtn">▶</button>
-    <button id="audioPauseBtn">⏸</button>
-    <button id="audioStopBtn">⏹</button>
+<!-- Barre audio pour l'accueil (voix féminine neutre) -->
+<div id="audioBarWelcome" class="audio-bar" style="display: none;">
+    <button id="welcomePlayBtn">▶</button>
+    <button id="welcomePauseBtn">⏸</button>
+    <button id="welcomeStopBtn">⏹</button>
+</div>
+
+<!-- Barre audio dédiée aux jours (voix homme français) -->
+<div id="audioBarDays" class="audio-bar-days" style="display: none;">
+    <button id="daysPlayBtn">▶</button>
+    <button id="daysPauseBtn">⏸</button>
+    <button id="daysStopBtn">⏹</button>
 </div>
 
 <!-- MODALE HISTORIQUE -->
@@ -424,13 +408,13 @@
 
         let currentDomaine = '';
         let jours = {};
-        let currentPage = 0;
-        const totalPages = 8; // 0 intro + 7 jours
+        let currentPage = 0;          // 0 = intro, 1..7 = jours
+        const totalPages = 8;
         let currentExpertiseInterval = null;
 
         function isJourGenere(jourNum) { return !!jours[jourNum]; }
 
-        // Appliquer clignotement sur la case si le jour est ouvert mais non coché
+        // Barre segmentée et clignotement
         function mettreAJourClignotement() {
             const segments = document.querySelectorAll('#segmentsContainer .segment');
             for (let i = 0; i < segments.length; i++) {
@@ -445,7 +429,6 @@
             }
         }
 
-        // Barre segmentée
         function afficherBarreSegments() {
             const container = document.getElementById('segmentsContainer');
             if (!container) return;
@@ -485,7 +468,7 @@
             }
         }
 
-        // Texte d'accueil (bien formaté)
+        // Texte d'accueil (formaté)
         const PAGE0_HTML = `
             <div style="line-height: 1.5; text-align: left;">
                 <h2 style="text-align:center;">Bienvenue dans votre chapelet d'expertise</h2>
@@ -507,179 +490,164 @@
             </div>
         `;
 
-        // ========== LECTEUR AUDIO (optimisé pour mobile avec délai et nettoyage) ==========
-        const audioBar = document.getElementById('audioBar');
-        const playBtn = document.getElementById('audioPlayBtn');
-        const pauseBtn = document.getElementById('audioPauseBtn');
-        const stopBtn = document.getElementById('audioStopBtn');
-        let currentAudioText = '';
-        let currentUtterance = null;
-        let isPlaying = false;
+        // ========== LECTEUR AUDIO POUR L'ACCUEIL (voix quelconque, mais sobre) ==========
+        const welcomeBar = document.getElementById('audioBarWelcome');
+        const welcomePlay = document.getElementById('welcomePlayBtn');
+        const welcomePause = document.getElementById('welcomePauseBtn');
+        const welcomeStop = document.getElementById('welcomeStopBtn');
+        let currentWelcomeText = '';
+        let welcomeUtterance = null;
+        let isWelcomePlaying = false;
 
-        function nettoyerTexteAudio(raw) {
-            if (!raw) return '';
-            return raw
-                .replace(/\*\*/g, '')
-                .replace(/\*/g, '')
-                .replace(/#/g, '')
-                .replace(/`/g, '')
-                .replace(/_/g, '')
-                .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
-                .replace(/\[([^\]]+)\]/g, '$1')
-                .replace(/[“”]/g, '"')
-                .replace(/[‘’]/g, "'")
-                .replace(/[—–]/g, '-')
-                .replace(/[•·]/g, '*')
-                .replace(/\s+/g, ' ')
-                .trim();
+        function stopWelcomeAudio() {
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            isWelcomePlaying = false;
+            welcomeUtterance = null;
+            welcomeBar.style.display = 'none';
         }
 
-        function stopAudio() {
-            if (window.speechSynthesis) {
-                window.speechSynthesis.cancel();
-            }
-            isPlaying = false;
-            currentUtterance = null;
-            audioBar.style.display = 'none';
-        }
-
-        // Version robuste pour mobile : utilisation de setTimeout pour laisser le temps à l'API de se réinitialiser
-        function playAudio(text) {
-            if (!window.speechSynthesis) {
-                alert("Votre navigateur ne supporte pas la synthèse vocale.");
-                return;
-            }
-            stopAudio();
+        function playWelcomeAudio(text) {
+            if (!window.speechSynthesis) return;
+            stopWelcomeAudio();
             const cleaned = nettoyerTexteAudio(text);
-            if (!cleaned) {
-                alert("Le texte à lire est vide.");
-                return;
+            if (!cleaned) return;
+            const utterance = new SpeechSynthesisUtterance(cleaned);
+            utterance.lang = 'fr-FR';
+            utterance.rate = 0.9;
+            utterance.onend = () => { stopWelcomeAudio(); };
+            utterance.onerror = () => { stopWelcomeAudio(); };
+            welcomeUtterance = utterance;
+            window.speechSynthesis.speak(utterance);
+            isWelcomePlaying = true;
+            welcomeBar.style.display = 'flex';
+        }
+
+        welcomePlay.addEventListener('click', () => {
+            if (currentWelcomeText) playWelcomeAudio(currentWelcomeText);
+            else alert("Aucun texte à lire.");
+        });
+        welcomePause.addEventListener('click', () => {
+            if (isWelcomePlaying) { window.speechSynthesis.cancel(); isWelcomePlaying = false; }
+        });
+        welcomeStop.addEventListener('click', stopWelcomeAudio);
+
+        // ========== LECTEUR AUDIO POUR LES JOURS (voix masculine française) ==========
+        const daysBar = document.getElementById('audioBarDays');
+        const daysPlay = document.getElementById('daysPlayBtn');
+        const daysPause = document.getElementById('daysPauseBtn');
+        const daysStop = document.getElementById('daysStopBtn');
+        let currentDaysText = '';
+        let daysUtterance = null;
+        let isDaysPlaying = false;
+        let selectedFrenchVoice = null;
+
+        // Fonction pour charger les voix et sélectionner une voix masculine française
+        function initFrenchVoice() {
+            if (!window.speechSynthesis) return;
+            const voices = window.speechSynthesis.getVoices();
+            selectedFrenchVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Male') || v.name.includes('Homme') || v.name.includes('Thomas') || v.name.includes('Google')));
+            if (!selectedFrenchVoice) {
+                selectedFrenchVoice = voices.find(v => v.lang === 'fr-FR');
             }
+        }
+        window.speechSynthesis.onvoiceschanged = initFrenchVoice;
+        initFrenchVoice();
+
+        function stopDaysAudio() {
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            isDaysPlaying = false;
+            daysUtterance = null;
+            daysBar.style.display = 'none';
+        }
+
+        function playDaysAudio(text) {
+            if (!window.speechSynthesis) return;
+            stopDaysAudio();
+            const cleaned = nettoyerTexteAudio(text);
+            if (!cleaned) return;
+            // Petit délai pour laisser le temps au navigateur mobile
             setTimeout(() => {
                 const utterance = new SpeechSynthesisUtterance(cleaned);
                 utterance.lang = 'fr-FR';
-                utterance.rate = 0.9;
-                // Sélectionner une voix masculine francophone
-                const voices = window.speechSynthesis.getVoices();
-                const frenchMale = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Male') || v.name.includes('Homme') || v.name.includes('Thomas')));
-                if (frenchMale) utterance.voice = frenchMale;
-                else {
-                    const anyFrench = voices.find(v => v.lang === 'fr-FR');
-                    if (anyFrench) utterance.voice = anyFrench;
-                }
-                utterance.onend = () => { stopAudio(); };
-                utterance.onerror = (err) => { console.error(err); alert("Erreur de lecture audio. Vérifiez votre navigateur."); stopAudio(); };
-                currentUtterance = utterance;
+                utterance.rate = 0.85;
+                if (selectedFrenchVoice) utterance.voice = selectedFrenchVoice;
+                utterance.onend = () => { stopDaysAudio(); };
+                utterance.onerror = () => { stopDaysAudio(); };
+                daysUtterance = utterance;
                 window.speechSynthesis.speak(utterance);
-                isPlaying = true;
-                audioBar.style.display = 'flex';
+                isDaysPlaying = true;
+                daysBar.style.display = 'flex';
             }, 100);
         }
 
-        function pauseAudio() {
-            if (window.speechSynthesis && isPlaying) {
-                window.speechSynthesis.cancel();
-                isPlaying = false;
-            }
-        }
-
-        playBtn.addEventListener('click', () => {
-            if (currentAudioText) {
-                playAudio(currentAudioText);
-            } else {
-                alert("Aucun texte à lire.");
-            }
+        daysPlay.addEventListener('click', () => {
+            if (currentDaysText) playDaysAudio(currentDaysText);
+            else alert("Aucun texte à lire.");
         });
-        pauseBtn.addEventListener('click', pauseAudio);
-        stopBtn.addEventListener('click', stopAudio);
+        daysPause.addEventListener('click', () => {
+            if (isDaysPlaying) { window.speechSynthesis.cancel(); isDaysPlaying = false; }
+        });
+        daysStop.addEventListener('click', stopDaysAudio);
 
-        function lireTexte(texte) {
-            if (!texte) return;
-            currentAudioText = texte;
-            playAudio(texte);
-        }
-
-        // Bouton audio pour l'accueil (créé dynamiquement)
-        let accueilPlayBtn = null;
-        function ajouterBoutonAudioAccueil() {
-            const container = document.getElementById('jourContentContainer');
-            if (!container) return;
-            const oldBtn = document.getElementById('playAccueilBtn');
-            if (oldBtn) oldBtn.remove();
-            const btn = document.createElement('button');
-            btn.id = 'playAccueilBtn';
-            btn.className = 'play-button';
-            btn.innerHTML = '🔊';
-            btn.addEventListener('click', () => {
-                const introText = document.getElementById('jourContent').innerText;
-                if (introText && introText.length > 20) lireTexte(introText);
-            });
-            container.appendChild(btn);
-            accueilPlayBtn = btn;
-        }
-        function retirerBoutonAudioAccueil() {
-            if (accueilPlayBtn) accueilPlayBtn.remove();
-            accueilPlayBtn = null;
+        // Nettoyage commun
+        function nettoyerTexteAudio(raw) {
+            if (!raw) return '';
+            return raw
+                .replace(/\*\*/g, '').replace(/\*/g, '').replace(/#/g, '').replace(/`/g, '')
+                .replace(/_/g, '').replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1').replace(/\[([^\]]+)\]/g, '$1')
+                .replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/[—–]/g, '-').replace(/[•·]/g, '*')
+                .replace(/\s+/g, ' ').trim();
         }
 
-        // ========== FONCTIONS EXPERTISE ==========
-        function startExpertiseProgressBar() {
-            const area = document.getElementById('expertiseProgressArea');
-            const fill = document.getElementById('expertiseProgressFill');
-            const text = document.getElementById('expertiseProgressText');
-            if (!area) return null;
-            area.style.display = 'block';
-            let percent = 0;
-            const interval = setInterval(() => {
-                if (percent < 90) { percent += 2; if (percent > 90) percent = 90;
-                    fill.style.width = percent + '%';
-                    text.innerText = percent + '%';
-                }
-            }, 150);
-            return interval;
-        }
-        function stopExpertiseProgressBar(interval, complete) {
-            const area = document.getElementById('expertiseProgressArea');
-            const fill = document.getElementById('expertiseProgressFill');
-            const text = document.getElementById('expertiseProgressText');
-            if (interval) clearInterval(interval);
-            if (complete && fill) {
-                fill.style.width = '100%';
-                text.innerText = '100%';
-                setTimeout(() => { if(area) area.style.display = 'none'; fill.style.width = '0%'; text.innerText = '0%'; }, 300);
-            } else {
-                if(area) area.style.display = 'none';
-                if(fill) fill.style.width = '0%';
-                if(text) text.innerText = '0%';
-            }
-        }
-
+        // Fonctions d'affichage
         function afficherPage(page) {
             const contentDiv = document.getElementById('jourContent');
             const daySpan = document.getElementById('dayCounter');
             const prevBtn = document.getElementById('prevDay');
             const nextBtn = document.getElementById('nextDay');
             const feedbackBox = document.getElementById('feedbackBox');
-            const playBtnElem = document.getElementById('playAudioBtn');
+            const playDaysBtn = document.getElementById('playAudioDaysBtn');
+
             if (page === 0) {
                 contentDiv.innerHTML = PAGE0_HTML;
                 daySpan.innerText = 'Intro / 8';
                 prevBtn.disabled = true;
                 nextBtn.disabled = false;
                 feedbackBox.style.display = 'none';
-                playBtnElem.style.display = 'none';
-                ajouterBoutonAudioAccueil();
-                stopAudio();
+                playDaysBtn.style.display = 'none';
+                // arrêter le lecteur des jours
+                stopDaysAudio();
+                // préparer le texte d'accueil pour le lecteur dédié
+                currentWelcomeText = contentDiv.innerText;
+                // afficher le bouton d'accueil ? non, on laisse la barre audio séparée.
+                // Mais on garde la barre audio dédiée pour l'accueil (peut être activée par le bouton flottant accueil ?)
+                // On ajoute le bouton flottant pour l'accueil (identique au design)
+                const container = document.getElementById('jourContentContainer');
+                let oldBtn = document.getElementById('playAccueilBtn');
+                if (oldBtn) oldBtn.remove();
+                const btn = document.createElement('button');
+                btn.id = 'playAccueilBtn';
+                btn.className = 'play-button';
+                btn.innerHTML = '🔊';
+                btn.addEventListener('click', () => {
+                    const txt = document.getElementById('jourContent').innerText;
+                    if (txt && txt.length > 20) playWelcomeAudio(txt);
+                });
+                container.appendChild(btn);
             } else {
-                retirerBoutonAudioAccueil();
+                // retirer le bouton d'accueil s'il existe
+                const oldAccueil = document.getElementById('playAccueilBtn');
+                if (oldAccueil) oldAccueil.remove();
                 const jourNum = page;
                 if (jours[jourNum]) {
                     contentDiv.innerHTML = jours[jourNum].replace(/\n/g, '<br>');
                     daySpan.innerText = `Jour ${jourNum} / 7`;
-                    prevBtn.disabled = (jourNum === 1);
+                    prevBtn.disabled = false;   // Important: on peut revenir à l'accueil depuis le jour 1
                     nextBtn.disabled = (jourNum === 7);
                     feedbackBox.style.display = 'block';
-                    playBtnElem.style.display = 'flex';
+                    playDaysBtn.style.display = 'flex';
+                    // Préparer le texte du jour pour le lecteur dédié
+                    currentDaysText = contentDiv.innerText;
                     afficherBarreSegments();
                 } else {
                     contentDiv.innerHTML = '<em>Chargement du jour...</em>';
@@ -691,7 +659,24 @@
 
         function chargerJour(jourNum) {
             if (currentExpertiseInterval) clearInterval(currentExpertiseInterval);
-            currentExpertiseInterval = startExpertiseProgressBar();
+            const loader = () => {
+                const area = document.getElementById('expertiseProgressArea');
+                if (area) area.style.display = 'block';
+            };
+            currentExpertiseInterval = setInterval(() => {
+                const area = document.getElementById('expertiseProgressArea');
+                if (!area) return;
+                let fill = document.getElementById('expertiseProgressFill');
+                let text = document.getElementById('expertiseProgressText');
+                if (fill) {
+                    let w = parseInt(fill.style.width) || 0;
+                    if (w < 90) {
+                        w += 2;
+                        fill.style.width = w + '%';
+                        text.innerText = w + '%';
+                    }
+                }
+            }, 150);
             fetch('/generer_jour_expertise', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -699,16 +684,20 @@
             })
             .then(res => res.json())
             .then(data => {
+                clearInterval(currentExpertiseInterval);
+                const area = document.getElementById('expertiseProgressArea');
+                if (area) area.style.display = 'none';
                 if (data.error) throw new Error(data.error);
                 jours[jourNum] = data.contenu;
-                stopExpertiseProgressBar(currentExpertiseInterval, true);
                 afficherPage(jourNum);
                 afficherBarreSegments();
             })
             .catch(err => {
+                clearInterval(currentExpertiseInterval);
+                const area = document.getElementById('expertiseProgressArea');
+                if (area) area.style.display = 'none';
                 console.error(err);
                 jours[jourNum] = `<strong>Erreur de génération</strong><br>Contenu non disponible.`;
-                stopExpertiseProgressBar(currentExpertiseInterval, false);
                 afficherPage(jourNum);
                 afficherBarreSegments();
             });
@@ -748,11 +737,11 @@
         });
 
         // Bouton audio des jours
-        document.getElementById('playAudioBtn').addEventListener('click', (e) => {
+        document.getElementById('playAudioDaysBtn').addEventListener('click', (e) => {
             e.stopPropagation();
             const rawText = document.getElementById('jourContent').innerText;
             if (!rawText || rawText.includes('Chargement')) return alert('Aucun contenu audio');
-            lireTexte(rawText);
+            playDaysAudio(rawText);
         });
 
         // Feedback
@@ -776,7 +765,7 @@
             } catch(err) { alert('Erreur réseau'); }
         });
 
-        // ========== MODE PERSONNEL ==========
+        // Mode personnel (inchangé)
         let currentPersonnelInterval = null;
         function startGenericProgress(areaId, fillId, textId) {
             const area = document.getElementById(areaId);
@@ -863,7 +852,7 @@
         document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
         window.addEventListener('click', (e) => { if (e.target === document.getElementById('historyModal')) historyModal.style.display = 'none'; });
 
-        // Partage de lien
+        // Partage
         document.getElementById('shareButton').addEventListener('click', async () => {
             const url = window.location.href;
             if (navigator.share) {
