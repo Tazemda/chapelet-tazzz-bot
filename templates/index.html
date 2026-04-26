@@ -103,7 +103,6 @@
             border-left: 5px solid #e67e22;
             position: relative;
         }
-        /* lecteurs audio */
         .audio-welcome {
             position: absolute;
             top: 15px;
@@ -156,6 +155,7 @@
             font-weight: bold;
             color: #f1c40f;
             animation: blinkText 1s infinite;
+            cursor: pointer;
         }
         @keyframes blinkText {
             0% { opacity: 1; }
@@ -193,7 +193,6 @@
         .segment .day-status {
             font-size: 0.6rem;
         }
-        /* texte chargé mais non validé : écriture grasse et vive */
         .segment.loaded .day-label {
             font-weight: 900;
             color: #f39c12;
@@ -415,10 +414,9 @@
             document.getElementById('badgeCountPersonnel').innerText = count + '🏅';
             document.getElementById('badgeCountConsultation').innerText = count + '🏅';
         }
-        // Appel initial
         updateBadgeCounters();
 
-        // Nettoyer les anciens badges "indésirables" (optionnel)
+        // Nettoyer les anciens badges "indésirables"
         let anciensBadges = JSON.parse(localStorage.getItem('badges')) || [];
         if (anciensBadges.length > 0) {
             const propres = anciensBadges.filter(b => !b.includes("1 semaine") && !b.includes("trophée") && !b.includes("🏆"));
@@ -443,13 +441,13 @@
             });
         });
 
-        // Variables globales (expertise)
+        // Variables globales
         let progression = JSON.parse(localStorage.getItem('progression')) || [false,false,false,false,false,false,false];
         let historique = JSON.parse(localStorage.getItem('historique')) || [];
         function sauvegarderTout() {
             localStorage.setItem('progression', JSON.stringify(progression));
             localStorage.setItem('historique', JSON.stringify(historique));
-            updateBadgeCounters();   // Rafraîchir compteur
+            updateBadgeCounters();
         }
 
         let currentDomaine = '';
@@ -458,47 +456,65 @@
         const totalPages = 8;
         let currentExpertiseInterval = null;
 
-        // LECTEUR AUDIO pour accueil (voix simple)
+        // ========== AUDIO AVEC VOIX FRANÇAISE NATURELLE ==========
+        // Fonction pour obtenir une voix française de qualité (non robotique)
+        let frenchVoice = null;
+        function initFrenchVoice() {
+            if (!window.speechSynthesis) return;
+            const voices = window.speechSynthesis.getVoices();
+            // Priorité aux voix "Google" françaises (souvent naturelles) ou "Samantha" (iOS), "Thomas"
+            frenchVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Thomas') || v.name.includes('Amélie')));
+            if (!frenchVoice) frenchVoice = voices.find(v => v.lang === 'fr-FR');
+        }
+        if (window.speechSynthesis) {
+            window.speechSynthesis.onvoiceschanged = initFrenchVoice;
+            initFrenchVoice();
+        }
+
+        function cleanText(text) {
+            if (!text) return '';
+            return text.replace(/\*\*/g,'').replace(/\*/g,'').replace(/#/g,'').replace(/`/g,'').replace(/_/g,'').replace(/\[([^\]]+)\]\([^\)]+\)/g,'$1').trim();
+        }
+
+        // Lecteur pour l'accueil
         let welcomeUtterance = null;
         let isWelcomePlaying = false;
         function stopWelcomeAudio() { if (window.speechSynthesis) window.speechSynthesis.cancel(); isWelcomePlaying = false; }
         function playWelcomeAudio(text) {
             if (!window.speechSynthesis) return;
             stopWelcomeAudio();
-            const cleaned = text.replace(/\*\*/g,'').replace(/\*/g,'').replace(/#/g,'').replace(/`/g,'').replace(/_/g,'').replace(/\[([^\]]+)\]\([^\)]+\)/g,'$1').trim();
+            const cleaned = cleanText(text);
             if (!cleaned) return;
             const utterance = new SpeechSynthesisUtterance(cleaned);
             utterance.lang = 'fr-FR';
             utterance.rate = 0.9;
+            if (frenchVoice) utterance.voice = frenchVoice;
             utterance.onend = () => { isWelcomePlaying = false; };
             utterance.onerror = () => { isWelcomePlaying = false; };
             window.speechSynthesis.speak(utterance);
             isWelcomePlaying = true;
         }
 
-        // LECTEUR AUDIO pour jours (voix plus masculine)
+        // Lecteur pour les jours (même voix naturelle)
         let dayUtterance = null;
         let isDayPlaying = false;
         function stopDayAudio() { if (window.speechSynthesis) window.speechSynthesis.cancel(); isDayPlaying = false; }
         function playDayAudio(text) {
             if (!window.speechSynthesis) return;
             stopDayAudio();
-            const cleaned = text.replace(/\*\*/g,'').replace(/\*/g,'').replace(/#/g,'').replace(/`/g,'').replace(/_/g,'').replace(/\[([^\]]+)\]\([^\)]+\)/g,'$1').trim();
+            const cleaned = cleanText(text);
             if (!cleaned) return;
             const utterance = new SpeechSynthesisUtterance(cleaned);
             utterance.lang = 'fr-FR';
             utterance.rate = 0.85;
-            // tentatives voix masculine
-            const voices = window.speechSynthesis.getVoices();
-            const maleVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Male') || v.name.includes('Homme') || v.name.includes('Thomas')));
-            if (maleVoice) utterance.voice = maleVoice;
+            if (frenchVoice) utterance.voice = frenchVoice;
             utterance.onend = () => { isDayPlaying = false; };
             utterance.onerror = () => { isDayPlaying = false; };
             window.speechSynthesis.speak(utterance);
             isDayPlaying = true;
         }
 
-        // Mise à jour des segments (J1...J7)
+        // Fonctions pour la barre de progression
         function afficherBarreSegments() {
             const container = document.getElementById('segmentsContainer');
             if (!container) return;
@@ -508,7 +524,6 @@
                 seg.className = 'segment';
                 if (progression[i]) seg.classList.add('completed');
                 if (!progression[i] && !jours[i+1]) seg.classList.add('disabled');
-                // Si le jour est chargé mais non validé, on ajoute la classe "loaded" pour le texte gras
                 if (jours[i+1] && !progression[i]) seg.classList.add('loaded');
                 const dayNum = i+1;
                 seg.innerHTML = `<div class="day-label">J${dayNum}</div><div class="day-status">${progression[i] ? '✓' : (jours[i+1] ? '📖' : '🔒')}</div>`;
@@ -524,7 +539,6 @@
             updateValidationMessage();
         }
 
-        // Message clignotant au-dessus des segments
         function updateValidationMessage() {
             const msgDiv = document.getElementById('progressHeaderMsg');
             if (!msgDiv) return;
@@ -534,8 +548,10 @@
             }
             msgDiv.style.display = 'block';
             msgDiv.innerHTML = '👉 cliquez ici pour valider cette journée !';
-            // Rendre le message cliquable
-            msgDiv.onclick = () => {
+            // Supprimer ancien listener pour éviter les doublons
+            const newMsg = msgDiv.cloneNode(true);
+            msgDiv.parentNode.replaceChild(newMsg, msgDiv);
+            newMsg.onclick = () => {
                 const idx = currentPage-1;
                 if (idx >=0 && !progression[idx] && jours[currentPage]) cocherSegment(idx);
             };
@@ -547,7 +563,6 @@
                 progression[idx] = true;
                 sauvegarderTout();
                 afficherBarreSegments();
-                // si c'est le dernier jour, débloquer badge
                 if (idx+1 === 7) {
                     alert(`🎉 Félicitations ! Vous avez achevé votre expertise. Badge "Expert en ${currentDomaine}" débloqué.`);
                     let badges = JSON.parse(localStorage.getItem('badges')) || [];
@@ -568,18 +583,18 @@
             }
         }
 
-        // Texte d'accueil (compact)
+        // Nouveau texte d'accueil (format demandé)
         const welcomeHTML = `
             <div class="welcome-text">
-                <strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br>
-                📿 Procurez vous un vrai chapelet pour égrener durant vos lectures.<br>
+                <strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>
+                - Procurez vous un vrai chapelet pour égrener durant vos lectures.<br>
                 📖 Chaque jour, lisez ou récitez à voix haute le contenu du jour.<br>
-                🧘 Respectez les instructions : Tenez le gros grain pour la Méditation du Mystère.<br>
-                🔁 Continuez à égrener le chapelet lors des lectures suivantes. C'est votre fil conducteur.<br>
-                🔑 Les 5 dizaines d’un jour correspondent à 5 concepts clés.<br>
-                🔊 Vous pouvez lire ou écouter chaque journée : un bouton 🔊 apparaît en haut à droite du contenu.<br>
-                ✅ N'oubliez pas de cocher la case qui clignote dans la barre de progression pour valider votre journée !<br>
-                ➡️ Cliquez sur <strong>“Suivant”</strong> pour commencer le <strong>Jour 1</strong>.
+                - Respectez les instructions : Tenez le gros grain pour la Méditation du Mystère.<br>
+                - Continuez à égrener le chapelet lors des lectures suivantes. C'est votre fil conducteur.<br>
+                - Les 5 dizaines d’un jour correspondent à 5 concepts clés.<br>
+                - Vous pouvez lire ou écouter chaque journée : un bouton 🔊 apparaît en haut à droite du contenu.<br>
+                - N'oubliez pas de cocher la case qui clignote dans la barre de progression pour valider votre journée !<br>
+                - Cliquez sur <strong>“Suivant”</strong> pour commencer le <strong>Jour 1</strong>.
             </div>
         `;
 
@@ -631,7 +646,6 @@
                 feedbackBox.style.display = 'none';
                 welcomeBtn.style.display = 'flex';
                 dayAudioBtn.style.display = 'none';
-                // attacher lecteur accueil
                 welcomeBtn.onclick = () => {
                     const introText = document.getElementById('jourContent').innerText;
                     if (introText) playWelcomeAudio(introText);
@@ -711,7 +725,7 @@
             if (currentPage < totalPages - 1) { currentPage++; afficherPage(currentPage); }
         });
 
-        // Feedback
+        // Feedback étoiles
         let currentNoteEx = 0;
         function refreshStars() {
             document.querySelectorAll('#starsEx .star').forEach((s, idx) => {
@@ -775,7 +789,7 @@
             } catch(err) { stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText', currentPersonnelInterval, false); alert('Erreur: ' + err.message); }
         });
 
-        // Consultation
+        // Consultation -> redirige vers expertise
         document.getElementById('generateConsult').addEventListener('click', () => {
             let msg = document.getElementById('consultMessage').value.trim();
             if (!msg) { alert('Message requis'); return; }
@@ -830,7 +844,7 @@
         document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
         window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
 
-        // Partage / abonnement
+        // Partage / Abonnement
         document.getElementById('shareButton').addEventListener('click', async () => {
             const url = window.location.href;
             if (navigator.share) {
