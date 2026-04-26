@@ -52,6 +52,7 @@
             justify-content: center;
             margin-bottom: 25px;
             flex-wrap: wrap;
+            align-items: center;
         }
         .mode-btn {
             background: #2c3e4e;
@@ -62,8 +63,20 @@
             cursor: pointer;
             font-weight: bold;
             font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
+        .medal-counter {
+            background: #f1c40f;
+            color: #1e2b3c;
+            border-radius: 30px;
+            padding: 2px 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-left: 6px;
+        }
         .mode-panel { display: none; animation: fadeIn 0.3s ease; }
         .mode-panel.active-panel { display: block; }
         input, textarea {
@@ -90,7 +103,43 @@
             border-left: 5px solid #e67e22;
             position: relative;
         }
-        /* aucun lecteur audio pour les jours */
+        /* lecteurs audio */
+        .audio-welcome {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #2c3e4e;
+            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 20;
+            border: none;
+            font-size: 1.2rem;
+            transition: 0.2s;
+        }
+        .audio-welcome:hover { background: #e67e22; }
+        .audio-day {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #2c3e4e;
+            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 20;
+            border: none;
+            font-size: 1.2rem;
+            transition: 0.2s;
+        }
+        .audio-day:hover { background: #e67e22; }
         .nav-buttons {
             display: flex;
             justify-content: space-between;
@@ -102,57 +151,89 @@
         .day-counter { font-size: 0.9rem; font-weight: bold; background: #2c3e4e; padding: 5px 12px; border-radius: 30px; }
         .progress-header {
             text-align: center;
-            font-size: 0.85rem;
-            margin-bottom: 10px;
+            font-size: 0.75rem;
+            margin-bottom: 5px;
             font-weight: bold;
-            color: #f5b041;
-            background: rgba(0,0,0,0.3);
-            display: inline-block;
-            width: auto;
-            margin-left: auto;
-            margin-right: auto;
-            padding: 6px 14px;
-            border-radius: 40px;
-            transition: 0.2s;
+            color: #f1c40f;
+            animation: blinkText 1s infinite;
+        }
+        @keyframes blinkText {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
         }
         .progress-segments {
             display: flex;
             gap: 8px;
             justify-content: center;
-            margin: 10px 0 20px;
+            margin: 5px 0 20px;
             flex-wrap: wrap;
         }
         .segment {
-            width: 38px;
-            height: 38px;
+            width: 48px;
+            height: 48px;
             border-radius: 12px;
             background-color: #2c3e4e;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 0.9rem;
-            font-weight: bold;
+            font-size: 0.7rem;
+            font-weight: normal;
             cursor: pointer;
             transition: 0.2s;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            color: #ccc;
+        }
+        .segment .day-label {
+            font-weight: bold;
+            font-size: 1rem;
+            margin-bottom: 2px;
+        }
+        .segment .day-status {
+            font-size: 0.6rem;
+        }
+        /* texte chargé mais non validé : écriture grasse et vive */
+        .segment.loaded .day-label {
+            font-weight: 900;
+            color: #f39c12;
+            text-shadow: 0 0 2px #f39c12;
         }
         .segment.completed {
-            background-color: #aa00ff;
-            box-shadow: 0 0 8px #aa00ff;
+            background-color: #8a2be2;
+            box-shadow: 0 0 8px #aa55ff;
+        }
+        .segment.completed .day-label {
+            color: white;
+            text-shadow: none;
         }
         .segment.disabled {
             cursor: not-allowed;
             opacity: 0.4;
             pointer-events: none;
         }
-        /* Clignotement : la case entière apparaît / disparaît */
-        .segment.blink {
-            animation: vanishBlink 0.9s infinite;
+        .progress-container {
+            margin: 15px 0 10px;
+            width: 100%;
         }
-        @keyframes vanishBlink {
-            0% { opacity: 1; background-color: #e67e22; transform: scale(1); }
-            50% { opacity: 0.2; background-color: #e67e22; transform: scale(0.95); }
-            100% { opacity: 1; background-color: #e67e22; transform: scale(1); }
+        .progress-bar {
+            width: 100%;
+            background-color: #2c3e4e;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 18px;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background-color: #2ecc71;
+            transition: width 0.2s ease;
+        }
+        .progress-text {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 0.75rem;
+            color: #2ecc71;
         }
         .feedback-box {
             margin-top: 20px;
@@ -209,19 +290,18 @@
         }
         .history-item:hover { background: #e67e22; }
         .badge-text { font-size: 0.8rem; color: #f39c12; margin-top: 5px; }
-        /* texte d'accueil très compact */
         .welcome-text {
             font-size: 0.85rem;
-            line-height: 1.3;
+            line-height: 1.35;
             text-align: left;
             margin: 0;
+            padding-right: 40px;
         }
         .welcome-text p, .welcome-text li {
             margin: 0.2rem 0;
         }
         .welcome-text ul {
             margin: 0.2rem 0 0.3rem 1.2rem;
-            padding-left: 0;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -234,9 +314,18 @@
         <div class="history-link" id="historyLink">📜 Historique</div>
     </div>
     <div class="mode-selector">
-        <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
-        <button class="mode-btn" data-mode="personnel">🔥 Personnel (21/66j)</button>
-        <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
+        <button class="mode-btn active" data-mode="expertise">
+            📚 Expertise (7 jours)
+            <span id="badgeCountExpertise" class="medal-counter">0🏅</span>
+        </button>
+        <button class="mode-btn" data-mode="personnel">
+            🔥 Personnel (21/66j)
+            <span id="badgeCountPersonnel" class="medal-counter">0🏅</span>
+        </button>
+        <button class="mode-btn" data-mode="consultation">
+            💬 Consultation
+            <span id="badgeCountConsultation" class="medal-counter">0🏅</span>
+        </button>
     </div>
 
     <!-- Mode Expertise -->
@@ -245,18 +334,19 @@
         <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
         <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
         <div id="jourContainer" style="display:none;">
-            <div id="progressHeaderMsg" class="progress-header">✅ Jour rempli – cliquez sur la case pour valider</div>
+            <div id="progressHeaderMsg" class="progress-header" style="display:none;">👉 cliquez ici pour valider cette journée !</div>
             <div id="segmentsContainer" class="progress-segments"></div>
             <div id="jourContentContainer" style="position: relative;">
                 <div id="jourContent" class="result"></div>
-                <!-- plus aucun bouton audio pour les jours -->
+                <button id="audioWelcomeBtn" class="audio-welcome" style="display:none;">🔊</button>
+                <button id="audioDayBtn" class="audio-day" style="display:none;">🔊</button>
             </div>
             <div class="nav-buttons">
                 <button id="prevDay" disabled>◀ Précédent</button>
                 <span id="dayCounter">Intro / 8</span>
                 <button id="nextDay">Suivant ▶</button>
             </div>
-            <div id="expertiseProgressArea" class="progress-container" style="display:none;">
+            <div class="progress-container" id="expertiseProgressArea" style="display:none;">
                 <div class="progress-bar"><div id="expertiseProgressFill" class="progress-fill"></div></div>
                 <div id="expertiseProgressText" class="progress-text">0%</div>
             </div>
@@ -273,7 +363,7 @@
         </div>
     </div>
 
-    <!-- Mode Personnel (inchangé) -->
+    <!-- Mode Personnel (simplifié) -->
     <div id="personnelPanel" class="mode-panel">
         <p>📝 5 défauts (un par ligne) :</p>
         <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;..."></textarea>
@@ -317,13 +407,23 @@
 
 <script>
     (function() {
-        // Nettoyer anciens badges indésirables
+        // ========== GESTION BADGES & COMPTEUR MÉDAILLES ==========
+        function updateBadgeCounters() {
+            let badges = JSON.parse(localStorage.getItem('badges')) || [];
+            let count = badges.length;
+            document.getElementById('badgeCountExpertise').innerText = count + '🏅';
+            document.getElementById('badgeCountPersonnel').innerText = count + '🏅';
+            document.getElementById('badgeCountConsultation').innerText = count + '🏅';
+        }
+        // Appel initial
+        updateBadgeCounters();
+
+        // Nettoyer les anciens badges "indésirables" (optionnel)
         let anciensBadges = JSON.parse(localStorage.getItem('badges')) || [];
         if (anciensBadges.length > 0) {
-            const nouveauxBadges = anciensBadges.filter(b => !b.includes("1 semaine") && !b.includes("trophée") && !b.includes("🏆"));
-            localStorage.setItem('badges', JSON.stringify(nouveauxBadges));
-        } else {
-            localStorage.setItem('badges', JSON.stringify([]));
+            const propres = anciensBadges.filter(b => !b.includes("1 semaine") && !b.includes("trophée") && !b.includes("🏆"));
+            localStorage.setItem('badges', JSON.stringify(propres));
+            updateBadgeCounters();
         }
 
         // Onglets
@@ -343,12 +443,13 @@
             });
         });
 
-        // Variables globales
+        // Variables globales (expertise)
         let progression = JSON.parse(localStorage.getItem('progression')) || [false,false,false,false,false,false,false];
         let historique = JSON.parse(localStorage.getItem('historique')) || [];
         function sauvegarderTout() {
             localStorage.setItem('progression', JSON.stringify(progression));
             localStorage.setItem('historique', JSON.stringify(historique));
+            updateBadgeCounters();   // Rafraîchir compteur
         }
 
         let currentDomaine = '';
@@ -357,38 +458,47 @@
         const totalPages = 8;
         let currentExpertiseInterval = null;
 
-        function isJourGenere(jourNum) { return !!jours[jourNum]; }
-
-        // Mise à jour du message du header (clignotement, validation)
-        function updateProgressHeader() {
-            const headerDiv = document.getElementById('progressHeaderMsg');
-            if (!headerDiv) return;
-            if (currentPage === 0 || !jours[currentPage]) {
-                headerDiv.style.display = 'none';
-                return;
-            }
-            const jourIndex = currentPage - 1;
-            if (progression[jourIndex]) {
-                headerDiv.style.display = 'none';
-                return;
-            }
-            // Jour non validé et contenu présent
-            headerDiv.style.display = 'block';
-            headerDiv.innerHTML = '👇 Cliquer ici pour valider votre journée 👇';
-            headerDiv.style.cursor = 'pointer';
-            // Supprimer ancien listener pour éviter double
-            const newHeader = headerDiv.cloneNode(true);
-            headerDiv.parentNode.replaceChild(newHeader, headerDiv);
-            const freshHeader = document.getElementById('progressHeaderMsg');
-            freshHeader.addEventListener('click', () => {
-                const idx = currentPage - 1;
-                if (idx >= 0 && !progression[idx] && jours[currentPage]) {
-                    cocherSegment(idx);
-                }
-            });
+        // LECTEUR AUDIO pour accueil (voix simple)
+        let welcomeUtterance = null;
+        let isWelcomePlaying = false;
+        function stopWelcomeAudio() { if (window.speechSynthesis) window.speechSynthesis.cancel(); isWelcomePlaying = false; }
+        function playWelcomeAudio(text) {
+            if (!window.speechSynthesis) return;
+            stopWelcomeAudio();
+            const cleaned = text.replace(/\*\*/g,'').replace(/\*/g,'').replace(/#/g,'').replace(/`/g,'').replace(/_/g,'').replace(/\[([^\]]+)\]\([^\)]+\)/g,'$1').trim();
+            if (!cleaned) return;
+            const utterance = new SpeechSynthesisUtterance(cleaned);
+            utterance.lang = 'fr-FR';
+            utterance.rate = 0.9;
+            utterance.onend = () => { isWelcomePlaying = false; };
+            utterance.onerror = () => { isWelcomePlaying = false; };
+            window.speechSynthesis.speak(utterance);
+            isWelcomePlaying = true;
         }
 
-        // Barre segmentée + clignotement
+        // LECTEUR AUDIO pour jours (voix plus masculine)
+        let dayUtterance = null;
+        let isDayPlaying = false;
+        function stopDayAudio() { if (window.speechSynthesis) window.speechSynthesis.cancel(); isDayPlaying = false; }
+        function playDayAudio(text) {
+            if (!window.speechSynthesis) return;
+            stopDayAudio();
+            const cleaned = text.replace(/\*\*/g,'').replace(/\*/g,'').replace(/#/g,'').replace(/`/g,'').replace(/_/g,'').replace(/\[([^\]]+)\]\([^\)]+\)/g,'$1').trim();
+            if (!cleaned) return;
+            const utterance = new SpeechSynthesisUtterance(cleaned);
+            utterance.lang = 'fr-FR';
+            utterance.rate = 0.85;
+            // tentatives voix masculine
+            const voices = window.speechSynthesis.getVoices();
+            const maleVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Male') || v.name.includes('Homme') || v.name.includes('Thomas')));
+            if (maleVoice) utterance.voice = maleVoice;
+            utterance.onend = () => { isDayPlaying = false; };
+            utterance.onerror = () => { isDayPlaying = false; };
+            window.speechSynthesis.speak(utterance);
+            isDayPlaying = true;
+        }
+
+        // Mise à jour des segments (J1...J7)
         function afficherBarreSegments() {
             const container = document.getElementById('segmentsContainer');
             if (!container) return;
@@ -397,10 +507,13 @@
                 const seg = document.createElement('div');
                 seg.className = 'segment';
                 if (progression[i]) seg.classList.add('completed');
-                if (!progression[i] && !isJourGenere(i+1)) seg.classList.add('disabled');
-                seg.innerText = `${i+1}`;
+                if (!progression[i] && !jours[i+1]) seg.classList.add('disabled');
+                // Si le jour est chargé mais non validé, on ajoute la classe "loaded" pour le texte gras
+                if (jours[i+1] && !progression[i]) seg.classList.add('loaded');
+                const dayNum = i+1;
+                seg.innerHTML = `<div class="day-label">J${dayNum}</div><div class="day-status">${progression[i] ? '✓' : (jours[i+1] ? '📖' : '🔒')}</div>`;
                 seg.onclick = (function(idx) { return () => {
-                    if (!progression[idx] && !isJourGenere(idx+1)) {
+                    if (!progression[idx] && !jours[idx+1]) {
                         alert(`Veuillez d'abord générer le contenu du jour ${idx+1} en naviguant vers ce jour.`);
                         return;
                     }
@@ -408,45 +521,54 @@
                 }; })(i);
                 container.appendChild(seg);
             }
-            // Gérer le clignotement : la case entière apparaît/disparaît
-            updateBlinkAndHeader();
+            updateValidationMessage();
         }
 
-        function updateBlinkAndHeader() {
-            const segments = document.querySelectorAll('#segmentsContainer .segment');
-            for (let i = 0; i < segments.length; i++) {
-                const jour = i+1;
-                const isCompleted = progression[i];
-                const isCurrent = (currentPage === jour);
-                if (!isCompleted && isCurrent && jours[jour]) {
-                    segments[i].classList.add('blink');
-                } else {
-                    segments[i].classList.remove('blink');
-                }
+        // Message clignotant au-dessus des segments
+        function updateValidationMessage() {
+            const msgDiv = document.getElementById('progressHeaderMsg');
+            if (!msgDiv) return;
+            if (currentPage === 0 || !jours[currentPage] || progression[currentPage-1]) {
+                msgDiv.style.display = 'none';
+                return;
             }
-            updateProgressHeader();
+            msgDiv.style.display = 'block';
+            msgDiv.innerHTML = '👉 cliquez ici pour valider cette journée !';
+            // Rendre le message cliquable
+            msgDiv.onclick = () => {
+                const idx = currentPage-1;
+                if (idx >=0 && !progression[idx] && jours[currentPage]) cocherSegment(idx);
+            };
         }
 
         function cocherSegment(idx) {
-            // Vérifier ordre
             for (let i=0; i<idx; i++) if (!progression[i]) { alert(`Validez d'abord le jour ${i+1}.`); return; }
             if (!progression[idx]) {
                 progression[idx] = true;
                 sauvegarderTout();
                 afficherBarreSegments();
+                // si c'est le dernier jour, débloquer badge
                 if (idx+1 === 7) {
                     alert(`🎉 Félicitations ! Vous avez achevé votre expertise. Badge "Expert en ${currentDomaine}" débloqué.`);
+                    let badges = JSON.parse(localStorage.getItem('badges')) || [];
+                    const expertBadge = `🏅 Expert en ${currentDomaine}`;
+                    if (!badges.includes(expertBadge)) {
+                        badges.push(expertBadge);
+                        localStorage.setItem('badges', JSON.stringify(badges));
+                        updateBadgeCounters();
+                    }
                     const histEntry = historique.find(h => h.domaine === currentDomaine);
                     if (histEntry) histEntry.dateFin = new Date().toISOString();
                 } else alert(`🎊 Bravo ! Jour ${idx+1}/7 validé.`);
                 const histEntry = historique.find(h => h.domaine === currentDomaine);
                 if (histEntry) histEntry.progression = progression.slice();
                 sauvegarderTout();
-                updateBlinkAndHeader();
+                afficherBarreSegments();
+                updateValidationMessage();
             }
         }
 
-        // Texte d'accueil ultra compact (sans défilement)
+        // Texte d'accueil (compact)
         const welcomeHTML = `
             <div class="welcome-text">
                 <strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br>
@@ -461,13 +583,7 @@
             </div>
         `;
 
-        // ========== Fonctions génération / navigation ==========
-        function stopAllProgress() {
-            if (currentExpertiseInterval) clearInterval(currentExpertiseInterval);
-            const area = document.getElementById('expertiseProgressArea');
-            if (area) area.style.display = 'none';
-        }
-
+        // Chargement et affichage
         function startExpertiseProgressBar() {
             const area = document.getElementById('expertiseProgressArea');
             const fill = document.getElementById('expertiseProgressFill');
@@ -483,7 +599,6 @@
             }, 150);
             return interval;
         }
-
         function stopExpertiseProgressBar(interval, complete) {
             const area = document.getElementById('expertiseProgressArea');
             const fill = document.getElementById('expertiseProgressFill');
@@ -506,27 +621,42 @@
             const prevBtn = document.getElementById('prevDay');
             const nextBtn = document.getElementById('nextDay');
             const feedbackBox = document.getElementById('feedbackBox');
+            const welcomeBtn = document.getElementById('audioWelcomeBtn');
+            const dayAudioBtn = document.getElementById('audioDayBtn');
             if (page === 0) {
                 contentDiv.innerHTML = welcomeHTML;
                 daySpan.innerText = 'Intro / 8';
                 prevBtn.disabled = true;
                 nextBtn.disabled = false;
                 feedbackBox.style.display = 'none';
-                updateBlinkAndHeader();
+                welcomeBtn.style.display = 'flex';
+                dayAudioBtn.style.display = 'none';
+                // attacher lecteur accueil
+                welcomeBtn.onclick = () => {
+                    const introText = document.getElementById('jourContent').innerText;
+                    if (introText) playWelcomeAudio(introText);
+                };
             } else {
                 const jourNum = page;
+                welcomeBtn.style.display = 'none';
                 if (jours[jourNum]) {
                     contentDiv.innerHTML = jours[jourNum].replace(/\n/g, '<br>');
                     daySpan.innerText = `Jour ${jourNum} / 7`;
-                    prevBtn.disabled = false;   // on peut revenir à l'accueil
+                    prevBtn.disabled = false;
                     nextBtn.disabled = (jourNum === 7);
                     feedbackBox.style.display = 'block';
-                    updateBlinkAndHeader();
+                    dayAudioBtn.style.display = 'flex';
+                    dayAudioBtn.onclick = () => {
+                        const dayText = document.getElementById('jourContent').innerText;
+                        if (dayText) playDayAudio(dayText);
+                    };
+                    afficherBarreSegments();
                 } else {
                     contentDiv.innerHTML = '<em>Chargement du jour...</em>';
                     chargerJour(jourNum);
                 }
             }
+            updateValidationMessage();
         }
 
         function chargerJour(jourNum) {
@@ -543,14 +673,14 @@
                 jours[jourNum] = data.contenu;
                 stopExpertiseProgressBar(currentExpertiseInterval, true);
                 afficherPage(jourNum);
-                updateBlinkAndHeader();
+                afficherBarreSegments();
             })
             .catch(err => {
                 console.error(err);
                 stopExpertiseProgressBar(currentExpertiseInterval, false);
                 jours[jourNum] = `<strong>⚠️ Erreur de génération</strong><br>Contenu non disponible. Vérifiez votre connexion ou réessayez.`;
                 afficherPage(jourNum);
-                updateBlinkAndHeader();
+                afficherBarreSegments();
             });
         }
 
@@ -575,21 +705,13 @@
         });
 
         document.getElementById('prevDay').addEventListener('click', () => {
-            if (currentPage > 0) {
-                currentPage--;
-                afficherPage(currentPage);
-                updateBlinkAndHeader();
-            }
+            if (currentPage > 0) { currentPage--; afficherPage(currentPage); }
         });
         document.getElementById('nextDay').addEventListener('click', () => {
-            if (currentPage < totalPages - 1) {
-                currentPage++;
-                afficherPage(currentPage);
-                updateBlinkAndHeader();
-            }
+            if (currentPage < totalPages - 1) { currentPage++; afficherPage(currentPage); }
         });
 
-        // Feedback (étoiles)
+        // Feedback
         let currentNoteEx = 0;
         function refreshStars() {
             document.querySelectorAll('#starsEx .star').forEach((s, idx) => {
@@ -608,12 +730,12 @@
             const comment = document.getElementById('feedbackCommentEx').value.trim();
             try {
                 await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) });
-                alert('Merci pour votre avis !');
+                alert('Merci !');
                 document.getElementById('feedbackBox').style.display = 'none';
             } catch(err) { alert('Erreur réseau'); }
         });
 
-        // ========== MODE PERSONNEL (simplifié sans audio) ==========
+        // Mode Personnel
         let currentPersonnelInterval = null;
         function startGenericProgress(areaId, fillId, textId) {
             const area = document.getElementById(areaId);
@@ -653,7 +775,7 @@
             } catch(err) { stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText', currentPersonnelInterval, false); alert('Erreur: ' + err.message); }
         });
 
-        // Consultation -> redirige vers expertise
+        // Consultation
         document.getElementById('generateConsult').addEventListener('click', () => {
             let msg = document.getElementById('consultMessage').value.trim();
             if (!msg) { alert('Message requis'); return; }
@@ -674,7 +796,6 @@
         // Historique
         const historyModal = document.getElementById('historyModal');
         const historyList = document.getElementById('historyList');
-        const closeHistory = document.getElementById('closeHistoryModal');
         function formaterDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
         function afficherHistorique() {
             historyList.innerHTML = '';
@@ -706,10 +827,10 @@
             });
         }
         document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display = 'flex'; });
-        closeHistory.addEventListener('click', () => historyModal.style.display = 'none');
+        document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
         window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
 
-        // Partage de lien
+        // Partage / abonnement
         document.getElementById('shareButton').addEventListener('click', async () => {
             const url = window.location.href;
             if (navigator.share) {
