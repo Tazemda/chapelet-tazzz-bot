@@ -124,7 +124,7 @@
                 <button id="submitFeedbackEx">Envoyer mon avis</button>
             </div>
         </div>
-        <div id="expertiseLoader" class="loader">⏳ Génération en cours...</div>
+        <div id="expertiseLoader" class="loader">⏳ Génération du programme complet (7 jours)...</div>
     </div>
 
     <!-- Mode Personnel -->
@@ -165,56 +165,61 @@
         });
     });
 
-    // ========== EXPERTISE : navigation jour 1 à 7 (sans page 0) ==========
-    let domaine = '';
-    let jours = {};
+    // ========== EXPERTISE : génération complète en un seul appel ==========
+    let jours = [];
     let currentJour = 1;
     const totalJours = 7;
 
     function afficherJour(jour) {
         const contentDiv = document.getElementById('jourContent');
         const daySpan = document.getElementById('dayCounter');
-        if (jours[jour]) {
-            contentDiv.innerHTML = jours[jour].replace(/\n/g, '<br>');
+        if (jours.length >= jour && jours[jour-1]) {
+            contentDiv.innerHTML = jours[jour-1].replace(/\n/g, '<br>');
             daySpan.innerText = `Jour ${jour} / 7`;
             document.getElementById('prevDay').disabled = (jour === 1);
             document.getElementById('nextDay').disabled = (jour === 7);
             document.getElementById('feedbackBox').style.display = 'block';
         } else {
-            contentDiv.innerHTML = '<em>Chargement du jour...</em>';
-            chargerJour(jour);
+            contentDiv.innerHTML = '<em>Jour non disponible. Relancez la génération.</em>';
         }
     }
 
-    function chargerJour(jour) {
+    function chargerExpertise(domaine) {
         const loader = document.getElementById('expertiseLoader');
         loader.style.display = 'block';
-        fetch('/generer_jour_expertise', {
+        fetch('/generer_expertise', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ domaine: domaine, jour: jour })
+            body: JSON.stringify({ domaine: domaine })
         })
         .then(res => res.json())
         .then(data => {
             if (data.error) throw new Error(data.error);
-            jours[jour] = data.contenu;
-            afficherJour(jour);
+            if (data.jours) {
+                jours = data.jours;
+                currentJour = 1;
+                afficherJour(1);
+                document.getElementById('jourContainer').style.display = 'block';
+            } else if (data.chapelet) {
+                // Fallback : affiche tout le texte
+                document.getElementById('jourContent').innerHTML = data.chapelet.replace(/\n/g, '<br>');
+                document.getElementById('dayCounter').innerText = 'Texte unique';
+                document.getElementById('prevDay').disabled = true;
+                document.getElementById('nextDay').disabled = true;
+                document.getElementById('jourContainer').style.display = 'block';
+            }
         })
         .catch(err => {
             console.error(err);
-            jours[jour] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jour}. Rafraîchissez ou réessayez.`;
-            afficherJour(jour);
+            alert('Erreur de génération : ' + err.message);
         })
         .finally(() => loader.style.display = 'none');
     }
 
     document.getElementById('startExpertise').addEventListener('click', () => {
-        domaine = document.getElementById('domaine').value.trim();
+        const domaine = document.getElementById('domaine').value.trim();
         if (!domaine) { alert('Domaine requis'); return; }
-        jours = {};
-        currentJour = 1;
-        chargerJour(1);
-        document.getElementById('jourContainer').style.display = 'block';
+        chargerExpertise(domaine);
         document.getElementById('startExpertise').style.display = 'none';
     });
 
@@ -287,10 +292,7 @@
     document.getElementById('generateConsult').addEventListener('click', () => {
         let msg = document.getElementById('consultMessage').value.trim();
         if (!msg) { alert('Message requis'); return; }
-        domaine = msg;
-        jours = {};
-        currentJour = 1;
-        chargerJour(1);
+        chargerExpertise(msg);
         document.getElementById('jourContainer').style.display = 'block';
         document.getElementById('startExpertise').style.display = 'none';
         document.getElementById('consultResult').innerHTML = 'Redirection vers le mode Expertise...';
