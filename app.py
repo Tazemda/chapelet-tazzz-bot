@@ -34,6 +34,13 @@ def clean_markdown(text):
     text = re.sub(r'```[\s\S]*?```', '', text)
     return text.replace('`', '').strip()
 
+def remove_markdown_chars(text):
+    """Supprime les caractères # et * (gras/italique) du texte pour une lecture plus fluide."""
+    text = re.sub(r'\*\*', '', text)   # supprime les doubles astérisques (gras)
+    text = re.sub(r'\*', '', text)     # supprime les astérisques simples (italique)
+    text = re.sub(r'#', '', text)      # supprime les dièses
+    return text
+
 def init_db():
     conn = sqlite3.connect('tazbot.db')
     c = conn.cursor()
@@ -46,7 +53,7 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= PROMPT ALLÉGÉ (méditation 2-3 phrases, Ave Maria 3-4 phrases) =================
+# ================= PROMPT ALLÉGÉ =================
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
@@ -85,19 +92,21 @@ def generer_jour_expertise(domaine, jour_num):
     try:
         raw = call_deepseek(prompt, max_tokens=2000)
         contenu = clean_markdown(raw)
-        # Vérification minimale : si le contenu ne commence pas par "## **JOUR", on ajoute un titre générique
-        if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
-            contenu = f"## **JOUR {jour_num} – {titre_objectif.upper()}**\n\n{contenu}"
+        # Supprimer les caractères # et * pour une lecture audio propre
+        contenu = remove_markdown_chars(contenu)
+        # Vérification minimale : si le contenu ne commence pas par "JOUR", on ajoute un titre générique sans caractères spéciaux
+        if not re.search(r'JOUR\s+\d+', contenu, re.IGNORECASE):
+            contenu = f"JOUR {jour_num} – {titre_objectif.upper()}\n\n{contenu}"
         return contenu
     except Exception as e:
         print(f"Erreur jour {jour_num}: {e}")
-        return f"""## **JOUR {jour_num} – {titre_objectif.upper()}** (version de secours)
+        return f"""JOUR {jour_num} – {titre_objectif.upper()} (version de secours)
 
-**DIZAINE 1 – Introduction à {domaine}**
-**Méditation synthèse générale (gros grain)** : (contenu temporaire – veuillez réessayer plus tard)
+DIZAINE 1 – Introduction à {domaine}
+Méditation synthèse générale (gros grain) : (contenu temporaire – veuillez réessayer plus tard)
 RÉPÈTE 3 x – pas de graines : ?
 RÉPÈTE 10 x – les 10 petites graines : ...
-RÉPÈTE 3 x – pas de graines : "Le concept est consolidé."
+RÉPÈTE 3 x – pas de graines : Le concept est consolidé.
 (Dizaines 2 à 5 structure similaire)"""
 
 # ================= DÉVELOPPEMENT PERSONNEL (inchangé) =================
