@@ -83,7 +83,28 @@
         .stars { display: inline-flex; gap: 5px; margin: 10px; }
         .star { font-size: 28px; cursor: pointer; color: #555; transition: color 0.2s; }
         .star.selected { color: gold; }
-        .loader { display: none; text-align: center; margin: 20px; }
+        .loader-container {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #2c3e4e;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 20px;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background-color: #e67e22;
+            transition: width 0.2s ease;
+        }
+        .progress-text {
+            margin-top: 8px;
+            font-size: 0.9rem;
+        }
         .action-buttons {
             display: flex;
             gap: 15px;
@@ -136,7 +157,10 @@
                 <button id="submitFeedbackEx">Envoyer mon avis</button>
             </div>
         </div>
-        <div id="expertiseLoader" class="loader">⏳ Génération en cours...</div>
+        <div id="expertiseLoader" class="loader-container">
+            <div class="progress-bar"><div class="progress-fill" id="expertiseProgressFill"></div></div>
+            <div class="progress-text" id="expertiseProgressText">0%</div>
+        </div>
     </div>
 
     <!-- Mode Personnel -->
@@ -145,6 +169,10 @@
         <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;Je dépense sans compter&#10;Je suis timide&#10;Je manque de motivation"></textarea>
         <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
         <div id="personnelResult" class="result"></div>
+        <div id="personnelLoader" class="loader-container">
+            <div class="progress-bar"><div class="progress-fill" id="personnelProgressFill"></div></div>
+            <div class="progress-text" id="personnelProgressText">0%</div>
+        </div>
     </div>
 
     <!-- Mode Consultation -->
@@ -153,6 +181,10 @@
         <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention du risque thrombo-embolique..."></textarea>
         <button id="generateConsult">✨ GÉNÉRER ✨</button>
         <div id="consultResult" class="result"></div>
+        <div id="consultLoader" class="loader-container">
+            <div class="progress-bar"><div class="progress-fill" id="consultProgressFill"></div></div>
+            <div class="progress-text" id="consultProgressText">0%</div>
+        </div>
     </div>
 
     <!-- Boutons d'action (partage et abonnement) -->
@@ -184,6 +216,47 @@
         });
     });
 
+    // Fonction pour démarrer la barre de progression
+    function startProgress(loaderId, fillId, textId) {
+        const loaderDiv = document.getElementById(loaderId);
+        const fillDiv = document.getElementById(fillId);
+        const textSpan = document.getElementById(textId);
+        if (!loaderDiv || !fillDiv || !textSpan) return;
+        
+        loaderDiv.style.display = 'block';
+        let percent = 0;
+        const interval = setInterval(() => {
+            if (percent < 90) {
+                percent += 2; // incrémentation progressive
+                if (percent > 90) percent = 90;
+                fillDiv.style.width = percent + '%';
+                textSpan.innerText = percent + '%';
+            }
+        }, 150);
+        
+        // Stocker l'intervalle pour l'arrêter plus tard
+        return interval;
+    }
+    
+    function stopProgress(loaderId, fillId, textId, interval, complete = true) {
+        const loaderDiv = document.getElementById(loaderId);
+        const fillDiv = document.getElementById(fillId);
+        const textSpan = document.getElementById(textId);
+        if (interval) clearInterval(interval);
+        if (complete && fillDiv && textSpan) {
+            fillDiv.style.width = '100%';
+            textSpan.innerText = '100%';
+            setTimeout(() => {
+                if (loaderDiv) loaderDiv.style.display = 'none';
+            }, 300);
+        } else {
+            if (loaderDiv) loaderDiv.style.display = 'none';
+        }
+        // Remettre la barre à 0 pour la prochaine fois (optionnel)
+        if (fillDiv) fillDiv.style.width = '0%';
+        if (textSpan) textSpan.innerText = '0%';
+    }
+
     // ========== PAGE PRÉLIMINAIRE (fixe) ==========
     const PAGE0 = `
 # 📖 Bienvenue dans votre chapelet d’expertise
@@ -200,11 +273,12 @@
 👉 Cliquez sur **“Suivant”** pour commencer le **Jour 1**.
     `;
 
-    // ========== EXPERTISE : navigation avec page préliminaire (page 0) ==========
+    // ========== EXPERTISE ==========
     let domaine = '';
     let jours = {};
     let currentPage = 0;
     const totalPages = 8;
+    let currentExpertiseInterval = null;
 
     function afficherPage(page) {
         const contentDiv = document.getElementById('jourContent');
@@ -235,8 +309,10 @@
     }
 
     function chargerJour(jourNum) {
-        const loader = document.getElementById('expertiseLoader');
-        loader.style.display = 'block';
+        // Démarrer barre de progression
+        if (currentExpertiseInterval) clearInterval(currentExpertiseInterval);
+        currentExpertiseInterval = startProgress('expertiseLoader', 'expertiseProgressFill', 'expertiseProgressText');
+        
         fetch('/generer_jour_expertise', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -246,14 +322,15 @@
         .then(data => {
             if (data.error) throw new Error(data.error);
             jours[jourNum] = data.contenu;
+            stopProgress('expertiseLoader', 'expertiseProgressFill', 'expertiseProgressText', currentExpertiseInterval, true);
             afficherPage(jourNum);
         })
         .catch(err => {
             console.error(err);
             jours[jourNum] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jourNum}. Rafraîchissez ou réessayez.`;
+            stopProgress('expertiseLoader', 'expertiseProgressFill', 'expertiseProgressText', currentExpertiseInterval, false);
             afficherPage(jourNum);
-        })
-        .finally(() => loader.style.display = 'none');
+        });
     }
 
     document.getElementById('startExpertise').addEventListener('click', () => {
@@ -314,11 +391,14 @@
         } catch (err) { alert('Erreur réseau'); }
     });
 
-    // Mode Personnel
+    // ========== MODE PERSONNEL ==========
+    let currentPersonnelInterval = null;
     document.getElementById('generatePersonnel').addEventListener('click', async () => {
         let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
         if (defauts.length !== 5) { alert('5 défauts requis'); return; }
-        document.getElementById('personnelResult').innerHTML = '⏳ Génération...';
+        document.getElementById('personnelResult').innerHTML = '';
+        if (currentPersonnelInterval) clearInterval(currentPersonnelInterval);
+        currentPersonnelInterval = startProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText');
         try {
             const res = await fetch('/generer_personnel', {
                 method: 'POST',
@@ -327,25 +407,47 @@
             });
             const data = await res.json();
             if (data.error) throw new Error(data.error);
+            stopProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText', currentPersonnelInterval, true);
             document.getElementById('personnelResult').innerHTML = data.contenu.replace(/\n/g, '<br>');
-        } catch (err) { alert('Erreur: ' + err.message); }
+        } catch (err) {
+            stopProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText', currentPersonnelInterval, false);
+            alert('Erreur: ' + err.message);
+        }
     });
 
-    // Mode Consultation
-    document.getElementById('generateConsult').addEventListener('click', () => {
+    // ========== MODE CONSULTATION ==========
+    let currentConsultInterval = null;
+    document.getElementById('generateConsult').addEventListener('click', async () => {
         let msg = document.getElementById('consultMessage').value.trim();
         if (!msg) { alert('Message requis'); return; }
-        domaine = msg;
-        jours = {};
-        currentPage = 0;
-        afficherPage(0);
-        document.getElementById('jourContainer').style.display = 'block';
-        document.getElementById('startExpertise').style.display = 'none';
-        document.getElementById('consultResult').innerHTML = 'Redirection vers le mode Expertise...';
-        document.querySelector('.mode-btn[data-mode="expertise"]').click();
+        document.getElementById('consultResult').innerHTML = '';
+        if (currentConsultInterval) clearInterval(currentConsultInterval);
+        currentConsultInterval = startProgress('consultLoader', 'consultProgressFill', 'consultProgressText');
+        try {
+            const res = await fetch('/generer_consultation', {  // Note : cette route n'existe pas encore dans app.py, mais on laisse pour l'exemple
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msg })
+            });
+            const data = await res.json();
+            if (data.error) throw new Error(data.error);
+            stopProgress('consultLoader', 'consultProgressFill', 'consultProgressText', currentConsultInterval, true);
+            document.getElementById('consultResult').innerHTML = data.contenu.replace(/\n/g, '<br>');
+        } catch (err) {
+            // Fallback : rediriger vers l'expertise
+            stopProgress('consultLoader', 'consultProgressFill', 'consultProgressText', currentConsultInterval, false);
+            alert('Redirection vers le mode Expertise (car consultation directe non disponible)');
+            domaine = msg;
+            jours = {};
+            currentPage = 0;
+            afficherPage(0);
+            document.getElementById('jourContainer').style.display = 'block';
+            document.getElementById('startExpertise').style.display = 'none';
+            document.querySelector('.mode-btn[data-mode="expertise"]').click();
+        }
     });
 
-    // ========== BOUTON PARTAGE ==========
+    // Boutons partage et abonnement (inchangés)
     document.getElementById('shareButton').addEventListener('click', async () => {
         const url = window.location.href;
         if (navigator.share) {
@@ -359,7 +461,6 @@
                 if (err.name !== 'AbortError') alert('Partage annulé ou erreur.');
             }
         } else {
-            // Fallback : copier le lien
             try {
                 await navigator.clipboard.writeText(url);
                 alert('Lien copié dans le presse-papiers !');
@@ -368,12 +469,8 @@
             }
         }
     });
-
-    // ========== BOUTON ABONNEMENT (simulation) ==========
     document.getElementById('subscribeButton').addEventListener('click', () => {
         alert("🔒 L'abonnement n'est pas encore actif. Cette option sera bientôt disponible.\nPour l'instant, l'accès est gratuit.");
-        // Ici, plus tard, vous redirigerez vers une page de paiement (Stripe, etc.)
-        // window.location.href = "/subscribe";
     });
 </script>
 </body>
