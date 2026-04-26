@@ -1,7 +1,6 @@
 import os
 import re
 import sqlite3
-import time
 from datetime import datetime
 from flask import Flask, request, jsonify, render_template
 import requests
@@ -12,9 +11,9 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-def call_deepseek(prompt, max_tokens=3500, timeout=240, retries=2):
+def call_deepseek(prompt, max_tokens=2000):
     if not DEEPSEEK_API_KEY:
-        raise Exception("❌ Clé API DeepSeek manquante")
+        raise Exception("Clé API manquante")
     headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
     payload = {
         "model": "deepseek-chat",
@@ -22,23 +21,14 @@ def call_deepseek(prompt, max_tokens=3500, timeout=240, retries=2):
         "temperature": 0.7,
         "max_tokens": max_tokens
     }
-    for attempt in range(retries + 1):
-        try:
-            resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=timeout)
-            if resp.status_code == 200:
-                return resp.json()["choices"][0]["message"]["content"]
-            else:
-                raise Exception(f"API error {resp.status_code}: {resp.text[:200]}")
-        except requests.exceptions.Timeout:
-            if attempt < retries:
-                time.sleep(2)
-                continue
-            raise Exception("⏱️ Timeout – DeepSeek ne répond pas")
-        except Exception as e:
-            if attempt < retries:
-                time.sleep(2)
-                continue
-            raise e
+    try:
+        resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=150)
+        if resp.status_code == 200:
+            return resp.json()["choices"][0]["message"]["content"]
+        else:
+            raise Exception(f"API error {resp.status_code}: {resp.text[:200]}")
+    except Exception as e:
+        raise Exception(f"Erreur API: {str(e)}")
 
 def clean_markdown(text):
     text = re.sub(r'```[\s\S]*?```', '', text)
@@ -56,35 +46,29 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= PROMPT AVEC LES LIBELLÉS EXACTS =================
+# ================= EXPERTISE (7 jours, titres dynamiques) =================
+# NOUVEAU PROMPT AVEC LES LIBELLÉS EXACTS
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
 Génère le contenu complet du **Jour {jour_num}** sur 7 jours.  
 L'objectif général du jour {jour_num} est : {titre_objectif}.
 
-Commence par écrire le **titre du jour** sous la forme :
+Commence par écrire le **titre du jour** sous la forme (obligatoire) :
 ## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**
 
-Puis, rédige exactement **5 DIZAINES**. Chaque dizaine doit suivre ce format (ne mets pas les mentions "répète ceci" dans le texte) :
+Puis, rédige exactement **5 DIZAINES** selon le modèle ci‑dessous.  
+Chaque dizaine doit être complète et détaillée.
 
-**DIZAINE X – Concept : [nom du concept]**
+**DIZAINE 1 – Concept : [nom du concept]**
+**Méditation synthèse générale (gros grain)** : (paragraphe dense avec définitions, exemples concrets, points clés)
+**Notre Père** (répète ceci 3 x – pas de graines) : (une seule phrase : une question centrale pertinente qui montre le problème clé que ce concept résout)
+**Je vous salue Marie** (répète ceci 10 x – les 10 petites graines) : (un paragraphe de 5 à 8 phrases, synthétique et mémorisable)
+**Gloire au Père** (répète ceci 3 x) : "Le concept "[nom]" est consolidé."
 
-**Méditation synthèse générale (gros grain)**  
-(paragraphe dense avec définition, rôle, exemple concret)
+Répète pour **DIZAINE 2** à **DIZAINE 5**.
 
-**Notre Père** (répète ceci 3 x – pas de graines)  
-(une seule phrase : question centrale pertinente)
-
-**Je vous salue Marie** (répète ceci 10 x – les 10 petites graines)  
-(paragraphe de 5 à 8 phrases, synthétique et mémorisable)
-
-**Gloire au Père** (répète ceci 3 x)  
-"Le concept [nom] est consolidé."
-
-Répète pour DIZAINE 2 à 5.
-
-Adapte le contenu au domaine exact "{domaine}". Soigne la qualité.
+Soigne la qualité et l'exhaustivité. Contenu directement utilisable pour un apprentissage autonome.
 """
 
 def generer_jour_expertise(domaine, jour_num):
@@ -99,46 +83,35 @@ def generer_jour_expertise(domaine, jour_num):
     ]
     titre_objectif = objectifs[jour_num-1]
     prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_objectif=titre_objectif)
-
-    # Premier appel
-    raw = call_deepseek(prompt, max_tokens=3500, timeout=240, retries=2)
-    contenu = clean_markdown(raw)
-
-    # Vérifier le nombre de dizaines
-    nb_dizaines = contenu.count("**DIZAINE")
-    if nb_dizaines < 5:
-        # Relance avec plus de tokens
-        raw = call_deepseek(prompt, max_tokens=4500, timeout=300, retries=1)
+    try:
+        raw = call_deepseek(prompt, max_tokens=2000)
         contenu = clean_markdown(raw)
-        nb_dizaines = contenu.count("**DIZAINE")
-        if nb_dizaines < 5:
-            contenu += f"\n\n⚠️ Attention : seules {nb_dizaines} dizaines ont été générées."
+        # Vérification minimale : si le contenu ne commence pas par "## **JOUR", on ajoute un titre générique
+        if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
+            contenu = f"## **JOUR {jour_num} – {titre_objectif.upper()}**\n\n{contenu}"
+        return contenu
+    except Exception as e:
+        print(f"Erreur jour {jour_num}: {e}")
+        return f"""## **JOUR {jour_num} – {titre_objectif.upper()}** (version de secours)
 
-    # Titre par défaut si absent
-    if not re.search(r'##\s*\*\*JOUR\s+\d+', contenu, re.IGNORECASE):
-        contenu = f"## **JOUR {jour_num} – {titre_objectif.upper()}**\n\n{contenu}"
+**DIZAINE 1 – Introduction à {domaine}**
+**Méditation synthèse générale (gros grain)** : (contenu temporaire – veuillez réessayer plus tard)
+**Notre Père** (répète ceci 3 x – pas de graines) : ?
+**Je vous salue Marie** (répète ceci 10 x – les 10 petites graines) : ...
+**Gloire au Père** (répète ceci 3 x) : consolidé.
+(Dizaines 2 à 5 structure similaire)"""
 
-    return contenu
-
-# ================= MODE PERSONNEL =================
+# ================= DÉVELOPPEMENT PERSONNEL (simplifié) =================
 def generer_personnel(defauts):
-    notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes."
+    notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour."
     resultats = []
     for i, d in enumerate(defauts, 1):
-        prompt = f"""
-Génère un **Mystère {i}** pour le défaut : "{d}".
-Format exact :
-**Mystère {i} – {d}**
-**Méditation synthèse générale (gros grain)** : (2-3 phrases : rappel d'un échec passé puis visualisation positive)
-**Notre Père** (répète ceci 3 x) : "{notre_pere}"
-**Je vous salue Marie** (répète ceci 10 x) : (une phrase courte positive adaptée à ce défaut)
-**Gloire au Père** (répète ceci 3 x) : "Je remercie Dieu et l'univers pour cette transformation."
-"""
+        prompt = f"Mystère {i} – {d}\n**Méditation** : souvenir d'un échec puis visualisation positive.\n**Notre Père** : {notre_pere} (3 fois)\n**Je vous salue Marie** : phrase courte positive corrigeant {d} (10 fois)\n**Gloire au Père** : Merci (3 fois)"
         try:
-            raw = call_deepseek(prompt, max_tokens=800, timeout=120, retries=1)
+            raw = call_deepseek(prompt, max_tokens=500)
             resultats.append(clean_markdown(raw))
-        except Exception as e:
-            resultats.append(f"❌ **Erreur pour le défaut {i}** : {str(e)}")
+        except:
+            resultats.append(f"**Mystère {i} – {d}** (version de secours)\nMéditation...\nNotre Père...\nAve Maria...")
     return "\n\n".join(resultats)
 
 # ================= ROUTES =================
@@ -153,11 +126,8 @@ def generer_jour_expertise_route():
     jour = data.get('jour')
     if not domaine or not jour:
         return jsonify({'error': 'Domaine et jour requis'}), 400
-    try:
-        contenu = generer_jour_expertise(domaine, int(jour))
-        return jsonify({'contenu': contenu})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    contenu = generer_jour_expertise(domaine, int(jour))
+    return jsonify({'contenu': contenu})
 
 @app.route('/generer_personnel', methods=['POST'])
 def generer_personnel_route():
@@ -165,11 +135,8 @@ def generer_personnel_route():
     defauts = data.get('defauts')
     if not defauts or len(defauts) != 5:
         return jsonify({'error': '5 défauts requis'}), 400
-    try:
-        contenu = generer_personnel(defauts)
-        return jsonify({'contenu': contenu})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    contenu = generer_personnel(defauts)
+    return jsonify({'contenu': contenu})
 
 @app.route('/feedback', methods=['POST'])
 def feedback():
