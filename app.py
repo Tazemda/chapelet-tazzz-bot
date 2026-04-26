@@ -59,11 +59,11 @@ Puis, EXACTEMENT 5 DIZAINES. Chaque dizaine doit suivre ce format (concis) :
 
 **DIZAINE X – Concept : [nom du concept]**
 
-**Méditation synthèse générale (gros grain)** : 7 phrases moyennement denses du jour 1 au jour 7 (définition + rôle + exemple court).
+**Méditation synthèse générale (gros grain)** : exactement 7 phrases moyennement denses non numérotés (toutes les méditations, tous les jours) : définition + rôle + exemple court.
 
 A la place du **Notre Père**, écrire : RÉPÈTE 3 x – pas de graines : une seule phrase, question centrale.
 
-A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 x – les 10 petites graines: 4 à 5 phrases synthétiques, numérotées et mémorisables du jour 1 au jour 7.
+A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 x – les 10 petites graines: exactement 5 phrases (toutes les méditations, tous les jours) synthétiques, numérotées et mémorisables.
 
 A la place du **Gloire au Père**, écrire / RÉPÈTE 3 x – pas de graines : "Le concept [nom] est consolidé."
 
