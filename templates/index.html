@@ -1,166 +1,790 @@
-import os
-import re
-import sqlite3
-from datetime import datetime
-from flask import Flask, request, jsonify, render_template
-import requests
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>🧠 CHAPELET TAZZZ BOT – EXPERTISE 7 JOURS</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e2b3c 0%, #0f1a24 100%);
+            margin: 0;
+            padding: 20px;
+            color: #f0f0f0;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        h1 { text-align: center; font-size: 2.2rem; margin-bottom: 5px; }
+        .subtitle {
+            text-align: center;
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-bottom: 35px;
+            margin-top: 5px;
+            position: relative;
+        }
+        .history-link {
+            position: absolute;
+            left: -10px;
+            bottom: -30px;
+            background: #2c3e4e;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .history-link:hover { background: #e67e22; }
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .mode-btn {
+            background: #2c3e4e;
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .mode-btn.active { background: #e67e22; box-shadow: 0 0 15px rgba(230,126,34,0.5); }
+        .mode-panel { display: none; animation: fadeIn 0.4s ease; }
+        .mode-panel.active-panel { display: block; }
+        input, textarea {
+            width: 100%; padding: 12px; margin: 10px 0;
+            border-radius: 12px; border: none; background: #f0f0f0; font-size: 1rem;
+        }
+        button {
+            background: #e67e22; border: none; color: white; padding: 12px 24px;
+            border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px;
+        }
+        .result {
+            background: #0b1620;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 550px;
+            overflow-y: auto;
+            border-left: 5px solid #e67e22;
+            position: relative;
+        }
+        .play-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: #e67e22;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.3rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: 0.2s;
+        }
+        .play-button:hover {
+            background: #d35400;
+            transform: scale(1.05);
+        }
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        .nav-buttons button { width: auto; margin: 0; }
+        .day-counter { font-size: 0.9rem; }
+        .progress-header {
+            text-align: center;
+            font-size: 0.7rem;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+        .progress-segments {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin: 5px 0 15px 0;
+            flex-wrap: wrap;
+        }
+        .segment {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background-color: #2c3e4e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .segment.completed {
+            background-color: #aa00ff;
+            box-shadow: 0 0 6px #aa00ff;
+        }
+        .segment.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .progress-container {
+            margin: 15px 0 10px 0;
+            width: 100%;
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #2c3e4e;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 20px;
+        }
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background-color: #2ecc71;
+            transition: width 0.2s ease;
+        }
+        .progress-text {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 0.8rem;
+            color: #2ecc71;
+        }
+        .feedback-box {
+            margin-top: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stars { display: inline-flex; gap: 5px; margin: 10px; }
+        .star { font-size: 28px; cursor: pointer; color: #555; transition: color 0.2s; }
+        .star.selected { color: gold; }
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .action-buttons button {
+            background: #2c3e4e;
+            margin-top: 0;
+            padding: 8px 20px;
+            font-size: 0.9rem;
+        }
+        .footer { text-align: center; margin-top: 30px; font-size: 0.8rem; opacity: 0.8; }
+        .copyright { font-size: 0.7rem; margin-top: 10px; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #1e2b3c;
+            max-width: 500px;
+            width: 90%;
+            border-radius: 24px;
+            padding: 20px;
+            text-align: center;
+        }
+        .audio-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .audio-controls button {
+            background: #2c3e4e;
+            margin: 0;
+            padding: 8px 16px;
+        }
+        input[type="range"] {
+            width: 80%;
+            margin: 10px auto;
+        }
+        .history-item {
+            background: #2c3e4e;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+        .badge-text {
+            font-size: 0.8rem;
+            color: #e67e22;
+            margin-top: 4px;
+        }
+        /* Réduction des interlignes pour le message d'accueil */
+        .intro-text {
+            line-height: 1.4;
+        }
+        .intro-text p, .intro-text li, .intro-text div, .intro-text h2, .intro-text h3 {
+            margin: 0.2rem 0;
+        }
+        .intro-text ul, .intro-text ol {
+            margin: 0.3rem 0;
+            padding-left: 1.2rem;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
+    <div class="subtitle">
+        Transforme ta structure mentale
+        <div class="history-link" id="historyLink">📜 Historique</div>
+    </div>
+    <div class="mode-selector">
+        <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
+        <button class="mode-btn" data-mode="personnel">🔥 Développement personnel (21/66j)</button>
+        <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
+    </div>
 
-app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
+    <!-- Mode Expertise -->
+    <div id="expertisePanel" class="mode-panel active-panel">
+        <p>🔬 Domaine à maîtriser :</p>
+        <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
+        <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
+        <div id="jourContainer" style="display:none;">
+            <div class="progress-header">✅ Jour rempli à cocher ici</div>
+            <div id="segmentsContainer" class="progress-segments"></div>
+            <div id="jourContentContainer" style="position: relative;">
+                <div id="jourContent" class="result"></div>
+                <button id="playAudioBtn" class="play-button" style="display: none;">🔊</button>
+            </div>
+            <div class="nav-buttons">
+                <button id="prevDay" disabled>◀ Précédent</button>
+                <span id="dayCounter">Intro / 8</span>
+                <button id="nextDay">Suivant ▶</button>
+            </div>
+            <div id="expertiseProgressArea" class="progress-container" style="display:none;">
+                <div class="progress-bar"><div id="expertiseProgressFill" class="progress-fill"></div></div>
+                <div id="expertiseProgressText" class="progress-text">0%</div>
+            </div>
+            <div id="feedbackBox" class="feedback-box" style="display:none;">
+                <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
+                <div class="stars" id="starsEx">
+                    <span class="star" data-value="1">☆</span><span class="star" data-value="2">☆</span>
+                    <span class="star" data-value="3">☆</span><span class="star" data-value="4">☆</span>
+                    <span class="star" data-value="5">☆</span>
+                </div>
+                <textarea id="feedbackCommentEx" rows="2" placeholder="Vos remarques (facultatif)"></textarea>
+                <button id="submitFeedbackEx">Envoyer mon avis</button>
+            </div>
+        </div>
+    </div>
 
-DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
-DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
+    <!-- Mode Personnel -->
+    <div id="personnelPanel" class="mode-panel">
+        <p>📝 5 défauts (un par ligne) :</p>
+        <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;..."></textarea>
+        <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
+        <div id="personnelResult" class="result"></div>
+        <div id="personnelLoader" class="progress-container" style="display:none;">
+            <div class="progress-bar"><div id="personnelProgressFill" class="progress-fill"></div></div>
+            <div id="personnelProgressText" class="progress-text">0%</div>
+        </div>
+    </div>
 
-def call_deepseek(prompt, max_tokens=2000):
-    if not DEEPSEEK_API_KEY:
-        raise Exception("Clé API manquante")
-    headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
-    payload = {
-        "model": "deepseek-chat",
-        "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.7,
-        "max_tokens": max_tokens
-    }
-    try:
-        resp = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload, timeout=150)
-        if resp.status_code == 200:
-            return resp.json()["choices"][0]["message"]["content"]
-        else:
-            raise Exception(f"API error {resp.status_code}: {resp.text[:200]}")
-    except Exception as e:
-        raise Exception(f"Erreur API: {str(e)}")
+    <!-- Mode Consultation -->
+    <div id="consultationPanel" class="mode-panel">
+        <p>💬 Décrivez votre besoin :</p>
+        <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser ..."></textarea>
+        <button id="generateConsult">✨ GÉNÉRER ✨</button>
+        <div id="consultResult" class="result"></div>
+        <div id="consultLoader" class="progress-container" style="display:none;">
+            <div class="progress-bar"><div id="consultProgressFill" class="progress-fill"></div></div>
+            <div id="consultProgressText" class="progress-text">0%</div>
+        </div>
+    </div>
 
-def clean_markdown(text):
-    text = re.sub(r'```[\s\S]*?```', '', text)
-    return text.replace('`', '').strip()
+    <div class="action-buttons">
+        <button id="shareButton">📤 Partager le lien</button>
+        <button id="subscribeButton">🔒 S'abonner</button>
+    </div>
+    <div class="footer">
+        <div class="copyright">Plasticité cérébrale & répétition rythmée.<br>© Dr Tazzz</div>
+    </div>
+</div>
 
-def remove_markdown_chars(text):
-    """Supprime les caractères # et * (gras/italique) du texte pour une lecture plus fluide."""
-    text = re.sub(r'\*\*', '', text)   # supprime les doubles astérisques (gras)
-    text = re.sub(r'\*', '', text)     # supprime les astérisques simples (italique)
-    text = re.sub(r'#', '', text)      # supprime les dièses
-    return text
+<!-- MODALE AUDIO -->
+<div id="audioModal" class="modal">
+    <div class="modal-content">
+        <h3>🔊 Lecture audio</h3>
+        <div id="audioTextPreview" style="background: #2c3e4e; padding: 10px; border-radius: 12px; max-height: 200px; overflow-y: auto; font-size: 0.8rem; text-align: left; margin-bottom: 15px;"></div>
+        <div class="audio-controls">
+            <button id="playPauseBtn">▶ Lire</button>
+            <button id="stopBtn">⏹ Arrêter</button>
+        </div>
+        <div>
+            <label>Vitesse : <span id="speedValue">1.0</span></label>
+            <input type="range" id="speedSlider" min="0.5" max="2" step="0.1" value="1.0">
+        </div>
+        <button id="closeAudioModal" style="margin-top: 15px;">Fermer</button>
+    </div>
+</div>
 
-def init_db():
-    conn = sqlite3.connect('tazbot.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS feedback
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  date TEXT,
-                  note INTEGER,
-                  commentaire TEXT)''')
-    conn.commit()
-    conn.close()
-init_db()
+<!-- MODALE HISTORIQUE -->
+<div id="historyModal" class="modal">
+    <div class="modal-content">
+        <h3>📜 Historique des formations</h3>
+        <div id="historyList"></div>
+        <button id="closeHistoryModal" style="margin-top:15px;">Fermer</button>
+    </div>
+</div>
 
-# ================= PROMPT ALLÉGÉ =================
-PROMPT_JOUR = """
-Tu es un expert pédagogique. Domaine : "{domaine}".
+<script>
+    (function() {
+        // Nettoyer l'ancien localStorage des badges indésirables
+        let anciensBadges = JSON.parse(localStorage.getItem('badges')) || [];
+        if (anciensBadges.length > 0) {
+            const nouveauxBadges = anciensBadges.filter(b => !b.includes("1 semaine") && !b.includes("trophée") && !b.includes("🏆"));
+            localStorage.setItem('badges', JSON.stringify(nouveauxBadges));
+        } else {
+            localStorage.setItem('badges', JSON.stringify([]));
+        }
 
-Génère le contenu complet du **Jour {jour_num}** sur 7 jours.  
-L'objectif général du jour {jour_num} est : {titre_objectif}.
+        // Onglets
+        const modeBtns = document.querySelectorAll('.mode-btn');
+        const panels = {
+            expertise: document.getElementById('expertisePanel'),
+            personnel: document.getElementById('personnelPanel'),
+            consultation: document.getElementById('consultationPanel')
+        };
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                modeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const mode = btn.getAttribute('data-mode');
+                Object.values(panels).forEach(p => p.classList.remove('active-panel'));
+                panels[mode].classList.add('active-panel');
+            });
+        });
 
-Commence par le titre : `## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**`
+        // Variables pour expertise
+        let progression = JSON.parse(localStorage.getItem('progression')) || [false,false,false,false,false,false,false];
+        let historique = JSON.parse(localStorage.getItem('historique')) || [];
+        function sauvegarderTout() {
+            localStorage.setItem('progression', JSON.stringify(progression));
+            localStorage.setItem('historique', JSON.stringify(historique));
+        }
 
-Puis, EXACTEMENT 5 DIZAINES. Chaque dizaine doit suivre ce format (concis) :
+        let currentDomaine = '';
+        let jours = {};
+        let currentPage = 0;
+        const totalPages = 8;
+        let currentExpertiseInterval = null;
 
-**DIZAINE X – Concept : [nom du concept]**
+        function isJourGenere(jourNum) { return !!jours[jourNum]; }
 
-**Méditation synthèse générale (gros grain)** : exactement 7 phrases moyennement denses non numérotés (toutes les méditations, tous les jours) : définition + rôle + exemple court.
+        // Barre segmentée
+        function afficherBarreSegments() {
+            const container = document.getElementById('segmentsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            for (let i=0; i<7; i++) {
+                const seg = document.createElement('div');
+                seg.className = 'segment';
+                if (progression[i]) seg.classList.add('completed');
+                if (!progression[i] && !isJourGenere(i+1)) seg.classList.add('disabled');
+                seg.innerText = `${i+1}`;
+                seg.onclick = (function(idx) { return () => {
+                    if (!progression[idx] && !isJourGenere(idx+1)) {
+                        alert(`Veuillez d'abord générer le contenu du jour ${idx+1} en naviguant vers ce jour.`);
+                        return;
+                    }
+                    cocherSegment(idx);
+                }; })(i);
+                container.appendChild(seg);
+            }
+        }
 
-A la place du **Notre Père**, écrire : RÉPÈTE 3 x – pas de graines : une seule phrase, question centrale.
+        function cocherSegment(idx) {
+            for (let i=0; i<idx; i++) if (!progression[i]) { alert(`Validez d'abord le jour ${i+1}.`); return; }
+            if (!progression[idx]) {
+                progression[idx] = true;
+                sauvegarderTout();
+                afficherBarreSegments();
+                if (idx+1 === 7) {
+                    alert(`🎉 Félicitations ! Vous avez achevé votre expertise. Badge "Expert en ${currentDomaine}" débloqué.`);
+                    const histEntry = historique.find(h => h.domaine === currentDomaine);
+                    if (histEntry) histEntry.dateFin = new Date().toISOString();
+                } else alert(`🎊 Bravo ! Jour ${idx+1}/7 validé.`);
+                const histEntry = historique.find(h => h.domaine === currentDomaine);
+                if (histEntry) histEntry.progression = progression.slice();
+                sauvegarderTout();
+            }
+        }
 
-A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 x – les 10 petites graines: exactement 5 phrases (toutes les méditations, tous les jours) synthétiques, numérotées et mémorisables.
+        // Page d'accueil (HTML resserré)
+        const PAGE0_HTML = `
+            <div class="intro-text">
+                <h2>Bienvenue dans votre chapelet d expertise</h2>
+                <h3>Comment utiliser le Chapelet Tazzz Bot ?</h3>
+                <ul>
+                    <li><strong>Procurez vous un vrai chapelet</strong> pour égrener durant vos lectures.</li>
+                    <li>Chaque jour, lisez ou récitez à voix haute le contenu du jour.</li>
+                    <li>Respectez les instructions :
+                        <ul>
+                            <li><em>Tenez le gros grain</em> pour la <strong>Méditation du Mystère</strong>.</li>
+                            <li><em>Répétez 3 fois</em> le contenu du <strong>Notre Père</strong>.</li>
+                            <li><em>Répétez 10 fois</em> (5 lectures, 5 sans regarder) le <strong>Je vous salue Marie</strong>.</li>
+                        </ul>
+                    </li>
+                    <li>Les <strong>5 dizaines</strong> d’un jour correspondent à 5 concepts clés.</li>
+                    <li><strong>Vous pouvez lire ou écouter chaque journée</strong> : un bouton 🔊 apparaît en haut à droite du contenu.</li>
+                </ul>
+                <p>👉 <strong>N'oubliez pas de cocher la barre de progression à la fin de chaque journée !</strong></p>
+                <p>👉 Cliquez sur <strong>“Suivant”</strong> pour commencer le <strong>Jour 1</strong>.</p>
+                <button id="playIntroAudioBtn" style="background: #2c3e4e; margin-top: 15px;">🔊 Écouter ce message d’accueil</button>
+            </div>
+        `;
 
-A la place du **Gloire au Père**, écrire / RÉPÈTE 3 x – pas de graines : "Le concept [nom] est consolidé."
+        // Audio (commun)
+        const audioModal = document.getElementById('audioModal');
+        const audioTextPreview = document.getElementById('audioTextPreview');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        let currentUtterance = null;
+        let isPlaying = false;
+        window.currentAudioText = '';
 
-Soigne la qualité. Ne dépasse pas 2000 tokens au total.
-"""
+        function stopAudio() {
+            if (window.speechSynthesis) window.speechSynthesis.cancel();
+            isPlaying = false;
+            playPauseBtn.textContent = '▶ Lire';
+        }
 
-def generer_jour_expertise(domaine, jour_num):
-    objectifs = [
-        "Découverte des bases fondamentales",
-        "Approfondissement des pratiques clés",
-        "Cas complexes et exceptions",
-        "Contrôle qualité et indicateurs",
-        "Gestion des risques et plan d'action",
-        "Synthèse et liens entre concepts",
-        "Auto‑évaluation et perfectionnement"
-    ]
-    titre_objectif = objectifs[jour_num-1]
-    prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_objectif=titre_objectif)
-    try:
-        raw = call_deepseek(prompt, max_tokens=2000)
-        contenu = clean_markdown(raw)
-        # Supprimer les caractères # et * pour une lecture audio propre
-        contenu = remove_markdown_chars(contenu)
-        # Vérification minimale : si le contenu ne commence pas par "JOUR", on ajoute un titre générique sans caractères spéciaux
-        if not re.search(r'JOUR\s+\d+', contenu, re.IGNORECASE):
-            contenu = f"JOUR {jour_num} – {titre_objectif.upper()}\n\n{contenu}"
-        return contenu
-    except Exception as e:
-        print(f"Erreur jour {jour_num}: {e}")
-        return f"""JOUR {jour_num} – {titre_objectif.upper()} (version de secours)
+        function playAudio(text, rate = parseFloat(speedSlider.value)) {
+            if (!window.speechSynthesis) { alert("Votre navigateur ne supporte pas la synthèse vocale."); return; }
+            stopAudio();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'fr-FR';
+            utterance.rate = rate;
+            // Sélectionner une voix masculine francophone si disponible
+            if (window.speechSynthesis.getVoices) {
+                const voices = window.speechSynthesis.getVoices();
+                const frenchVoice = voices.find(v => v.lang === 'fr-FR' && v.name.includes('Google') && v.name.includes('Male'));
+                if (frenchVoice) utterance.voice = frenchVoice;
+                else {
+                    const anyFrench = voices.find(v => v.lang === 'fr-FR');
+                    if (anyFrench) utterance.voice = anyFrench;
+                }
+            }
+            utterance.onend = () => { isPlaying = false; playPauseBtn.textContent = '▶ Lire'; };
+            utterance.onerror = (err) => { console.error(err); alert("Erreur audio"); isPlaying = false; playPauseBtn.textContent = '▶ Lire'; };
+            currentUtterance = utterance;
+            window.speechSynthesis.speak(utterance);
+            isPlaying = true;
+            playPauseBtn.textContent = '⏸ Pause';
+        }
 
-DIZAINE 1 – Introduction à {domaine}
-Méditation synthèse générale (gros grain) : (contenu temporaire – veuillez réessayer plus tard)
-RÉPÈTE 3 x – pas de graines : ?
-RÉPÈTE 10 x – les 10 petites graines : ...
-RÉPÈTE 3 x – pas de graines : Le concept est consolidé.
-(Dizaines 2 à 5 structure similaire)"""
+        function pauseAudio() { if (isPlaying) { window.speechSynthesis.cancel(); isPlaying = false; playPauseBtn.textContent = '▶ Lire'; } }
 
-# ================= DÉVELOPPEMENT PERSONNEL (inchangé) =================
-def generer_personnel(defauts):
-    notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour."
-    resultats = []
-    for i, d in enumerate(defauts, 1):
-        prompt = f"Mystère {i} – {d}\n**Méditation** : souvenir d'un échec puis visualisation positive.\n**Notre Père** : {notre_pere} (3 fois)\n**Je vous salue Marie** : phrase courte positive corrigeant {d} (10 fois)\n**Gloire au Père** : Merci (3 fois)"
-        try:
-            raw = call_deepseek(prompt, max_tokens=500)
-            resultats.append(clean_markdown(raw))
-        except:
-            resultats.append(f"**Mystère {i} – {d}** (version de secours)\nMéditation...\nNotre Père...\nAve Maria...")
-    return "\n\n".join(resultats)
+        playPauseBtn.addEventListener('click', () => {
+            if (isPlaying) pauseAudio();
+            else if (window.currentAudioText) playAudio(window.currentAudioText, parseFloat(speedSlider.value));
+            else alert("Aucun texte à lire.");
+        });
+        stopBtn.addEventListener('click', stopAudio);
+        speedSlider.addEventListener('input', () => {
+            speedValue.textContent = speedSlider.value;
+            if (isPlaying && currentUtterance && window.currentAudioText) playAudio(window.currentAudioText, parseFloat(speedSlider.value));
+            else if (currentUtterance) currentUtterance.rate = parseFloat(speedSlider.value);
+        });
 
-# ================= ROUTES =================
-@app.route('/')
-def index():
-    return render_template('index.html')
+        // Fonction pour lire un texte (déclenchée sur clic utilisateur)
+        function lireTexte(texte) {
+            if (!texte) return;
+            window.currentAudioText = texte;
+            audioTextPreview.innerText = texte.substring(0, 500) + (texte.length > 500 ? '...' : '');
+            stopAudio();
+            playPauseBtn.textContent = '▶ Lire';
+            audioModal.style.display = 'flex';
+        }
 
-@app.route('/generer_jour_expertise', methods=['POST'])
-def generer_jour_expertise_route():
-    data = request.get_json()
-    domaine = data.get('domaine')
-    jour = data.get('jour')
-    if not domaine or not jour:
-        return jsonify({'error': 'Domaine et jour requis'}), 400
-    contenu = generer_jour_expertise(domaine, int(jour))
-    return jsonify({'contenu': contenu})
+        // Lecture automatique du message d'accueil au premier clic (spontané)
+        let accueilLu = false;
+        function lireAccueilSiNecessaire() {
+            if (!accueilLu && document.getElementById('jourContent').innerText.includes('Bienvenue')) {
+                const introText = document.getElementById('jourContent').innerText;
+                if (introText && introText.length > 20) {
+                    accueilLu = true;
+                    lireTexte(introText);
+                }
+            }
+        }
+        // Déclenchement sur premier clic quelque part
+        const firstClickHandler = () => {
+            lireAccueilSiNecessaire();
+            window.removeEventListener('click', firstClickHandler);
+            window.removeEventListener('touchstart', firstClickHandler);
+        };
+        window.addEventListener('click', firstClickHandler);
+        window.addEventListener('touchstart', firstClickHandler);
 
-@app.route('/generer_personnel', methods=['POST'])
-def generer_personnel_route():
-    data = request.get_json()
-    defauts = data.get('defauts')
-    if not defauts or len(defauts) != 5:
-        return jsonify({'error': '5 défauts requis'}), 400
-    contenu = generer_personnel(defauts)
-    return jsonify({'contenu': contenu})
+        // Bouton "Écouter l'accueil" manuel
+        function bindIntroAudio() {
+            const introBtn = document.getElementById('playIntroAudioBtn');
+            if (introBtn) {
+                introBtn.removeEventListener('click', introBtn._listener);
+                introBtn._listener = () => {
+                    const introContainer = document.getElementById('jourContent');
+                    const cleanText = introContainer.innerText || introContainer.textContent;
+                    if (cleanText) lireTexte(cleanText);
+                };
+                introBtn.addEventListener('click', introBtn._listener);
+            }
+        }
 
-@app.route('/feedback', methods=['POST'])
-def feedback():
-    data = request.get_json()
-    note = data.get('note')
-    commentaire = data.get('commentaire')
-    if note is None or commentaire is None:
-        return jsonify({'error': 'Note et commentaire requis'}), 400
-    conn = sqlite3.connect('tazbot.db')
-    c = conn.cursor()
-    c.execute("INSERT INTO feedback (date, note, commentaire) VALUES (?, ?, ?)",
-              (str(datetime.now()), note, commentaire))
-    conn.commit()
-    conn.close()
-    return jsonify({'status': 'ok'})
+        // Fonctions d'affichage et chargement (expertise)
+        function startExpertiseProgressBar() { /* identique à avant */ }
+        function stopExpertiseProgressBar(interval, complete) { /* identique */ }
+        // (pour alléger, je garde le code précédent)
+        // Je recopie les fonctions simplifiées
+        function startExpertiseProgressBar() {
+            const area = document.getElementById('expertiseProgressArea');
+            const fill = document.getElementById('expertiseProgressFill');
+            const text = document.getElementById('expertiseProgressText');
+            if (!area) return null;
+            area.style.display = 'block';
+            let percent=0;
+            const interval = setInterval(()=>{ if(percent<90){ percent+=2; if(percent>90) percent=90; fill.style.width=percent+'%'; text.innerText=percent+'%'; } },150);
+            return interval;
+        }
+        function stopExpertiseProgressBar(interval, complete) {
+            const area=document.getElementById('expertiseProgressArea');
+            const fill=document.getElementById('expertiseProgressFill');
+            const text=document.getElementById('expertiseProgressText');
+            if(interval) clearInterval(interval);
+            if(complete && fill){
+                fill.style.width='100%'; text.innerText='100%';
+                setTimeout(()=>{ if(area) area.style.display='none'; fill.style.width='0%'; text.innerText='0%'; },300);
+            } else { if(area) area.style.display='none'; if(fill) fill.style.width='0%'; if(text) text.innerText='0%'; }
+        }
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+        function afficherPage(page) {
+            const contentDiv = document.getElementById('jourContent');
+            const daySpan = document.getElementById('dayCounter');
+            const prevBtn = document.getElementById('prevDay');
+            const nextBtn = document.getElementById('nextDay');
+            const feedbackBox = document.getElementById('feedbackBox');
+            const playBtn = document.getElementById('playAudioBtn');
+            if (page === 0) {
+                contentDiv.innerHTML = PAGE0_HTML;
+                daySpan.innerText = 'Intro / 8';
+                prevBtn.disabled = true;
+                nextBtn.disabled = false;
+                feedbackBox.style.display = 'none';
+                playBtn.style.display = 'none';
+                bindIntroAudio();
+            } else {
+                const jourNum = page;
+                if (jours[jourNum]) {
+                    contentDiv.innerHTML = jours[jourNum].replace(/\n/g, '<br>');
+                    daySpan.innerText = `Jour ${jourNum} / 7`;
+                    prevBtn.disabled = (jourNum === 1);
+                    nextBtn.disabled = (jourNum === 7);
+                    feedbackBox.style.display = 'block';
+                    playBtn.style.display = 'flex';
+                    afficherBarreSegments();
+                } else {
+                    contentDiv.innerHTML = '<em>Chargement du jour...</em>';
+                    chargerJour(jourNum);
+                }
+            }
+        }
+
+        function chargerJour(jourNum) {
+            if (currentExpertiseInterval) clearInterval(currentExpertiseInterval);
+            currentExpertiseInterval = startExpertiseProgressBar();
+            fetch('/generer_jour_expertise', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ domaine: currentDomaine, jour: jourNum })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                jours[jourNum] = data.contenu;
+                stopExpertiseProgressBar(currentExpertiseInterval, true);
+                afficherPage(jourNum);
+                afficherBarreSegments();
+            })
+            .catch(err => {
+                console.error(err);
+                jours[jourNum] = `<strong>Erreur de génération</strong><br>Contenu non disponible.`;
+                stopExpertiseProgressBar(currentExpertiseInterval, false);
+                afficherPage(jourNum);
+                afficherBarreSegments();
+            });
+        }
+
+        document.getElementById('startExpertise').addEventListener('click', () => {
+            currentDomaine = document.getElementById('domaine').value.trim();
+            if (!currentDomaine) { alert('Domaine requis'); return; }
+            let histEntry = historique.find(h => h.domaine === currentDomaine);
+            if (!histEntry) {
+                histEntry = { domaine: currentDomaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false] };
+                historique.push(histEntry);
+                sauvegarderTout();
+                progression = histEntry.progression;
+            } else progression = histEntry.progression.slice();
+            jours = {};
+            currentPage = 0;
+            afficherPage(0);
+            document.getElementById('jourContainer').style.display = 'block';
+            document.getElementById('startExpertise').style.display = 'none';
+            afficherBarreSegments();
+        });
+
+        document.getElementById('prevDay').addEventListener('click', () => { if (currentPage > 0) { currentPage--; afficherPage(currentPage); } });
+        document.getElementById('nextDay').addEventListener('click', () => { if (currentPage < totalPages - 1) { currentPage++; afficherPage(currentPage); } });
+
+        // Feedback (inchangé)
+        let currentNoteEx = 0;
+        document.querySelectorAll('#starsEx .star').forEach(star => {
+            star.addEventListener('click', () => {
+                currentNoteEx = parseInt(star.getAttribute('data-value'));
+                document.querySelectorAll('#starsEx .star').forEach((s, idx) => {
+                    if (idx < currentNoteEx) { s.textContent = '★'; s.classList.add('selected'); }
+                    else { s.textContent = '☆'; s.classList.remove('selected'); }
+                });
+            });
+        });
+        document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
+            if (currentNoteEx === 0) { alert('Sélectionnez une note'); return; }
+            const comment = document.getElementById('feedbackCommentEx').value.trim();
+            try {
+                await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) });
+                alert('Merci !');
+                document.getElementById('feedbackBox').style.display = 'none';
+            } catch(err) { alert('Erreur réseau'); }
+        });
+
+        // Bouton Play pour les jours d'expertise
+        document.getElementById('playAudioBtn').addEventListener('click', () => {
+            const rawText = document.getElementById('jourContent').innerText;
+            if (!rawText || rawText.includes('Chargement')) return alert('Aucun contenu audio');
+            lireTexte(rawText);
+        });
+
+        // Mode personnel (simplifié)
+        let currentPersonnelInterval = null;
+        function startGenericProgress(areaId, fillId, textId) { /* identique à avant */ }
+        function stopGenericProgress(areaId, fillId, textId, interval, complete) { /* identique */ }
+        // (je les recopie)
+        function startGenericProgress(areaId,fillId,textId){
+            const area=document.getElementById(areaId); if(!area) return null; area.style.display='block'; let p=0;
+            const i=setInterval(()=>{ if(p<90){ p+=2; if(p>90)p=90; document.getElementById(fillId).style.width=p+'%'; document.getElementById(textId).innerText=p+'%'; } },150);
+            return i;
+        }
+        function stopGenericProgress(areaId,fillId,textId,i,complete){
+            const a=document.getElementById(areaId),f=document.getElementById(fillId),t=document.getElementById(textId);
+            if(i) clearInterval(i);
+            if(complete){ f.style.width='100%'; t.innerText='100%'; setTimeout(()=>{ a.style.display='none'; f.style.width='0%'; t.innerText='0%'; },300);}
+            else{ if(a) a.style.display='none'; if(f) f.style.width='0%'; if(t) t.innerText='0%'; }
+        }
+        document.getElementById('generatePersonnel').addEventListener('click', async () => {
+            let defauts = document.getElementById('defauts').value.split('\n').filter(l=>l.trim()).slice(0,5);
+            if(defauts.length!==5) { alert('5 défauts requis'); return; }
+            document.getElementById('personnelResult').innerHTML='';
+            if(currentPersonnelInterval) clearInterval(currentPersonnelInterval);
+            currentPersonnelInterval=startGenericProgress('personnelLoader','personnelProgressFill','personnelProgressText');
+            try {
+                const res=await fetch('/generer_personnel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({defauts:defauts})});
+                const data=await res.json();
+                if(data.error) throw new Error(data.error);
+                stopGenericProgress('personnelLoader','personnelProgressFill','personnelProgressText',currentPersonnelInterval,true);
+                document.getElementById('personnelResult').innerHTML=data.contenu.replace(/\n/g,'<br>');
+            } catch(err){ stopGenericProgress('personnelLoader','personnelProgressFill','personnelProgressText',currentPersonnelInterval,false); alert('Erreur: '+err.message); }
+        });
+
+        // Consultation
+        document.getElementById('generateConsult').addEventListener('click', () => {
+            let msg = document.getElementById('consultMessage').value.trim();
+            if (!msg) { alert('Message requis'); return; }
+            currentDomaine = msg;
+            historique = historique.filter(h => h.domaine !== currentDomaine);
+            progression = [false,false,false,false,false,false,false];
+            historique.push({ domaine: currentDomaine, dateDebut: new Date().toISOString(), dateFin: null, progression: progression.slice() });
+            sauvegarderTout();
+            jours = {};
+            currentPage = 0;
+            afficherPage(0);
+            document.getElementById('jourContainer').style.display = 'block';
+            document.getElementById('startExpertise').style.display = 'none';
+            document.querySelector('.mode-btn[data-mode="expertise"]').click();
+            afficherBarreSegments();
+        });
+
+        // Historique
+        const historyModal = document.getElementById('historyModal');
+        const historyList = document.getElementById('historyList');
+        function formaterDate(isoString) { if (!isoString) return 'en cours'; return new Date(isoString).toLocaleDateString(); }
+        function afficherHistorique() {
+            historyList.innerHTML = '';
+            historique.forEach((item) => {
+                const nbCompleted = item.progression.filter(v=>v).length;
+                const div = document.createElement('div'); div.className='history-item';
+                let status = (nbCompleted===7) ? `Expertise en ${item.domaine} du ${formaterDate(item.dateDebut)} au ${formaterDate(item.dateFin)}` : `Expertise inachevée (${nbCompleted}/7) – ${item.domaine}`;
+                div.innerHTML = `<strong>${status}</strong><br><small>Début: ${formaterDate(item.dateDebut)}</small>`;
+                if (nbCompleted===7) { const badgeSpan = document.createElement('div'); badgeSpan.className='badge-text'; badgeSpan.innerHTML = `🏅 Expert en ${item.domaine}`; div.appendChild(badgeSpan); }
+                div.onclick = () => {
+                    currentDomaine = item.domaine; progression = item.progression.slice(); jours = {}; currentPage=0; afficherPage(0);
+                    document.getElementById('jourContainer').style.display='block'; document.getElementById('startExpertise').style.display='none'; afficherBarreSegments(); historyModal.style.display='none';
+                    document.querySelector('.mode-btn[data-mode="expertise"]').click();
+                };
+                historyList.appendChild(div);
+            });
+        }
+        document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display='flex'; });
+        document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display='none');
+        document.getElementById('closeAudioModal').addEventListener('click', () => { stopAudio(); audioModal.style.display='none'; });
+        window.addEventListener('click', (e) => { if (e.target === audioModal) { stopAudio(); audioModal.style.display='none'; } if (e.target === historyModal) historyModal.style.display='none'; });
+
+        // Partage de lien
+        document.getElementById('shareButton').addEventListener('click', async () => {
+            const url = window.location.href;
+            if (navigator.share) { try { await navigator.share({ title: 'Chapelet Tazzz Bot', text: 'Découvrez l’outil qui transforme votre structure mentale !', url: url }); } catch(e) { if(e.name!=='AbortError') alert('Partage annulé'); } }
+            else { try { await navigator.clipboard.writeText(url); alert('Lien copié !'); } catch(e) { alert('Impossible de copier'); } }
+        });
+        document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 L'abonnement n'est pas encore actif."));
+    })();
+</script>
+</body>
+</html>
