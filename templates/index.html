@@ -268,7 +268,6 @@
             color: #e67e22;
             margin-top: 4px;
         }
-        .hidden { display: none; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -352,7 +351,7 @@
     </div>
 </div>
 
-<!-- Mini barre audio commune (Play, Pause, Stop) -->
+<!-- Mini barre audio commune -->
 <div id="audioBar" class="audio-bar" style="display: none;">
     <button id="audioPlayBtn">▶</button>
     <button id="audioPauseBtn">⏸</button>
@@ -451,23 +450,20 @@
             }
         }
 
-        // Texte d'accueil simplifié
+        // NOUVEAU TEXTE D'ACCUEIL (concis)
         const PAGE0_HTML = `
             <div>
                 <p><strong>Bienvenue dans votre chapelet d'expertise</strong></p>
-                <p><strong>Comment utiliser le Chapelet Tazzz Bot ?</strong></p>
+                <p><strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong></p>
                 <p>Procurez vous un vrai chapelet pour égrener durant vos lectures.<br>
                 Chaque jour, lisez ou récitez à voix haute le contenu du jour.</p>
-                <p>Respectez les instructions :</p>
-                <ul>
-                    <li>Tenez le gros grain pour la Méditation du Mystère.</li>
-                    <li>Répétez 3 fois le contenu du Notre Père.</li>
-                    <li>Répétez 10 fois (5 lectures, 5 sans regarder) le Je vous salue Marie.</li>
-                    <li>Les 5 dizaines d’un jour correspondent à 5 concepts clés.</li>
-                </ul>
+                <p>Respectez les instructions : Tenez le gros grain pour la Méditation du Mystère.<br>
+                Répétez 3 fois le contenu à la place du NOTRE PÈRE.<br>
+                Répétez 10 fois (5 lectures, 5 sans regarder) le contenu à la place du JE VOUS SALUE MARIE.<br>
+                Les 5 dizaines d’un jour correspondent à 5 concepts clés.</p>
                 <p>Vous pouvez lire ou écouter chaque journée : un bouton 🔊 apparaît en haut à droite du contenu.</p>
-                <p>👉 N'oubliez pas de cocher la barre de progression à la fin de chaque journée !</p>
-                <p>👉 Cliquez sur <strong>“Suivant”</strong> pour commencer le <strong>Jour 1</strong>.</p>
+                <p>N'oubliez pas de cocher la barre de progression à la fin de chaque journée !</p>
+                <p>Cliquez sur <strong>“Suivant”</strong> pour commencer le <strong>Jour 1</strong>.</p>
             </div>
         `;
 
@@ -480,6 +476,20 @@
         let currentUtterance = null;
         let isPlaying = false;
 
+        // Fonction pour nettoyer le texte (supprimer les caractères markdown)
+        function nettoyerTexteAudio(raw) {
+            if (!raw) return '';
+            return raw
+                .replace(/\*\*/g, '')   // supprime les doubles astérisques
+                .replace(/\*/g, '')      // supprime les astérisques simples
+                .replace(/#/g, '')       // supprime les dièses
+                .replace(/`/g, '')       // supprime les backticks
+                .replace(/_/g, '')       // supprime les underscores
+                .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1') // supprime les liens markdown
+                .replace(/\[([^\]]+)\]/g, '$1')           // supprime les crochets seuls
+                .trim();
+        }
+
         function stopAudio() {
             if (window.speechSynthesis) window.speechSynthesis.cancel();
             isPlaying = false;
@@ -490,10 +500,12 @@
         function playAudio(text) {
             if (!window.speechSynthesis) { alert("Votre navigateur ne supporte pas la synthèse vocale."); return; }
             stopAudio();
-            const utterance = new SpeechSynthesisUtterance(text);
+            const cleaned = nettoyerTexteAudio(text);
+            if (!cleaned) { alert("Le texte à lire est vide."); return; }
+            const utterance = new SpeechSynthesisUtterance(cleaned);
             utterance.lang = 'fr-FR';
-            utterance.rate = 1.0;  // vitesse fixe
-            // Choisir une voix masculine francophone si possible
+            utterance.rate = 1.0;
+            // Recherche d'une voix masculine francophone
             const voices = window.speechSynthesis.getVoices();
             const frenchMale = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Male') || v.name.includes('Homme') || v.name.includes('Thomas')));
             if (frenchMale) utterance.voice = frenchMale;
@@ -502,7 +514,7 @@
                 if (anyFrench) utterance.voice = anyFrench;
             }
             utterance.onend = () => { stopAudio(); };
-            utterance.onerror = () => { stopAudio(); alert("Erreur de lecture audio"); };
+            utterance.onerror = (err) => { console.error(err); alert("Erreur de lecture audio"); stopAudio(); };
             currentUtterance = utterance;
             window.speechSynthesis.speak(utterance);
             isPlaying = true;
@@ -526,7 +538,6 @@
         pauseBtn.addEventListener('click', pauseAudio);
         stopBtn.addEventListener('click', stopAudio);
 
-        // Fonction pour lancer la lecture d'un texte (appelée par les boutons)
         function lireTexte(texte) {
             if (!texte) return;
             currentAudioText = texte;
@@ -603,7 +614,6 @@
                 feedbackBox.style.display = 'none';
                 playBtn.style.display = 'none';
                 ajouterBoutonAudioAccueil();
-                // Arrêter audio en cours si nécessaire
                 stopAudio();
             } else {
                 retirerBoutonAudioAccueil();
