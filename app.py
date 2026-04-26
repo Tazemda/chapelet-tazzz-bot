@@ -63,7 +63,7 @@ Puis, EXACTEMENT 5 DIZAINES. Chaque dizaine doit suivre ce format (concis) :
 
 A la place du **Notre Père**, écrire : RÉPÈTE 3 x – pas de graines : une seule phrase, question centrale.
 
-A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 x – les 10 petites graines: 4 à 5 phrases synthétiques, numérotées et mémorisables.
+A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 x – les 10 petites graines: 4 à 5 phrases synthétiques, numérotées et mémorisables du jour 1 au jour 7.
 
 A la place du **Gloire au Père**, écrire / RÉPÈTE 3 x – pas de graines : "Le concept [nom] est consolidé."
 
