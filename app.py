@@ -46,7 +46,7 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= PROMPT ACTUALISÉ (concis, avec consignes de répétition) =================
+# ================= PROMPT ALLÉGÉ (méditation 2-3 phrases, Ave Maria 3-4 phrases) =================
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
@@ -55,15 +55,15 @@ L'objectif général du jour {jour_num} est : {titre_objectif}.
 
 Commence par le titre : `## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**`
 
-Puis, EXACTEMENT 5 DIZAINES. Chaque dizaine doit suivre ce format (concis mais complet) :
+Puis, EXACTEMENT 5 DIZAINES. Chaque dizaine doit suivre ce format (concis) :
 
 **DIZAINE X – Concept : [nom du concept]**
 
-**Méditation synthèse générale (gros grain)** : 3 à 4 phrases denses (définition, rôle, exemple concret).
+**Méditation synthèse générale (gros grain)** : 2 à 3 phrases denses (définition + rôle + exemple court).
 
 A la place du **Notre Père**, écrire : RÉPÈTE 3 x – pas de graines : une seule phrase, question centrale.
 
-A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 x – les 10 petites graines: 4 à 6 phrases synthétiques et mémorisables.
+A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 x – les 10 petites graines: 3 à 4 phrases synthétiques et mémorisables.
 
 A la place du **Gloire au Père**, écrire / RÉPÈTE 3 x – pas de graines : "Le concept [nom] est consolidé."
 
