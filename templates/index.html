@@ -222,6 +222,7 @@
             gap: 15px;
             justify-content: center;
             margin: 20px 0;
+            flex-wrap: wrap;
         }
         .audio-controls button {
             background: #2c3e4e;
@@ -454,21 +455,85 @@
             }
         }
 
-        const PAGE0 = `# 📖 Bienvenue dans votre chapelet d’expertise
+        // NOUVELLE PAGE PRÉLIMINAIRE (sans caractères markdown gênants)
+        const PAGE0_HTML = `
+            <h2>📖 Bienvenue dans votre chapelet d expertise</h2>
+            <h3>🧠 COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</h3>
+            <ul>
+                <li><strong>Procurez vous un vrai chapelet</strong> que vous égrènerez durant vos lectures et récitations.</li>
+                <li>Chaque jour, lisez ou récitez à voix haute le contenu du jour.</li>
+                <li>Respectez les <strong>instructions</strong> : 
+                    <ul>
+                        <li><em>Tenez le gros grain correspondant</em> pour la <strong>Méditation du Mystère</strong> (chaque Mystère est une grande fiche synthétique sur l’un des 5 sujets du jour).</li>
+                        <li><em>Répétez 3 fois</em> le contenu qui est à la place du <strong>Notre Père</strong>.</li>
+                        <li><em>Répétez 10 fois</em> (5 lectures, 5 sans regarder) le contenu à la place du <strong>Je vous salue Marie</strong>.</li>
+                    </ul>
+                </li>
+                <li>Les <strong>5 dizaines</strong> d’un jour correspondent à 5 concepts clés.</li>
+                <li><strong>Vous pouvez lire ou écouter chaque journée selon votre choix</strong> : un bouton "🔊" apparaît en haut à droite du contenu. Cliquez‑le pour ouvrir le lecteur audio (mise en pause, réglage de la vitesse).</li>
+            </ul>
+            <p>👉 <strong>N'oubliez pas de cocher la barre de progression à la fin de chaque journée !</strong></p>
+            <p>👉 Cliquez sur <strong>“Suivant”</strong> pour commencer le <strong>Jour 1</strong>.</p>
+            <button id="playIntroAudioBtn" style="background: #2c3e4e; margin-top: 15px;">🔊 Écouter ce message d’accueil</button>
+        `;
 
-## 🧠 COMMENT UTILISER LE CHAPELET TAZZZ BOT ?
-- **Procurez‑vous un vrai chapelet** que vous égrènerez durant vos lectures et récitations.
-- Chaque jour, lisez ou récitez à voix haute le contenu du jour.
-- Respectez les **instructions** : 
-  - *Tenez le gros grain correspondant* pour la **Méditation du Mystère**.
-  - *Répétez 3 fois* le contenu du **Notre Père**. 
-  - *Répétez 10 fois* (5 lectures, 5 sans regarder) le **Je vous salue Marie**.
-- Les **5 dizaines** d’un jour correspondent à 5 concepts clés.
+        function afficherPage(page) {
+            const contentDiv = document.getElementById('jourContent');
+            const daySpan = document.getElementById('dayCounter');
+            const prevBtn = document.getElementById('prevDay');
+            const nextBtn = document.getElementById('nextDay');
+            const feedbackBox = document.getElementById('feedbackBox');
+            const playBtn = document.getElementById('playAudioBtn');
+            if (page === 0) {
+                contentDiv.innerHTML = PAGE0_HTML;
+                daySpan.innerText = 'Intro / 8';
+                prevBtn.disabled = true;
+                nextBtn.disabled = false;
+                feedbackBox.style.display = 'none';
+                playBtn.style.display = 'none';
+                // Ajouter l'écouteur pour le bouton "Écouter l'accueil" (créé dynamiquement)
+                setTimeout(() => {
+                    const introBtn = document.getElementById('playIntroAudioBtn');
+                    if (introBtn) {
+                        introBtn.addEventListener('click', () => {
+                            // Récupérer le texte visible (sans les boutons)
+                            const introContainer = document.getElementById('jourContent');
+                            const cleanText = introContainer.innerText || introContainer.textContent;
+                            if (cleanText) {
+                                // Utiliser le même mécanisme audio que pour les jours
+                                const audioModal = document.getElementById('audioModal');
+                                const audioTextPreview = document.getElementById('audioTextPreview');
+                                audioTextPreview.innerText = cleanText.substring(0, 500) + (cleanText.length > 500 ? '...' : '');
+                                window.currentAudioText = cleanText;
+                                // Réinitialiser le lecteur
+                                if (window.speechSynthesis) window.speechSynthesis.cancel();
+                                const playPauseBtn = document.getElementById('playPauseBtn');
+                                playPauseBtn.textContent = '▶ Lire';
+                                audioModal.style.display = 'flex';
+                            } else {
+                                alert('Aucun texte à lire.');
+                            }
+                        });
+                    }
+                }, 50);
+            } else {
+                const jourNum = page;
+                if (jours[jourNum]) {
+                    contentDiv.innerHTML = jours[jourNum].replace(/\n/g, '<br>');
+                    daySpan.innerText = `Jour ${jourNum} / 7`;
+                    prevBtn.disabled = (jourNum === 1);
+                    nextBtn.disabled = (jourNum === 7);
+                    feedbackBox.style.display = 'block';
+                    playBtn.style.display = 'flex';
+                    afficherBarreSegments();
+                } else {
+                    contentDiv.innerHTML = '<em>Chargement du jour...</em>';
+                    chargerJour(jourNum);
+                }
+            }
+        }
 
-👉 **N'oubliez pas de cocher la barre de progression à la fin de chaque journée !**
-
-👉 Cliquez sur **“Suivant”** pour commencer le **Jour 1**.`;
-
+        // Fonctions de progression et chargement (inchangées)
         function startExpertiseProgressBar() {
             const area = document.getElementById('expertiseProgressArea');
             const fill = document.getElementById('expertiseProgressFill');
@@ -497,37 +562,6 @@
                 if(area) area.style.display = 'none';
                 if(fill) fill.style.width = '0%';
                 if(text) text.innerText = '0%';
-            }
-        }
-
-        function afficherPage(page) {
-            const contentDiv = document.getElementById('jourContent');
-            const daySpan = document.getElementById('dayCounter');
-            const prevBtn = document.getElementById('prevDay');
-            const nextBtn = document.getElementById('nextDay');
-            const feedbackBox = document.getElementById('feedbackBox');
-            const playBtn = document.getElementById('playAudioBtn');
-            if (page === 0) {
-                contentDiv.innerHTML = PAGE0.replace(/\n/g, '<br>');
-                daySpan.innerText = 'Intro / 8';
-                prevBtn.disabled = true;
-                nextBtn.disabled = false;
-                feedbackBox.style.display = 'none';
-                playBtn.style.display = 'none';
-            } else {
-                const jourNum = page;
-                if (jours[jourNum]) {
-                    contentDiv.innerHTML = jours[jourNum].replace(/\n/g, '<br>');
-                    daySpan.innerText = `Jour ${jourNum} / 7`;
-                    prevBtn.disabled = (jourNum === 1);
-                    nextBtn.disabled = (jourNum === 7);
-                    feedbackBox.style.display = 'block';
-                    playBtn.style.display = 'flex';
-                    afficherBarreSegments();
-                } else {
-                    contentDiv.innerHTML = '<em>Chargement du jour...</em>';
-                    chargerJour(jourNum);
-                }
             }
         }
 
@@ -588,7 +622,7 @@
             if (currentPage < totalPages - 1) { currentPage++; afficherPage(currentPage); }
         });
 
-        // Feedback
+        // Feedback (inchangé)
         let currentNoteEx = 0;
         document.querySelectorAll('#starsEx .star').forEach(star => {
             star.addEventListener('click', () => {
@@ -609,7 +643,7 @@
             } catch(err) { alert('Erreur réseau'); }
         });
 
-        // ===================== LECTURE AUDIO (CORRIGÉ POUR MOBILE) =====================
+        // ===================== LECTURE AUDIO (améliorée) =====================
         const audioModal = document.getElementById('audioModal');
         const audioTextPreview = document.getElementById('audioTextPreview');
         const playPauseBtn = document.getElementById('playPauseBtn');
@@ -618,7 +652,7 @@
         const speedValue = document.getElementById('speedValue');
         let currentUtterance = null;
         let isPlaying = false;
-        let currentAudioText = '';  // stocke le texte complet du jour en cours
+        window.currentAudioText = '';  // accessible globalement pour l'accueil
 
         function stopAudio() {
             if (window.speechSynthesis) {
@@ -633,7 +667,7 @@
                 alert("Votre navigateur ne supporte pas la synthèse vocale.");
                 return;
             }
-            stopAudio();  // Annule toute lecture en cours
+            stopAudio();
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'fr-FR';
             utterance.rate = rate;
@@ -661,15 +695,13 @@
             }
         }
 
-        // Bouton Play/Pause de la modale
         playPauseBtn.addEventListener('click', () => {
             if (isPlaying) {
                 pauseAudio();
             } else {
-                if (currentAudioText && currentAudioText.length > 0) {
-                    playAudio(currentAudioText, parseFloat(speedSlider.value));
+                if (window.currentAudioText && window.currentAudioText.length > 0) {
+                    playAudio(window.currentAudioText, parseFloat(speedSlider.value));
                 } else {
-                    // Éviter les appels sans texte
                     alert("Aucun texte à lire.");
                 }
             }
@@ -681,16 +713,14 @@
 
         speedSlider.addEventListener('input', () => {
             speedValue.textContent = speedSlider.value;
-            // Si une lecture est en cours, on change la vitesse immédiatement
-            if (isPlaying && currentUtterance && currentAudioText) {
-                // recréer l'utterance avec la nouvelle vitesse
-                playAudio(currentAudioText, parseFloat(speedSlider.value));
+            if (isPlaying && currentUtterance && window.currentAudioText) {
+                playAudio(window.currentAudioText, parseFloat(speedSlider.value));
             } else if (currentUtterance) {
                 currentUtterance.rate = parseFloat(speedSlider.value);
             }
         });
 
-        // Bouton "Play" global (🔊) qui ouvre la modale et prépare le texte
+        // Bouton "Play" pour les jours d'expertise
         document.getElementById('playAudioBtn').addEventListener('click', () => {
             const contentDiv = document.getElementById('jourContent');
             const rawText = contentDiv.innerText;
@@ -698,20 +728,15 @@
                 alert('Aucun contenu audio disponible pour ce jour.');
                 return;
             }
-            // Nettoyer le texte (enlever les marques de répétition, etc. – optionnel)
             let cleanText = rawText;
-            // Afficher un extrait dans la modale
             audioTextPreview.innerText = cleanText.substring(0, 500) + (cleanText.length > 500 ? '...' : '');
-            currentAudioText = cleanText;
-            // Arrêter toute lecture en cours
+            window.currentAudioText = cleanText;
             stopAudio();
-            // Réinitialiser le bouton de la modale
             playPauseBtn.textContent = '▶ Lire';
-            // Ouvrir la modale
             audioModal.style.display = 'flex';
         });
 
-        // Fermeture de la modale audio
+        // Fermeture modale audio
         document.getElementById('closeAudioModal').addEventListener('click', () => {
             stopAudio();
             audioModal.style.display = 'none';
@@ -726,7 +751,7 @@
             }
         });
 
-        // ===================== MODE PERSONNEL =====================
+        // ===================== MODE PERSONNEL (inchangé) =====================
         let currentPersonnelInterval = null;
         function startGenericProgress(areaId, fillId, textId) {
             const area = document.getElementById(areaId);
