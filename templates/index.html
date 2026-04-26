@@ -84,6 +84,18 @@
         .star { font-size: 28px; cursor: pointer; color: #555; transition: color 0.2s; }
         .star.selected { color: gold; }
         .loader { display: none; text-align: center; margin: 20px; }
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .action-buttons button {
+            background: #2c3e4e;
+            margin-top: 0;
+            padding: 8px 20px;
+            font-size: 0.9rem;
+        }
         .footer { text-align: center; margin-top: 30px; font-size: 0.8rem; opacity: 0.8; }
         .copyright { font-size: 0.7rem; margin-top: 10px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -143,6 +155,12 @@
         <div id="consultResult" class="result"></div>
     </div>
 
+    <!-- Boutons d'action (partage et abonnement) -->
+    <div class="action-buttons">
+        <button id="shareButton">📤 Partager</button>
+        <button id="subscribeButton">🔒 S'abonner</button>
+    </div>
+
     <div class="footer">
         <div class="copyright">Plasticité cérébrale & répétition rythmée.<br>© Dr Tazzz</div>
     </div>
@@ -184,9 +202,9 @@
 
     // ========== EXPERTISE : navigation avec page préliminaire (page 0) ==========
     let domaine = '';
-    let jours = {};      // clés 1..7 pour les contenus des jours
-    let currentPage = 0; // 0 = page intro, 1..7 = jours
-    const totalPages = 8; // 0 + 7 jours
+    let jours = {};
+    let currentPage = 0;
+    const totalPages = 8;
 
     function afficherPage(page) {
         const contentDiv = document.getElementById('jourContent');
@@ -325,6 +343,37 @@
         document.getElementById('startExpertise').style.display = 'none';
         document.getElementById('consultResult').innerHTML = 'Redirection vers le mode Expertise...';
         document.querySelector('.mode-btn[data-mode="expertise"]').click();
+    });
+
+    // ========== BOUTON PARTAGE ==========
+    document.getElementById('shareButton').addEventListener('click', async () => {
+        const url = window.location.href;
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Chapelet Tazzz Bot',
+                    text: 'Découvrez l’outil qui transforme votre structure mentale !',
+                    url: url
+                });
+            } catch (err) {
+                if (err.name !== 'AbortError') alert('Partage annulé ou erreur.');
+            }
+        } else {
+            // Fallback : copier le lien
+            try {
+                await navigator.clipboard.writeText(url);
+                alert('Lien copié dans le presse-papiers !');
+            } catch (err) {
+                alert('Impossible de copier le lien manuellement.');
+            }
+        }
+    });
+
+    // ========== BOUTON ABONNEMENT (simulation) ==========
+    document.getElementById('subscribeButton').addEventListener('click', () => {
+        alert("🔒 L'abonnement n'est pas encore actif. Cette option sera bientôt disponible.\nPour l'instant, l'accès est gratuit.");
+        // Ici, plus tard, vous redirigerez vers une page de paiement (Stripe, etc.)
+        // window.location.href = "/subscribe";
     });
 </script>
 </body>
