@@ -59,7 +59,7 @@ Puis, EXACTEMENT 5 DIZAINES. Chaque dizaine doit suivre ce format (concis) :
 
 **DIZAINE X – Concept : [nom du concept]**
 
-**Méditation synthèse générale (gros grain)** : 7 phrases denses (définition + rôle + exemple court).
+**Méditation synthèse générale (gros grain)** : 7 phrases moyennement denses (définition + rôle + exemple court).
 
 A la place du **Notre Père**, écrire : RÉPÈTE 3 x – pas de graines : une seule phrase, question centrale.
 
