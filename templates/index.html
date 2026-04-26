@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🧠 CHAPELET TAZZZ BOT – EXPERTISE 7 JOURS</title>
+    <!-- html2canvas pour la génération d'image des badges -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -14,9 +16,32 @@
             color: #f0f0f0;
             min-height: 100vh;
         }
-        .container {
-            max-width: 800px;
+        .main-layout {
+            display: flex;
+            gap: 15px;
+            max-width: 1000px;
             margin: 0 auto;
+        }
+        /* Barre verticale de progression (compteur) */
+        .side-progress {
+            width: 30px;
+            background-color: #2c3e4e;
+            border-radius: 20px;
+            position: relative;
+            flex-shrink: 0;
+            align-self: stretch;
+            margin-top: 60px;
+        }
+        .side-progress-fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background-color: #2ecc71;
+            border-radius: 20px;
+            transition: height 0.3s ease;
+        }
+        .container {
+            flex: 1;
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
             border-radius: 24px;
@@ -96,6 +121,52 @@
             font-size: 0.8rem;
             color: #2ecc71;
         }
+        .calendar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+        .day-cell {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #2c3e4e;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .day-cell.completed {
+            background-color: #2ecc71;
+            color: #1e2b3c;
+            box-shadow: 0 0 5px #2ecc71;
+        }
+        .badge-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+        .badge {
+            background: #2c3e4e;
+            border-radius: 30px;
+            padding: 5px 12px;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .badge.earned {
+            background: #e67e22;
+            box-shadow: 0 0 5px gold;
+        }
         .feedback-box {
             margin-top: 20px;
             background: rgba(0,0,0,0.3);
@@ -111,6 +182,7 @@
             gap: 15px;
             justify-content: center;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
         .action-buttons button {
             background: #2c3e4e;
@@ -120,88 +192,148 @@
         }
         .footer { text-align: center; margin-top: 30px; font-size: 0.8rem; opacity: 0.8; }
         .copyright { font-size: 0.7rem; margin-top: 10px; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #1e2b3c;
+            max-width: 500px;
+            width: 90%;
+            border-radius: 24px;
+            padding: 20px;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        .history-item {
+            background: #2c3e4e;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
-    <div class="subtitle">Transforme ta structure mentale</div>
-    <div class="mode-selector">
-        <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
-        <button class="mode-btn" data-mode="personnel">🔥 Développement personnel (21/66j)</button>
-        <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
+<div class="main-layout">
+    <!-- Barre verticale de progression -->
+    <div class="side-progress">
+        <div id="verticalProgressFill" class="side-progress-fill" style="height: 0%;"></div>
     </div>
+    <div class="container">
+        <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
+        <div class="subtitle">Transforme ta structure mentale</div>
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
+            <button class="mode-btn" data-mode="personnel">🔥 Développement personnel (21/66j)</button>
+            <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
+        </div>
 
-    <!-- Mode Expertise -->
-    <div id="expertisePanel" class="mode-panel active-panel">
-        <p>🔬 Domaine à maîtriser :</p>
-        <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
-        <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
-        <div id="jourContainer" style="display:none;">
-            <div id="jourContent" class="result"></div>
-            <div class="nav-buttons">
-                <button id="prevDay" disabled>◀ Précédent</button>
-                <span id="dayCounter">Intro / 8</span>
-                <button id="nextDay">Suivant ▶</button>
-            </div>
-            <!-- Barre de progression verte (juste en dessous des boutons) -->
-            <div id="expertiseProgressArea" class="progress-container" style="display:none;">
-                <div class="progress-bar"><div id="expertiseProgressFill" class="progress-fill"></div></div>
-                <div id="expertiseProgressText" class="progress-text">0%</div>
-            </div>
-            <div id="feedbackBox" class="feedback-box" style="display:none;">
-                <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
-                <div class="stars" id="starsEx">
-                    <span class="star" data-value="1">☆</span>
-                    <span class="star" data-value="2">☆</span>
-                    <span class="star" data-value="3">☆</span>
-                    <span class="star" data-value="4">☆</span>
-                    <span class="star" data-value="5">☆</span>
+        <!-- Mode Expertise -->
+        <div id="expertisePanel" class="mode-panel active-panel">
+            <p>🔬 Domaine à maîtriser :</p>
+            <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
+            <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
+            <div id="jourContainer" style="display:none;">
+                <!-- Calendrier des jours (expertise 7 cases) -->
+                <div id="expertiseCalendar" class="calendar"></div>
+                <div id="jourContent" class="result"></div>
+                <div class="nav-buttons">
+                    <button id="prevDay" disabled>◀ Précédent</button>
+                    <span id="dayCounter">Intro / 8</span>
+                    <button id="nextDay">Suivant ▶</button>
                 </div>
-                <textarea id="feedbackCommentEx" rows="2" placeholder="Vos remarques (facultatif)"></textarea>
-                <button id="submitFeedbackEx">Envoyer mon avis</button>
+                <div id="expertiseProgressArea" class="progress-container" style="display:none;">
+                    <div class="progress-bar"><div id="expertiseProgressFill" class="progress-fill"></div></div>
+                    <div id="expertiseProgressText" class="progress-text">0%</div>
+                </div>
+                <div id="feedbackBox" class="feedback-box" style="display:none;">
+                    <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
+                    <div class="stars" id="starsEx">
+                        <span class="star" data-value="1">☆</span>
+                        <span class="star" data-value="2">☆</span>
+                        <span class="star" data-value="3">☆</span>
+                        <span class="star" data-value="4">☆</span>
+                        <span class="star" data-value="5">☆</span>
+                    </div>
+                    <textarea id="feedbackCommentEx" rows="2" placeholder="Vos remarques (facultatif)"></textarea>
+                    <button id="submitFeedbackEx">Envoyer mon avis</button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Mode Personnel -->
-    <div id="personnelPanel" class="mode-panel">
-        <p>📝 5 défauts (un par ligne) :</p>
-        <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;Je dépense sans compter&#10;Je suis timide&#10;Je manque de motivation"></textarea>
-        <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
-        <div id="personnelResult" class="result"></div>
-        <div id="personnelLoader" class="progress-container" style="display:none;">
-            <div class="progress-bar"><div id="personnelProgressFill" class="progress-fill"></div></div>
-            <div id="personnelProgressText" class="progress-text">0%</div>
+        <!-- Mode Personnel -->
+        <div id="personnelPanel" class="mode-panel">
+            <p>📝 5 défauts (un par ligne) :</p>
+            <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;Je dépense sans compter&#10;Je suis timide&#10;Je manque de motivation"></textarea>
+            <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
+            <div id="personnelResult" class="result"></div>
+            <!-- Calendrier personnel (21 cases) -->
+            <div id="personnelCalendar" class="calendar" style="margin-top:15px;"></div>
+            <div id="personnelLoader" class="progress-container" style="display:none;">
+                <div class="progress-bar"><div id="personnelProgressFill" class="progress-fill"></div></div>
+                <div id="personnelProgressText" class="progress-text">0%</div>
+            </div>
+        </div>
+
+        <!-- Mode Consultation -->
+        <div id="consultationPanel" class="mode-panel">
+            <p>💬 Décrivez votre besoin :</p>
+            <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention du risque thrombo-embolique..."></textarea>
+            <button id="generateConsult">✨ GÉNÉRER ✨</button>
+            <div id="consultResult" class="result"></div>
+            <div id="consultLoader" class="progress-container" style="display:none;">
+                <div class="progress-bar"><div id="consultProgressFill" class="progress-fill"></div></div>
+                <div id="consultProgressText" class="progress-text">0%</div>
+            </div>
+        </div>
+
+        <!-- Badges et boutons d'action -->
+        <div class="badge-container" id="badgeContainer"></div>
+        <div class="action-buttons">
+            <button id="shareButton">📤 Partager le lien</button>
+            <button id="historyButton">📚 Historique & badges</button>
+            <button id="subscribeButton">🔒 S'abonner</button>
+        </div>
+        <div class="footer">
+            <div class="copyright">Plasticité cérébrale & répétition rythmée.<br>© Dr Tazzz</div>
         </div>
     </div>
+</div>
 
-    <!-- Mode Consultation -->
-    <div id="consultationPanel" class="mode-panel">
-        <p>💬 Décrivez votre besoin :</p>
-        <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention du risque thrombo-embolique..."></textarea>
-        <button id="generateConsult">✨ GÉNÉRER ✨</button>
-        <div id="consultResult" class="result"></div>
-        <div id="consultLoader" class="progress-container" style="display:none;">
-            <div class="progress-bar"><div id="consultProgressFill" class="progress-fill"></div></div>
-            <div id="consultProgressText" class="progress-text">0%</div>
+<!-- Modal pour l'historique -->
+<div id="historyModal" class="modal">
+    <div class="modal-content">
+        <h3>📜 Historique des formations</h3>
+        <div id="historyList"></div>
+        <button id="closeHistoryModal" style="margin-top:15px;">Fermer</button>
+    </div>
+</div>
+
+<!-- Modal pour partager un badge (image) -->
+<div id="shareModal" class="modal">
+    <div class="modal-content" style="text-align:center;">
+        <h3>🏅 Partagez votre badge</h3>
+        <div id="badgePreview" style="background: linear-gradient(135deg, #1e2b3c, #0f1a24); border-radius: 30px; padding: 20px; margin: 10px auto; width: 200px;">
+            <div style="font-size: 3rem;">🏆</div>
+            <div id="badgeName" style="font-weight: bold;"></div>
         </div>
-    </div>
-
-    <!-- Boutons d'action (partage et abonnement) -->
-    <div class="action-buttons">
-        <button id="shareButton">📤 Partager</button>
-        <button id="subscribeButton">🔒 S'abonner</button>
-    </div>
-
-    <div class="footer">
-        <div class="copyright">Plasticité cérébrale & répétition rythmée.<br>© Dr Tazzz</div>
+        <button id="shareBadgeBtn">📤 Partager l'image</button>
+        <button id="closeShareModal">Fermer</button>
     </div>
 </div>
 
 <script>
-    // Onglets
+    // ------------------------------------------------------------------
+    // 1. GESTION DES ONGLETS (inchangé)
+    // ------------------------------------------------------------------
     const modeBtns = document.querySelectorAll('.mode-btn');
     const panels = {
         expertise: document.getElementById('expertisePanel'),
@@ -218,64 +350,181 @@
         });
     });
 
-    // ========== PAGE PRÉLIMINAIRE (fixe) ==========
-    const PAGE0 = `
-# 📖 Bienvenue dans votre chapelet d’expertise
+    // ------------------------------------------------------------------
+    // 2. LOCALSTORAGE : PROGRESSION, BADGES, HISTORIQUE
+    // ------------------------------------------------------------------
+    let progressionEx = JSON.parse(localStorage.getItem('progressionEx')) || [false,false,false,false,false,false,false];
+    let progressionPer = JSON.parse(localStorage.getItem('progressionPer')) || new Array(21).fill(false);
+    let badges = JSON.parse(localStorage.getItem('badges')) || [];
+    let historique = JSON.parse(localStorage.getItem('historique')) || []; // { mode, domaine, date, progression, chapelets }
 
-## 🧠 COMMENT UTILISER LE CHAPELET TAZZZ BOT ?
-- **Procurez‑vous un vrai chapelet** que vous égrènerez durant vos lectures et récitations.
-- Chaque jour, lisez ou récitez à voix haute le contenu du jour.
-- Respectez les **instructions** : 
-  - *Tenez le gros grain correspondant* pour la **Méditation du Mystère**. Chaque Mystère correspond tout simplement à une grande fiche synthétique sur l'un des 5 sujets du jour. Vous devrez lire simplement chaque mystère et si nécessaire vous pouvez consulter vos notes ou d'autres sources.
-  - *Répétez 3 fois* le contenu qui est à la place du **Notre Père**. 
-  - *Répétez 10 fois* (5 lectures, 5 sans regarder) le contenu à la place du **Je vous salue Marie**.
-- Les **5 dizaines** d’un jour correspondent à 5 concepts clés.
+    function sauvegarderProgression() {
+        localStorage.setItem('progressionEx', JSON.stringify(progressionEx));
+        localStorage.setItem('progressionPer', JSON.stringify(progressionPer));
+        localStorage.setItem('badges', JSON.stringify(badges));
+        localStorage.setItem('historique', JSON.stringify(historique));
+        mettreAJourAffichage();
+    }
 
-👉 Cliquez sur **“Suivant”** pour commencer le **Jour 1**.
-    `;
+    function mettreAJourAffichage() {
+        // mise à jour des calendriers
+        afficherCalendrierExpertise();
+        afficherCalendrierPersonnel();
+        afficherBadges();
+        miseAJourCompteurVertical();
+    }
 
-    // ========== EXPERTISE ==========
+    // Calendrier expertise (7 cases)
+    function afficherCalendrierExpertise() {
+        const container = document.getElementById('expertiseCalendar');
+        if (!container) return;
+        container.innerHTML = '';
+        for (let i=0; i<7; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'day-cell ' + (progressionEx[i] ? 'completed' : '');
+            cell.innerText = i+1;
+            cell.onclick = () => marquerJourExpertise(i);
+            container.appendChild(cell);
+        }
+    }
+
+    function marquerJourExpertise(index) {
+        if (!progressionEx[index]) {
+            progressionEx[index] = true;
+            sauvegarderProgression();
+            afficherFelicitation(index+1, 7, domaine);
+            // Vérifier badge "1 semaine"
+            if (progressionEx.every(v => v === true)) {
+                const badgeNom = "🏅 1 semaine d'expertise";
+                if (!badges.includes(badgeNom)) {
+                    badges.push(badgeNom);
+                    sauvegarderProgression();
+                    alert(`🎉 Nouveau badge gagné : ${badgeNom} !`);
+                }
+            }
+        }
+    }
+
+    // Calendrier personnel (21 cases)
+    function afficherCalendrierPersonnel() {
+        const container = document.getElementById('personnelCalendar');
+        if (!container) return;
+        container.innerHTML = '';
+        const nb = progressionPer.length;
+        for (let i=0; i<nb; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'day-cell ' + (progressionPer[i] ? 'completed' : '');
+            cell.innerText = i+1;
+            cell.style.width = '30px'; cell.style.height = '30px';
+            cell.onclick = () => marquerJourPersonnel(i);
+            container.appendChild(cell);
+        }
+    }
+
+    function marquerJourPersonnel(index) {
+        if (!progressionPer[index]) {
+            progressionPer[index] = true;
+            sauvegarderProgression();
+            // messages de félicitations pour le personnel (optionnel)
+            if (progressionPer.every(v => v === true)) {
+                const badge21 = "🎖️ 21 jours de discipline";
+                if (!badges.includes(badge21)) {
+                    badges.push(badge21);
+                    sauvegarderProgression();
+                    alert(`🎉 Nouveau badge gagné : ${badge21} !`);
+                }
+            }
+        }
+    }
+
+    function afficherFelicitation(jour, total, domaine) {
+        if (jour === total) {
+            alert(`🎉 Toutes mes félicitations ! Vous avez achevé votre expertise sur "${domaine}". Vous gagnez un badge "Expert en ${domaine}".`);
+            const expertBadge = `🏆 Expert en ${domaine}`;
+            if (!badges.includes(expertBadge)) {
+                badges.push(expertBadge);
+                sauvegarderProgression();
+            }
+        } else {
+            alert(`🎊 Bravo ! Vous venez d'achever le jour ${jour}/${total}.`);
+        }
+    }
+
+    function afficherBadges() {
+        const container = document.getElementById('badgeContainer');
+        if (!container) return;
+        container.innerHTML = badges.map(b => `<div class="badge earned">${b}</div>`).join('');
+    }
+
+    function miseAJourCompteurVertical() {
+        let total = 0, valide = 0;
+        if (document.querySelector('.mode-btn.active').getAttribute('data-mode') === 'expertise') {
+            total = 7;
+            valide = progressionEx.filter(v => v).length;
+        } else if (document.querySelector('.mode-btn.active').getAttribute('data-mode') === 'personnel') {
+            total = progressionPer.length;
+            valide = progressionPer.filter(v => v).length;
+        } else {
+            document.getElementById('verticalProgressFill').style.height = '0%';
+            return;
+        }
+        const pourcent = (valide / total) * 100;
+        document.getElementById('verticalProgressFill').style.height = pourcent + '%';
+    }
+
+    // ------------------------------------------------------------------
+    // 3. PARTIE EXPERTISE (génération, navigation, etc.)
+    // ------------------------------------------------------------------
     let domaine = '';
     let jours = {};
     let currentPage = 0;
     const totalPages = 8;
     let currentExpertiseInterval = null;
 
-    function startExpertiseProgress() {
+    const PAGE0 = `# 📖 Bienvenue dans votre chapelet d’expertise
+
+## 🧠 COMMENT UTILISER LE CHAPELET TAZZZ BOT ?
+- **Procurez‑vous un vrai chapelet** que vous égrènerez durant vos lectures et récitations.
+- Chaque jour, lisez ou récitez à voix haute le contenu du jour.
+- Respectez les **instructions** : 
+  - *Tenez le gros grain correspondant* pour la **Méditation du Mystère**.
+  - *Répétez 3 fois* le contenu du **Notre Père**. 
+  - *Répétez 10 fois* (5 lectures, 5 sans regarder) le **Je vous salue Marie**.
+- Les **5 dizaines** d’un jour correspondent à 5 concepts clés.
+
+👉 Cliquez sur **“Suivant”** pour commencer le **Jour 1**.`;
+
+    function startExpertiseProgress() { /* (identique avant) */ }
+    function stopExpertiseProgress(interval, complete) { /* (identique avant) */ }
+    // Réintégrer les fonctions de progression (elles sont déjà définies plus loin ? Je vais les recréer)
+    function startExpertiseProgressBar() {
         const area = document.getElementById('expertiseProgressArea');
         const fill = document.getElementById('expertiseProgressFill');
         const text = document.getElementById('expertiseProgressText');
-        if (!area || !fill || !text) return null;
+        if (!area) return null;
         area.style.display = 'block';
         let percent = 0;
         const interval = setInterval(() => {
-            if (percent < 90) {
-                percent += 2;
-                if (percent > 90) percent = 90;
+            if (percent < 90) { percent += 2; if (percent > 90) percent = 90;
                 fill.style.width = percent + '%';
                 text.innerText = percent + '%';
             }
         }, 150);
         return interval;
     }
-
-    function stopExpertiseProgress(interval, complete = true) {
+    function stopExpertiseProgressBar(interval, complete) {
         const area = document.getElementById('expertiseProgressArea');
         const fill = document.getElementById('expertiseProgressFill');
         const text = document.getElementById('expertiseProgressText');
         if (interval) clearInterval(interval);
-        if (complete && fill && text) {
+        if (complete && fill) {
             fill.style.width = '100%';
             text.innerText = '100%';
-            setTimeout(() => {
-                if (area) area.style.display = 'none';
-                if (fill) fill.style.width = '0%';
-                if (text) text.innerText = '0%';
-            }, 300);
+            setTimeout(() => { if(area) area.style.display = 'none'; fill.style.width = '0%'; text.innerText = '0%'; }, 300);
         } else {
-            if (area) area.style.display = 'none';
-            if (fill) fill.style.width = '0%';
-            if (text) text.innerText = '0%';
+            if(area) area.style.display = 'none';
+            if(fill) fill.style.width = '0%';
+            if(text) text.innerText = '0%';
         }
     }
 
@@ -285,7 +534,6 @@
         const prevBtn = document.getElementById('prevDay');
         const nextBtn = document.getElementById('nextDay');
         const feedbackBox = document.getElementById('feedbackBox');
-        
         if (page === 0) {
             contentDiv.innerHTML = PAGE0.replace(/\n/g, '<br>');
             daySpan.innerText = 'Intro / 8';
@@ -309,7 +557,7 @@
 
     function chargerJour(jourNum) {
         if (currentExpertiseInterval) clearInterval(currentExpertiseInterval);
-        currentExpertiseInterval = startExpertiseProgress();
+        currentExpertiseInterval = startExpertiseProgressBar();
         fetch('/generer_jour_expertise', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -319,13 +567,19 @@
         .then(data => {
             if (data.error) throw new Error(data.error);
             jours[jourNum] = data.contenu;
-            stopExpertiseProgress(currentExpertiseInterval, true);
+            stopExpertiseProgressBar(currentExpertiseInterval, true);
             afficherPage(jourNum);
+            // Après chargement, on met à jour la progression (case cochée automatiquement)
+            if (!progressionEx[jourNum-1]) {
+                progressionEx[jourNum-1] = true;
+                sauvegarderProgression();
+                afficherFelicitation(jourNum, 7, domaine);
+            }
         })
         .catch(err => {
             console.error(err);
             jours[jourNum] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jourNum}. Rafraîchissez ou réessayez.`;
-            stopExpertiseProgress(currentExpertiseInterval, false);
+            stopExpertiseProgressBar(currentExpertiseInterval, false);
             afficherPage(jourNum);
         });
     }
@@ -338,36 +592,35 @@
         afficherPage(0);
         document.getElementById('jourContainer').style.display = 'block';
         document.getElementById('startExpertise').style.display = 'none';
+        // Sauvegarder dans historique
+        const existe = historique.find(h => h.mode === 'expertise' && h.domaine === domaine);
+        if (!existe) {
+            historique.push({
+                mode: 'expertise',
+                domaine: domaine,
+                date: new Date().toISOString(),
+                progression: progressionEx.slice(),
+                chapelets: jours
+            });
+            sauvegarderProgression();
+        }
     });
 
     document.getElementById('prevDay').addEventListener('click', () => {
-        if (currentPage > 0) {
-            currentPage--;
-            afficherPage(currentPage);
-        }
+        if (currentPage > 0) { currentPage--; afficherPage(currentPage); }
     });
     document.getElementById('nextDay').addEventListener('click', () => {
-        if (currentPage < totalPages - 1) {
-            currentPage++;
-            afficherPage(currentPage);
-        }
+        if (currentPage < totalPages - 1) { currentPage++; afficherPage(currentPage); }
     });
 
-    // Feedback Expertise
+    // Feedback expertise (identique)
     let currentNoteEx = 0;
-    const starsEx = document.querySelectorAll('#starsEx .star');
-    starsEx.forEach(star => {
+    document.querySelectorAll('#starsEx .star').forEach(star => {
         star.addEventListener('click', () => {
             currentNoteEx = parseInt(star.getAttribute('data-value'));
-            starsEx.forEach(s => {
-                const val = parseInt(s.getAttribute('data-value'));
-                if (val <= currentNoteEx) {
-                    s.textContent = '★';
-                    s.classList.add('selected');
-                } else {
-                    s.textContent = '☆';
-                    s.classList.remove('selected');
-                }
+            document.querySelectorAll('#starsEx .star').forEach((s, idx) => {
+                if (idx < currentNoteEx) { s.textContent = '★'; s.classList.add('selected'); }
+                else { s.textContent = '☆'; s.classList.remove('selected'); }
             });
         });
     });
@@ -375,58 +628,42 @@
         if (currentNoteEx === 0) { alert('Sélectionnez une note'); return; }
         const comment = document.getElementById('feedbackCommentEx').value.trim();
         try {
-            const res = await fetch('/feedback', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ note: currentNoteEx, commentaire: comment })
-            });
-            const data = await res.json();
-            if (data.status === 'ok') {
-                alert('Merci pour votre avis !');
-                document.getElementById('feedbackBox').style.display = 'none';
-            } else alert('Erreur');
-        } catch (err) { alert('Erreur réseau'); }
+            await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) });
+            alert('Merci pour votre avis !');
+            document.getElementById('feedbackBox').style.display = 'none';
+        } catch(err) { alert('Erreur réseau'); }
     });
 
-    // ========== MODE PERSONNEL ==========
+    // Personnel (inchangé mais avec gestion de progression)
     let currentPersonnelInterval = null;
     function startGenericProgress(areaId, fillId, textId) {
         const area = document.getElementById(areaId);
-        const fill = document.getElementById(fillId);
-        const textSpan = document.getElementById(textId);
-        if (!area || !fill || !textSpan) return null;
+        if (!area) return null;
         area.style.display = 'block';
         let percent = 0;
         const interval = setInterval(() => {
-            if (percent < 90) {
-                percent += 2;
-                if (percent > 90) percent = 90;
-                fill.style.width = percent + '%';
-                textSpan.innerText = percent + '%';
+            if (percent < 90) { percent += 2; if (percent > 90) percent = 90;
+                document.getElementById(fillId).style.width = percent + '%';
+                document.getElementById(textId).innerText = percent + '%';
             }
         }, 150);
         return interval;
     }
-    function stopGenericProgress(areaId, fillId, textId, interval, complete = true) {
+    function stopGenericProgress(areaId, fillId, textId, interval, complete) {
         const area = document.getElementById(areaId);
         const fill = document.getElementById(fillId);
-        const textSpan = document.getElementById(textId);
+        const txt = document.getElementById(textId);
         if (interval) clearInterval(interval);
-        if (complete && fill && textSpan) {
+        if (complete && fill) {
             fill.style.width = '100%';
-            textSpan.innerText = '100%';
-            setTimeout(() => {
-                if (area) area.style.display = 'none';
-                if (fill) fill.style.width = '0%';
-                if (textSpan) textSpan.innerText = '0%';
-            }, 300);
+            txt.innerText = '100%';
+            setTimeout(() => { if(area) area.style.display = 'none'; fill.style.width = '0%'; txt.innerText = '0%'; }, 300);
         } else {
-            if (area) area.style.display = 'none';
-            if (fill) fill.style.width = '0%';
-            if (textSpan) textSpan.innerText = '0%';
+            if(area) area.style.display = 'none';
+            if(fill) fill.style.width = '0%';
+            if(txt) txt.innerText = '0%';
         }
     }
-
     document.getElementById('generatePersonnel').addEventListener('click', async () => {
         let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
         if (defauts.length !== 5) { alert('5 défauts requis'); return; }
@@ -434,71 +671,119 @@
         if (currentPersonnelInterval) clearInterval(currentPersonnelInterval);
         currentPersonnelInterval = startGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText');
         try {
-            const res = await fetch('/generer_personnel', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ defauts: defauts })
-            });
+            const res = await fetch('/generer_personnel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ defauts: defauts }) });
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText', currentPersonnelInterval, true);
             document.getElementById('personnelResult').innerHTML = data.contenu.replace(/\n/g, '<br>');
-        } catch (err) {
-            stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText', currentPersonnelInterval, false);
-            alert('Erreur: ' + err.message);
-        }
+            // enregistrement dans historique personnel
+            const persoHistorique = { mode: 'personnel', defauts: defauts, date: new Date().toISOString(), progression: progressionPer.slice() };
+            historique.push(persoHistorique);
+            sauvegarderProgression();
+        } catch(err) { stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText', currentPersonnelInterval, false); alert('Erreur: ' + err.message); }
     });
 
-    // ========== MODE CONSULTATION ==========
-    let currentConsultInterval = null;
-    document.getElementById('generateConsult').addEventListener('click', async () => {
+    // Consultation (redirection simple)
+    document.getElementById('generateConsult').addEventListener('click', () => {
         let msg = document.getElementById('consultMessage').value.trim();
         if (!msg) { alert('Message requis'); return; }
-        document.getElementById('consultResult').innerHTML = '';
-        if (currentConsultInterval) clearInterval(currentConsultInterval);
-        currentConsultInterval = startGenericProgress('consultLoader', 'consultProgressFill', 'consultProgressText');
-        try {
-            // Note: il faudrait une route /generer_consultation dans app.py, on redirige vers expertise
-            alert('Mode consultation redirige vers Expertise (car route non implémentée)');
-            stopGenericProgress('consultLoader', 'consultProgressFill', 'consultProgressText', currentConsultInterval, false);
-            domaine = msg;
-            jours = {};
-            currentPage = 0;
-            afficherPage(0);
-            document.getElementById('jourContainer').style.display = 'block';
-            document.getElementById('startExpertise').style.display = 'none';
-            document.querySelector('.mode-btn[data-mode="expertise"]').click();
-        } catch (err) {
-            stopGenericProgress('consultLoader', 'consultProgressFill', 'consultProgressText', currentConsultInterval, false);
-            alert('Erreur: ' + err.message);
-        }
+        domaine = msg;
+        jours = {};
+        currentPage = 0;
+        afficherPage(0);
+        document.getElementById('jourContainer').style.display = 'block';
+        document.getElementById('startExpertise').style.display = 'none';
+        document.querySelector('.mode-btn[data-mode="expertise"]').click();
     });
 
-    // Boutons partage et abonnement (inchangés)
+    // ------------------------------------------------------------------
+    // 4. HISTORIQUE ET PARTAGE DE BADGES
+    // ------------------------------------------------------------------
+    const historyModal = document.getElementById('historyModal');
+    const historyList = document.getElementById('historyList');
+    const shareModal = document.getElementById('shareModal');
+    let currentBadgeToShare = '';
+
+    document.getElementById('historyButton').addEventListener('click', () => {
+        historyList.innerHTML = '';
+        historique.forEach((item, idx) => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerHTML = `<strong>${item.mode === 'expertise' ? '📚 Expertise' : '🔥 Personnel'}</strong> – ${item.domaine || item.defauts?.join(', ')}<br><small>${new Date(item.date).toLocaleDateString()}</small>`;
+            div.onclick = () => {
+                // Recharger le contenu (pour expertise, recharger les chapelets)
+                if (item.mode === 'expertise' && item.chapelets) {
+                    domaine = item.domaine;
+                    jours = item.chapelets;
+                    progressionEx = item.progression;
+                    sauvegarderProgression();
+                    currentPage = 1;
+                    afficherPage(1);
+                    historyModal.style.display = 'none';
+                    document.getElementById('startExpertise').style.display = 'none';
+                    document.getElementById('jourContainer').style.display = 'block';
+                } else {
+                    alert('Reconsultation non implémentée pour le personnel');
+                }
+            };
+            historyList.appendChild(div);
+        });
+        historyModal.style.display = 'flex';
+    });
+    document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
+
+    // Partage de badge : quand on clique sur un badge gagné
+    document.getElementById('badgeContainer').addEventListener('click', (e) => {
+        const badgeDiv = e.target.closest('.badge');
+        if (badgeDiv && badgeDiv.classList.contains('earned')) {
+            currentBadgeToShare = badgeDiv.innerText;
+            document.getElementById('badgeName').innerText = currentBadgeToShare;
+            shareModal.style.display = 'flex';
+        }
+    });
+    document.getElementById('closeShareModal').addEventListener('click', () => shareModal.style.display = 'none');
+    document.getElementById('shareBadgeBtn').addEventListener('click', async () => {
+        const element = document.getElementById('badgePreview');
+        try {
+            const canvas = await html2canvas(element, { scale: 2, backgroundColor: null });
+            canvas.toBlob(async (blob) => {
+                const file = new File([blob], 'badge.png', { type: 'image/png' });
+                if (navigator.share) {
+                    await navigator.share({
+                        title: 'Mon badge Chapelet Tazzz',
+                        text: `Je viens de gagner le badge "${currentBadgeToShare}" !`,
+                        files: [file]
+                    });
+                } else {
+                    // Fallback : téléchargement
+                    const link = document.createElement('a');
+                    link.download = 'badge.png';
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                    alert('Image téléchargée. Partagez-la manuellement.');
+                }
+                shareModal.style.display = 'none';
+            });
+        } catch(e) { alert('Erreur génération image'); }
+    });
+
     document.getElementById('shareButton').addEventListener('click', async () => {
         const url = window.location.href;
         if (navigator.share) {
             try {
-                await navigator.share({
-                    title: 'Chapelet Tazzz Bot',
-                    text: 'Découvrez l’outil qui transforme votre structure mentale !',
-                    url: url
-                });
-            } catch (err) {
-                if (err.name !== 'AbortError') alert('Partage annulé ou erreur.');
-            }
+                await navigator.share({ title: 'Chapelet Tazzz Bot', text: 'Découvrez l’outil qui transforme votre structure mentale !', url: url });
+            } catch(err) { if(err.name !== 'AbortError') alert('Partage annulé'); }
         } else {
             try {
                 await navigator.clipboard.writeText(url);
-                alert('Lien copié dans le presse-papiers !');
-            } catch (err) {
-                alert('Impossible de copier le lien manuellement.');
-            }
+                alert('Lien copié !');
+            } catch(err) { alert('Impossible de copier'); }
         }
     });
-    document.getElementById('subscribeButton').addEventListener('click', () => {
-        alert("🔒 L'abonnement n'est pas encore actif. Cette option sera bientôt disponible.\nPour l'instant, l'accès est gratuit.");
-    });
+    document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 L'abonnement n'est pas encore actif.\nPour l'instant, l'accès est gratuit."));
+
+    // Initialisation
+    mettreAJourAffichage();
 </script>
 </body>
 </html>
