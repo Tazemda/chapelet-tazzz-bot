@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>🧠 CHAPELET TAZZZ BOT – EXPERTISE 7 JOURS</title>
     <style>
         * { box-sizing: border-box; }
@@ -609,7 +609,7 @@
             } catch(err) { alert('Erreur réseau'); }
         });
 
-        // ===================== LECTURE AUDIO =====================
+        // ===================== LECTURE AUDIO (CORRIGÉ POUR MOBILE) =====================
         const audioModal = document.getElementById('audioModal');
         const audioTextPreview = document.getElementById('audioTextPreview');
         const playPauseBtn = document.getElementById('playPauseBtn');
@@ -618,6 +618,7 @@
         const speedValue = document.getElementById('speedValue');
         let currentUtterance = null;
         let isPlaying = false;
+        let currentAudioText = '';  // stocke le texte complet du jour en cours
 
         function stopAudio() {
             if (window.speechSynthesis) {
@@ -627,13 +628,22 @@
             }
         }
 
-        function playAudio(text) {
-            stopAudio();
-            if (!text) return;
+        function playAudio(text, rate = parseFloat(speedSlider.value)) {
+            if (!window.speechSynthesis) {
+                alert("Votre navigateur ne supporte pas la synthèse vocale.");
+                return;
+            }
+            stopAudio();  // Annule toute lecture en cours
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'fr-FR';
-            utterance.rate = parseFloat(speedSlider.value);
+            utterance.rate = rate;
             utterance.onend = () => {
+                isPlaying = false;
+                playPauseBtn.textContent = '▶ Lire';
+            };
+            utterance.onerror = (err) => {
+                console.error("Erreur de synthèse vocale :", err);
+                alert("Erreur lors de la lecture audio. Réessayez.");
                 isPlaying = false;
                 playPauseBtn.textContent = '▶ Lire';
             };
@@ -651,24 +661,16 @@
             }
         }
 
-        function resumeAudio() {
-            if (currentUtterance && !isPlaying) {
-                playAudio(currentUtterance.text);
-            }
-        }
-
+        // Bouton Play/Pause de la modale
         playPauseBtn.addEventListener('click', () => {
             if (isPlaying) {
                 pauseAudio();
             } else {
-                if (currentUtterance && currentUtterance.text) {
-                    resumeAudio();
+                if (currentAudioText && currentAudioText.length > 0) {
+                    playAudio(currentAudioText, parseFloat(speedSlider.value));
                 } else {
-                    // rejouer le texte actuel
-                    const currentText = document.getElementById('jourContent').innerText;
-                    if (currentText && !currentText.includes('Chargement du jour') && !currentText.includes('Erreur')) {
-                        playAudio(currentText);
-                    }
+                    // Éviter les appels sans texte
+                    alert("Aucun texte à lire.");
                 }
             }
         });
@@ -679,47 +681,41 @@
 
         speedSlider.addEventListener('input', () => {
             speedValue.textContent = speedSlider.value;
-            if (currentUtterance) {
+            // Si une lecture est en cours, on change la vitesse immédiatement
+            if (isPlaying && currentUtterance && currentAudioText) {
+                // recréer l'utterance avec la nouvelle vitesse
+                playAudio(currentAudioText, parseFloat(speedSlider.value));
+            } else if (currentUtterance) {
                 currentUtterance.rate = parseFloat(speedSlider.value);
-                if (isPlaying) {
-                    // recréer l'utterance avec la nouvelle vitesse
-                    const currentText = currentUtterance.text;
-                    stopAudio();
-                    playAudio(currentText);
-                }
             }
         });
 
+        // Bouton "Play" global (🔊) qui ouvre la modale et prépare le texte
         document.getElementById('playAudioBtn').addEventListener('click', () => {
-            const currentText = document.getElementById('jourContent').innerText;
-            if (currentText && !currentText.includes('Chargement du jour') && !currentText.includes('Erreur')) {
-                // Afficher un aperçu du texte dans la modale
-                audioTextPreview.innerText = currentText.substring(0, 500) + (currentText.length > 500 ? '...' : '');
-                stopAudio();
-                currentUtterance = null;
-                playPauseBtn.textContent = '▶ Lire';
-                // Stocker le texte pour la lecture
-                if (!currentUtterance) {
-                    currentUtterance = new SpeechSynthesisUtterance(currentText);
-                    currentUtterance.lang = 'fr-FR';
-                    currentUtterance.rate = parseFloat(speedSlider.value);
-                    currentUtterance.onend = () => {
-                        isPlaying = false;
-                        playPauseBtn.textContent = '▶ Lire';
-                    };
-                }
-                audioModal.style.display = 'flex';
-            } else {
+            const contentDiv = document.getElementById('jourContent');
+            const rawText = contentDiv.innerText;
+            if (!rawText || rawText.includes('Chargement du jour') || rawText.includes('Erreur')) {
                 alert('Aucun contenu audio disponible pour ce jour.');
+                return;
             }
+            // Nettoyer le texte (enlever les marques de répétition, etc. – optionnel)
+            let cleanText = rawText;
+            // Afficher un extrait dans la modale
+            audioTextPreview.innerText = cleanText.substring(0, 500) + (cleanText.length > 500 ? '...' : '');
+            currentAudioText = cleanText;
+            // Arrêter toute lecture en cours
+            stopAudio();
+            // Réinitialiser le bouton de la modale
+            playPauseBtn.textContent = '▶ Lire';
+            // Ouvrir la modale
+            audioModal.style.display = 'flex';
         });
 
+        // Fermeture de la modale audio
         document.getElementById('closeAudioModal').addEventListener('click', () => {
             stopAudio();
             audioModal.style.display = 'none';
         });
-
-        // Fermer la modale si on clique en dehors
         window.addEventListener('click', (e) => {
             if (e.target === audioModal) {
                 stopAudio();
