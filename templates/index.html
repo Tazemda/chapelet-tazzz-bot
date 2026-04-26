@@ -35,14 +35,15 @@
         }
         .history-link {
             position: absolute;
-            left: 0;
-            bottom: -30px;   /* décalé plus bas sous le sous-titre */
+            left: -10px;
+            bottom: -30px;
             background: #2c3e4e;
             padding: 4px 12px;
             border-radius: 30px;
             font-size: 0.75rem;
             cursor: pointer;
             transition: 0.2s;
+            white-space: nowrap;
         }
         .history-link:hover { background: #e67e22; }
         .mode-selector {
@@ -83,6 +84,28 @@
             max-height: 550px;
             overflow-y: auto;
             border-left: 5px solid #e67e22;
+            position: relative;
+        }
+        .play-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: #e67e22;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 1.3rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: 0.2s;
+        }
+        .play-button:hover {
+            background: #d35400;
+            transform: scale(1.05);
         }
         .nav-buttons {
             display: flex;
@@ -93,11 +116,17 @@
         }
         .nav-buttons button { width: auto; margin: 0; }
         .day-counter { font-size: 0.9rem; }
+        .progress-header {
+            text-align: center;
+            font-size: 0.7rem;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
         .progress-segments {
             display: flex;
             gap: 6px;
             justify-content: center;
-            margin: 15px 0;
+            margin: 5px 0 15px 0;
             flex-wrap: wrap;
         }
         .segment {
@@ -116,6 +145,11 @@
         .segment.completed {
             background-color: #aa00ff;
             box-shadow: 0 0 6px #aa00ff;
+        }
+        .segment.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+            pointer-events: none;
         }
         .progress-container {
             margin: 15px 0 10px 0;
@@ -177,12 +211,26 @@
         }
         .modal-content {
             background: #1e2b3c;
-            max-width: 600px;
+            max-width: 500px;
             width: 90%;
             border-radius: 24px;
             padding: 20px;
-            max-height: 80%;
-            overflow-y: auto;
+            text-align: center;
+        }
+        .audio-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        .audio-controls button {
+            background: #2c3e4e;
+            margin: 0;
+            padding: 8px 16px;
+        }
+        input[type="range"] {
+            width: 80%;
+            margin: 10px auto;
         }
         .history-item {
             background: #2c3e4e;
@@ -218,8 +266,12 @@
         <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
         <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
         <div id="jourContainer" style="display:none;">
+            <div class="progress-header">✅ Jour rempli à cocher ici</div>
             <div id="segmentsContainer" class="progress-segments"></div>
-            <div id="jourContent" class="result"></div>
+            <div id="jourContentContainer" style="position: relative;">
+                <div id="jourContent" class="result"></div>
+                <button id="playAudioBtn" class="play-button" style="display: none;">🔊</button>
+            </div>
             <div class="nav-buttons">
                 <button id="prevDay" disabled>◀ Précédent</button>
                 <span id="dayCounter">Intro / 8</span>
@@ -275,6 +327,23 @@
     </div>
 </div>
 
+<!-- MODALE AUDIO -->
+<div id="audioModal" class="modal">
+    <div class="modal-content">
+        <h3>🔊 Lecture audio</h3>
+        <div id="audioTextPreview" style="background: #2c3e4e; padding: 10px; border-radius: 12px; max-height: 200px; overflow-y: auto; font-size: 0.8rem; text-align: left; margin-bottom: 15px;"></div>
+        <div class="audio-controls">
+            <button id="playPauseBtn">▶ Lire</button>
+            <button id="stopBtn">⏹ Arrêter</button>
+        </div>
+        <div>
+            <label>Vitesse : <span id="speedValue">1.0</span></label>
+            <input type="range" id="speedSlider" min="0.5" max="2" step="0.1" value="1.0">
+        </div>
+        <button id="closeAudioModal" style="margin-top: 15px;">Fermer</button>
+    </div>
+</div>
+
 <!-- MODALE HISTORIQUE -->
 <div id="historyModal" class="modal">
     <div class="modal-content">
@@ -286,10 +355,9 @@
 
 <script>
     (function() {
-        // Nettoyer l'ancien localStorage des badges indésirables (ex: "1 semaine d'expertise")
+        // Nettoyer l'ancien localStorage des badges indésirables
         let anciensBadges = JSON.parse(localStorage.getItem('badges')) || [];
         if (anciensBadges.length > 0) {
-            // Garder seulement les badges qui ne sont pas "1 semaine d'expertise" (supprimer également d'éventuels trophées)
             const nouveauxBadges = anciensBadges.filter(b => !b.includes("1 semaine") && !b.includes("trophée") && !b.includes("🏆"));
             localStorage.setItem('badges', JSON.stringify(nouveauxBadges));
         } else {
@@ -313,13 +381,23 @@
             });
         });
 
-        // Variables globales
+        // Variables
         let progression = JSON.parse(localStorage.getItem('progression')) || [false,false,false,false,false,false,false];
         let historique = JSON.parse(localStorage.getItem('historique')) || [];
 
         function sauvegarderTout() {
             localStorage.setItem('progression', JSON.stringify(progression));
             localStorage.setItem('historique', JSON.stringify(historique));
+        }
+
+        let currentDomaine = '';
+        let jours = {};
+        let currentPage = 0;
+        const totalPages = 8;
+        let currentExpertiseInterval = null;
+
+        function isJourGenere(jourNum) {
+            return !!jours[jourNum];
         }
 
         // Barre segmentée
@@ -329,9 +407,19 @@
             container.innerHTML = '';
             for (let i=0; i<7; i++) {
                 const seg = document.createElement('div');
-                seg.className = 'segment' + (progression[i] ? ' completed' : '');
+                seg.className = 'segment';
+                if (progression[i]) seg.classList.add('completed');
+                if (!progression[i] && !isJourGenere(i+1)) {
+                    seg.classList.add('disabled');
+                }
                 seg.innerText = `${i+1}`;
-                seg.onclick = (function(idx) { return () => cocherSegment(idx); })(i);
+                seg.onclick = (function(idx) { return () => {
+                    if (!progression[idx] && !isJourGenere(idx+1)) {
+                        alert(`Veuillez d'abord générer le contenu du jour ${idx+1} en naviguant vers ce jour.`);
+                        return;
+                    }
+                    cocherSegment(idx);
+                }; })(i);
                 container.appendChild(seg);
             }
         }
@@ -358,7 +446,6 @@
                 } else {
                     alert(`🎊 Bravo ! Vous venez de valider le jour ${idx+1}/7. Continue ainsi !`);
                 }
-                // Mettre à jour la progression dans l'historique
                 const histEntry = historique.find(h => h.domaine === currentDomaine);
                 if (histEntry) {
                     histEntry.progression = progression.slice();
@@ -366,13 +453,6 @@
                 }
             }
         }
-
-        // Partie Expertise
-        let currentDomaine = '';
-        let jours = {};
-        let currentPage = 0;
-        const totalPages = 8;
-        let currentExpertiseInterval = null;
 
         const PAGE0 = `# 📖 Bienvenue dans votre chapelet d’expertise
 
@@ -389,7 +469,7 @@
 
 👉 Cliquez sur **“Suivant”** pour commencer le **Jour 1**.`;
 
-        function startExpertiseProgress() {
+        function startExpertiseProgressBar() {
             const area = document.getElementById('expertiseProgressArea');
             const fill = document.getElementById('expertiseProgressFill');
             const text = document.getElementById('expertiseProgressText');
@@ -404,7 +484,7 @@
             }, 150);
             return interval;
         }
-        function stopExpertiseProgress(interval, complete) {
+        function stopExpertiseProgressBar(interval, complete) {
             const area = document.getElementById('expertiseProgressArea');
             const fill = document.getElementById('expertiseProgressFill');
             const text = document.getElementById('expertiseProgressText');
@@ -426,12 +506,14 @@
             const prevBtn = document.getElementById('prevDay');
             const nextBtn = document.getElementById('nextDay');
             const feedbackBox = document.getElementById('feedbackBox');
+            const playBtn = document.getElementById('playAudioBtn');
             if (page === 0) {
                 contentDiv.innerHTML = PAGE0.replace(/\n/g, '<br>');
                 daySpan.innerText = 'Intro / 8';
                 prevBtn.disabled = true;
                 nextBtn.disabled = false;
                 feedbackBox.style.display = 'none';
+                playBtn.style.display = 'none';
             } else {
                 const jourNum = page;
                 if (jours[jourNum]) {
@@ -440,6 +522,8 @@
                     prevBtn.disabled = (jourNum === 1);
                     nextBtn.disabled = (jourNum === 7);
                     feedbackBox.style.display = 'block';
+                    playBtn.style.display = 'flex';
+                    afficherBarreSegments();
                 } else {
                     contentDiv.innerHTML = '<em>Chargement du jour...</em>';
                     chargerJour(jourNum);
@@ -449,7 +533,7 @@
 
         function chargerJour(jourNum) {
             if (currentExpertiseInterval) clearInterval(currentExpertiseInterval);
-            currentExpertiseInterval = startExpertiseProgress();
+            currentExpertiseInterval = startExpertiseProgressBar();
             fetch('/generer_jour_expertise', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -459,14 +543,16 @@
             .then(data => {
                 if (data.error) throw new Error(data.error);
                 jours[jourNum] = data.contenu;
-                stopExpertiseProgress(currentExpertiseInterval, true);
+                stopExpertiseProgressBar(currentExpertiseInterval, true);
                 afficherPage(jourNum);
+                afficherBarreSegments();
             })
             .catch(err => {
                 console.error(err);
                 jours[jourNum] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jourNum}. Rafraîchissez ou réessayez.`;
-                stopExpertiseProgress(currentExpertiseInterval, false);
+                stopExpertiseProgressBar(currentExpertiseInterval, false);
                 afficherPage(jourNum);
+                afficherBarreSegments();
             });
         }
 
@@ -523,7 +609,128 @@
             } catch(err) { alert('Erreur réseau'); }
         });
 
-        // Mode Personnel
+        // ===================== LECTURE AUDIO =====================
+        const audioModal = document.getElementById('audioModal');
+        const audioTextPreview = document.getElementById('audioTextPreview');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        let currentUtterance = null;
+        let isPlaying = false;
+
+        function stopAudio() {
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+                isPlaying = false;
+                playPauseBtn.textContent = '▶ Lire';
+            }
+        }
+
+        function playAudio(text) {
+            stopAudio();
+            if (!text) return;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'fr-FR';
+            utterance.rate = parseFloat(speedSlider.value);
+            utterance.onend = () => {
+                isPlaying = false;
+                playPauseBtn.textContent = '▶ Lire';
+            };
+            currentUtterance = utterance;
+            window.speechSynthesis.speak(utterance);
+            isPlaying = true;
+            playPauseBtn.textContent = '⏸ Pause';
+        }
+
+        function pauseAudio() {
+            if (window.speechSynthesis && isPlaying) {
+                window.speechSynthesis.cancel();
+                isPlaying = false;
+                playPauseBtn.textContent = '▶ Lire';
+            }
+        }
+
+        function resumeAudio() {
+            if (currentUtterance && !isPlaying) {
+                playAudio(currentUtterance.text);
+            }
+        }
+
+        playPauseBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                pauseAudio();
+            } else {
+                if (currentUtterance && currentUtterance.text) {
+                    resumeAudio();
+                } else {
+                    // rejouer le texte actuel
+                    const currentText = document.getElementById('jourContent').innerText;
+                    if (currentText && !currentText.includes('Chargement du jour') && !currentText.includes('Erreur')) {
+                        playAudio(currentText);
+                    }
+                }
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            stopAudio();
+        });
+
+        speedSlider.addEventListener('input', () => {
+            speedValue.textContent = speedSlider.value;
+            if (currentUtterance) {
+                currentUtterance.rate = parseFloat(speedSlider.value);
+                if (isPlaying) {
+                    // recréer l'utterance avec la nouvelle vitesse
+                    const currentText = currentUtterance.text;
+                    stopAudio();
+                    playAudio(currentText);
+                }
+            }
+        });
+
+        document.getElementById('playAudioBtn').addEventListener('click', () => {
+            const currentText = document.getElementById('jourContent').innerText;
+            if (currentText && !currentText.includes('Chargement du jour') && !currentText.includes('Erreur')) {
+                // Afficher un aperçu du texte dans la modale
+                audioTextPreview.innerText = currentText.substring(0, 500) + (currentText.length > 500 ? '...' : '');
+                stopAudio();
+                currentUtterance = null;
+                playPauseBtn.textContent = '▶ Lire';
+                // Stocker le texte pour la lecture
+                if (!currentUtterance) {
+                    currentUtterance = new SpeechSynthesisUtterance(currentText);
+                    currentUtterance.lang = 'fr-FR';
+                    currentUtterance.rate = parseFloat(speedSlider.value);
+                    currentUtterance.onend = () => {
+                        isPlaying = false;
+                        playPauseBtn.textContent = '▶ Lire';
+                    };
+                }
+                audioModal.style.display = 'flex';
+            } else {
+                alert('Aucun contenu audio disponible pour ce jour.');
+            }
+        });
+
+        document.getElementById('closeAudioModal').addEventListener('click', () => {
+            stopAudio();
+            audioModal.style.display = 'none';
+        });
+
+        // Fermer la modale si on clique en dehors
+        window.addEventListener('click', (e) => {
+            if (e.target === audioModal) {
+                stopAudio();
+                audioModal.style.display = 'none';
+            }
+            if (e.target === document.getElementById('historyModal')) {
+                document.getElementById('historyModal').style.display = 'none';
+            }
+        });
+
+        // ===================== MODE PERSONNEL =====================
         let currentPersonnelInterval = null;
         function startGenericProgress(areaId, fillId, textId) {
             const area = document.getElementById(areaId);
@@ -592,16 +799,14 @@
             afficherBarreSegments();
         });
 
-        // Affichage Historique
+        // Historique
         const historyModal = document.getElementById('historyModal');
         const historyList = document.getElementById('historyList');
-
         function formaterDate(isoString) {
             if (!isoString) return 'en cours';
             const d = new Date(isoString);
             return d.toLocaleDateString();
         }
-
         function afficherHistorique() {
             historyList.innerHTML = '';
             historique.forEach((item) => {
@@ -637,7 +842,6 @@
                 historyList.appendChild(div);
             });
         }
-
         document.getElementById('historyLink').addEventListener('click', () => {
             afficherHistorique();
             historyModal.style.display = 'flex';
