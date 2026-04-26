@@ -46,28 +46,28 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= EXPERTISE – SEUL LE PROMPT EST MODIFIÉ (libellés exacts) =================
+# ================= PROMPT ACTUALISÉ (concis, avec consignes de répétition) =================
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
 Génère le contenu complet du **Jour {jour_num}** sur 7 jours.  
 L'objectif général du jour {jour_num} est : {titre_objectif}.
 
-Commence par écrire le **titre du jour** sous la forme (obligatoire) :
-## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**
+Commence par le titre : `## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**`
 
-Puis, rédige exactement **5 DIZAINES** selon le modèle ci‑dessous.  
-Chaque dizaine doit être complète et détaillée.
+Puis, EXACTEMENT 5 DIZAINES. Chaque dizaine doit suivre ce format (concis mais complet) :
 
 **DIZAINE X – Concept : [nom du concept]**
-**Méditation synthèse générale (gros grain)** : (paragraphe dense avec définitions, exemples concrets, points clés)
-**Notre Père** (répète ceci 3 x – pas de graines) : (une seule phrase : une question centrale pertinente qui montre le problème clé que ce concept résout)
-**Je vous salue Marie** (répète ceci 10 x – les 10 petites graines) : (un paragraphe de 5 à 8 phrases, synthétique et mémorisable)
-**Gloire au Père** (répète ceci 3 x) : (une phrase courte de consolidation : "Le concept [nom] est consolidé.")
 
-Répète pour **DIZAINE 2** à **DIZAINE 5**.
+**Méditation synthèse générale (gros grain)** : 3 à 4 phrases denses (définition, rôle, exemple concret).
 
-Soigne la qualité et l'exhaustivité. Contenu directement utilisable pour un apprentissage autonome.
+A la place du **Notre Père**, écrire : RÉPÈTE 3 x – pas de graines : une seule phrase, question centrale.
+
+A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 x – les 10 petites graines: 4 à 6 phrases synthétiques et mémorisables.
+
+A la place du **Gloire au Père**, écrire / RÉPÈTE 3 x – pas de graines : "Le concept [nom] est consolidé."
+
+Soigne la qualité. Ne dépasse pas 2000 tokens au total.
 """
 
 def generer_jour_expertise(domaine, jour_num):
@@ -95,9 +95,9 @@ def generer_jour_expertise(domaine, jour_num):
 
 **DIZAINE 1 – Introduction à {domaine}**
 **Méditation synthèse générale (gros grain)** : (contenu temporaire – veuillez réessayer plus tard)
-**Notre Père** (répète ceci 3 x – pas de graines) : ?
-**Je vous salue Marie** (répète ceci 10 x – les 10 petites graines) : ...
-**Gloire au Père** (répète ceci 3 x) : consolidé.
+RÉPÈTE 3 x – pas de graines : ?
+RÉPÈTE 10 x – les 10 petites graines : ...
+RÉPÈTE 3 x – pas de graines : "Le concept est consolidé."
 (Dizaines 2 à 5 structure similaire)"""
 
 # ================= DÉVELOPPEMENT PERSONNEL (inchangé) =================
