@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🧠 CHAPELET TAZZZ BOT – EXPERTISE 7 JOURS</title>
-    <!-- html2canvas pour la génération d'image des badges -->
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -16,40 +14,30 @@
             color: #f0f0f0;
             min-height: 100vh;
         }
-        .main-layout {
-            display: flex;
-            gap: 15px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        /* Barre verticale de progression (compteur) */
-        .side-progress {
-            width: 30px;
-            background-color: #2c3e4e;
-            border-radius: 20px;
-            position: relative;
-            flex-shrink: 0;
-            align-self: stretch;
-            margin-top: 60px;
-        }
-        .side-progress-fill {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            background-color: #2ecc71;
-            border-radius: 20px;
-            transition: height 0.3s ease;
-        }
         .container {
-            flex: 1;
+            max-width: 800px;
+            margin: 0 auto;
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
             border-radius: 24px;
             padding: 25px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            position: relative;
         }
+        .history-link {
+            position: absolute;
+            top: 20px;
+            left: 25px;
+            background: #2c3e4e;
+            padding: 5px 12px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .history-link:hover { background: #e67e22; }
         h1 { text-align: center; font-size: 2.2rem; margin-bottom: 5px; }
-        .subtitle { text-align: center; font-size: 1rem; opacity: 0.8; margin-bottom: 25px; }
+        .subtitle { text-align: center; font-size: 1rem; opacity: 0.8; margin-bottom: 25px; margin-top: 5px; }
         .mode-selector {
             display: flex;
             gap: 15px;
@@ -98,6 +86,33 @@
         }
         .nav-buttons button { width: auto; margin: 0; }
         .day-counter { font-size: 0.9rem; }
+        .progress-segments {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .segment {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background-color: #2c3e4e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .segment.completed {
+            background-color: #aa00ff;
+            box-shadow: 0 0 8px #aa00ff;
+        }
+        .segment.disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
         .progress-container {
             margin: 15px 0 10px 0;
             width: 100%;
@@ -120,52 +135,6 @@
             margin-top: 5px;
             font-size: 0.8rem;
             color: #2ecc71;
-        }
-        .calendar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 15px 0;
-            justify-content: center;
-        }
-        .day-cell {
-            width: 35px;
-            height: 35px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #2c3e4e;
-            border-radius: 50%;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
-        }
-        .day-cell.completed {
-            background-color: #2ecc71;
-            color: #1e2b3c;
-            box-shadow: 0 0 5px #2ecc71;
-        }
-        .badge-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin: 15px 0;
-            justify-content: center;
-        }
-        .badge {
-            background: #2c3e4e;
-            border-radius: 30px;
-            padding: 5px 12px;
-            font-size: 0.8rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .badge.earned {
-            background: #e67e22;
-            box-shadow: 0 0 5px gold;
         }
         .feedback-box {
             margin-top: 20px;
@@ -197,143 +166,129 @@
             position: fixed;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
             z-index: 1000;
             justify-content: center;
             align-items: center;
         }
         .modal-content {
             background: #1e2b3c;
-            max-width: 500px;
+            max-width: 600px;
             width: 90%;
             border-radius: 24px;
             padding: 20px;
             max-height: 80%;
             overflow-y: auto;
         }
-        .history-item {
+        .history-item, .badge-item {
             background: #2c3e4e;
             margin: 10px 0;
             padding: 10px;
             border-radius: 12px;
             cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .share-badge-btn {
+            background: #e67e22;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-<div class="main-layout">
-    <!-- Barre verticale de progression -->
-    <div class="side-progress">
-        <div id="verticalProgressFill" class="side-progress-fill" style="height: 0%;"></div>
+<div class="container">
+    <!-- Lien Historique (en haut à gauche) -->
+    <div class="history-link" id="historyLink">📜 Historique</div>
+
+    <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
+    <div class="subtitle">Transforme ta structure mentale</div>
+    <div class="mode-selector">
+        <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
+        <button class="mode-btn" data-mode="personnel">🔥 Développement personnel (21/66j)</button>
+        <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
     </div>
-    <div class="container">
-        <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
-        <div class="subtitle">Transforme ta structure mentale</div>
-        <div class="mode-selector">
-            <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
-            <button class="mode-btn" data-mode="personnel">🔥 Développement personnel (21/66j)</button>
-            <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
-        </div>
 
-        <!-- Mode Expertise -->
-        <div id="expertisePanel" class="mode-panel active-panel">
-            <p>🔬 Domaine à maîtriser :</p>
-            <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
-            <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
-            <div id="jourContainer" style="display:none;">
-                <!-- Calendrier des jours (expertise 7 cases) -->
-                <div id="expertiseCalendar" class="calendar"></div>
-                <div id="jourContent" class="result"></div>
-                <div class="nav-buttons">
-                    <button id="prevDay" disabled>◀ Précédent</button>
-                    <span id="dayCounter">Intro / 8</span>
-                    <button id="nextDay">Suivant ▶</button>
+    <!-- Mode Expertise -->
+    <div id="expertisePanel" class="mode-panel active-panel">
+        <p>🔬 Domaine à maîtriser :</p>
+        <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
+        <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
+        <div id="jourContainer" style="display:none;">
+            <!-- Barre segmentée horizontale (apparaît ici) -->
+            <div id="segmentsContainer" class="progress-segments"></div>
+            <div id="jourContent" class="result"></div>
+            <div class="nav-buttons">
+                <button id="prevDay" disabled>◀ Précédent</button>
+                <span id="dayCounter">Intro / 8</span>
+                <button id="nextDay">Suivant ▶</button>
+            </div>
+            <div id="expertiseProgressArea" class="progress-container" style="display:none;">
+                <div class="progress-bar"><div id="expertiseProgressFill" class="progress-fill"></div></div>
+                <div id="expertiseProgressText" class="progress-text">0%</div>
+            </div>
+            <div id="feedbackBox" class="feedback-box" style="display:none;">
+                <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
+                <div class="stars" id="starsEx">
+                    <span class="star" data-value="1">☆</span><span class="star" data-value="2">☆</span>
+                    <span class="star" data-value="3">☆</span><span class="star" data-value="4">☆</span>
+                    <span class="star" data-value="5">☆</span>
                 </div>
-                <div id="expertiseProgressArea" class="progress-container" style="display:none;">
-                    <div class="progress-bar"><div id="expertiseProgressFill" class="progress-fill"></div></div>
-                    <div id="expertiseProgressText" class="progress-text">0%</div>
-                </div>
-                <div id="feedbackBox" class="feedback-box" style="display:none;">
-                    <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
-                    <div class="stars" id="starsEx">
-                        <span class="star" data-value="1">☆</span>
-                        <span class="star" data-value="2">☆</span>
-                        <span class="star" data-value="3">☆</span>
-                        <span class="star" data-value="4">☆</span>
-                        <span class="star" data-value="5">☆</span>
-                    </div>
-                    <textarea id="feedbackCommentEx" rows="2" placeholder="Vos remarques (facultatif)"></textarea>
-                    <button id="submitFeedbackEx">Envoyer mon avis</button>
-                </div>
+                <textarea id="feedbackCommentEx" rows="2" placeholder="Vos remarques (facultatif)"></textarea>
+                <button id="submitFeedbackEx">Envoyer mon avis</button>
             </div>
         </div>
+    </div>
 
-        <!-- Mode Personnel -->
-        <div id="personnelPanel" class="mode-panel">
-            <p>📝 5 défauts (un par ligne) :</p>
-            <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;Je dépense sans compter&#10;Je suis timide&#10;Je manque de motivation"></textarea>
-            <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
-            <div id="personnelResult" class="result"></div>
-            <!-- Calendrier personnel (21 cases) -->
-            <div id="personnelCalendar" class="calendar" style="margin-top:15px;"></div>
-            <div id="personnelLoader" class="progress-container" style="display:none;">
-                <div class="progress-bar"><div id="personnelProgressFill" class="progress-fill"></div></div>
-                <div id="personnelProgressText" class="progress-text">0%</div>
-            </div>
+    <!-- Mode Personnel (simplifié, sans barre segmentée) -->
+    <div id="personnelPanel" class="mode-panel">
+        <p>📝 5 défauts (un par ligne) :</p>
+        <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;..."></textarea>
+        <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
+        <div id="personnelResult" class="result"></div>
+        <div id="personnelLoader" class="progress-container" style="display:none;">
+            <div class="progress-bar"><div id="personnelProgressFill" class="progress-fill"></div></div>
+            <div id="personnelProgressText" class="progress-text">0%</div>
         </div>
+    </div>
 
-        <!-- Mode Consultation -->
-        <div id="consultationPanel" class="mode-panel">
-            <p>💬 Décrivez votre besoin :</p>
-            <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prévention du risque thrombo-embolique..."></textarea>
-            <button id="generateConsult">✨ GÉNÉRER ✨</button>
-            <div id="consultResult" class="result"></div>
-            <div id="consultLoader" class="progress-container" style="display:none;">
-                <div class="progress-bar"><div id="consultProgressFill" class="progress-fill"></div></div>
-                <div id="consultProgressText" class="progress-text">0%</div>
-            </div>
+    <!-- Mode Consultation -->
+    <div id="consultationPanel" class="mode-panel">
+        <p>💬 Décrivez votre besoin :</p>
+        <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser ..."></textarea>
+        <button id="generateConsult">✨ GÉNÉRER ✨</button>
+        <div id="consultResult" class="result"></div>
+        <div id="consultLoader" class="progress-container" style="display:none;">
+            <div class="progress-bar"><div id="consultProgressFill" class="progress-fill"></div></div>
+            <div id="consultProgressText" class="progress-text">0%</div>
         </div>
+    </div>
 
-        <!-- Badges et boutons d'action -->
-        <div class="badge-container" id="badgeContainer"></div>
-        <div class="action-buttons">
-            <button id="shareButton">📤 Partager le lien</button>
-            <button id="historyButton">📚 Historique & badges</button>
-            <button id="subscribeButton">🔒 S'abonner</button>
-        </div>
-        <div class="footer">
-            <div class="copyright">Plasticité cérébrale & répétition rythmée.<br>© Dr Tazzz</div>
-        </div>
+    <div class="action-buttons">
+        <button id="shareButton">📤 Partager le lien</button>
+        <button id="subscribeButton">🔒 S'abonner</button>
+    </div>
+    <div class="footer">
+        <div class="copyright">Plasticité cérébrale & répétition rythmée.<br>© Dr Tazzz</div>
     </div>
 </div>
 
-<!-- Modal pour l'historique -->
+<!-- MODALE HISTORIQUE + BADGES -->
 <div id="historyModal" class="modal">
     <div class="modal-content">
         <h3>📜 Historique des formations</h3>
         <div id="historyList"></div>
+        <h3>🏅 Badges obtenus</h3>
+        <div id="badgesList"></div>
         <button id="closeHistoryModal" style="margin-top:15px;">Fermer</button>
     </div>
 </div>
 
-<!-- Modal pour partager un badge (image) -->
-<div id="shareModal" class="modal">
-    <div class="modal-content" style="text-align:center;">
-        <h3>🏅 Partagez votre badge</h3>
-        <div id="badgePreview" style="background: linear-gradient(135deg, #1e2b3c, #0f1a24); border-radius: 30px; padding: 20px; margin: 10px auto; width: 200px;">
-            <div style="font-size: 3rem;">🏆</div>
-            <div id="badgeName" style="font-weight: bold;"></div>
-        </div>
-        <button id="shareBadgeBtn">📤 Partager l'image</button>
-        <button id="closeShareModal">Fermer</button>
-    </div>
-</div>
-
 <script>
-    // ------------------------------------------------------------------
-    // 1. GESTION DES ONGLETS (inchangé)
-    // ------------------------------------------------------------------
+    // ======================== GESTION DES ONGLETS ========================
     const modeBtns = document.querySelectorAll('.mode-btn');
     const panels = {
         expertise: document.getElementById('expertisePanel'),
@@ -350,135 +305,70 @@
         });
     });
 
-    // ------------------------------------------------------------------
-    // 2. LOCALSTORAGE : PROGRESSION, BADGES, HISTORIQUE
-    // ------------------------------------------------------------------
-    let progressionEx = JSON.parse(localStorage.getItem('progressionEx')) || [false,false,false,false,false,false,false];
-    let progressionPer = JSON.parse(localStorage.getItem('progressionPer')) || new Array(21).fill(false);
+    // ======================== LOCALSTORAGE (PROGRESSION, BADGES, HISTORIQUE) ========================
+    let progression = JSON.parse(localStorage.getItem('progression')) || [false,false,false,false,false,false,false]; // 7 jours
     let badges = JSON.parse(localStorage.getItem('badges')) || [];
-    let historique = JSON.parse(localStorage.getItem('historique')) || []; // { mode, domaine, date, progression, chapelets }
+    let historique = JSON.parse(localStorage.getItem('historique')) || []; // { domaine, date, progressionSauvegardee }
 
-    function sauvegarderProgression() {
-        localStorage.setItem('progressionEx', JSON.stringify(progressionEx));
-        localStorage.setItem('progressionPer', JSON.stringify(progressionPer));
+    function sauvegarderTout() {
+        localStorage.setItem('progression', JSON.stringify(progression));
         localStorage.setItem('badges', JSON.stringify(badges));
         localStorage.setItem('historique', JSON.stringify(historique));
-        mettreAJourAffichage();
     }
 
-    function mettreAJourAffichage() {
-        // mise à jour des calendriers
-        afficherCalendrierExpertise();
-        afficherCalendrierPersonnel();
-        afficherBadges();
-        miseAJourCompteurVertical();
-    }
-
-    // Calendrier expertise (7 cases)
-    function afficherCalendrierExpertise() {
-        const container = document.getElementById('expertiseCalendar');
+    // ======================== BARRE SEGMENTÉE (expertise) ========================
+    function afficherBarreSegments() {
+        const container = document.getElementById('segmentsContainer');
         if (!container) return;
         container.innerHTML = '';
         for (let i=0; i<7; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'day-cell ' + (progressionEx[i] ? 'completed' : '');
-            cell.innerText = i+1;
-            cell.onclick = () => marquerJourExpertise(i);
-            container.appendChild(cell);
+            const seg = document.createElement('div');
+            seg.className = 'segment';
+            if (progression[i]) seg.classList.add('completed');
+            seg.innerText = `J${i+1}`;
+            seg.onclick = (function(idx) { return () => cocherSegment(idx); })(i);
+            container.appendChild(seg);
         }
     }
 
-    function marquerJourExpertise(index) {
-        if (!progressionEx[index]) {
-            progressionEx[index] = true;
-            sauvegarderProgression();
-            afficherFelicitation(index+1, 7, domaine);
-            // Vérifier badge "1 semaine"
-            if (progressionEx.every(v => v === true)) {
-                const badgeNom = "🏅 1 semaine d'expertise";
-                if (!badges.includes(badgeNom)) {
-                    badges.push(badgeNom);
-                    sauvegarderProgression();
-                    alert(`🎉 Nouveau badge gagné : ${badgeNom} !`);
+    function cocherSegment(idx) {
+        // Vérifier l'ordre : on ne peut cocher que si tous les précédents sont cochés
+        for (let i=0; i<idx; i++) {
+            if (!progression[i]) {
+                alert(`Veuillez d'abord valider le jour ${i+1} avant le jour ${idx+1}.`);
+                return;
+            }
+        }
+        if (!progression[idx]) {
+            progression[idx] = true;
+            sauvegarderTout();
+            afficherBarreSegments();
+            // Message de félicitations
+            if (idx+1 === 7) {
+                alert(`🎉 Toutes mes félicitations ! Vous avez achevé votre expertise. Badge "Expert en ${currentDomaine}" débloqué.`);
+                const badgeExpert = `🏆 Expert en ${currentDomaine}`;
+                if (!badges.includes(badgeExpert)) {
+                    badges.push(badgeExpert);
+                    sauvegarderTout();
                 }
+            } else {
+                alert(`🎊 Bravo ! Vous venez de valider le jour ${idx+1}/7.`);
+            }
+            // Mettre à jour l'historique (sauvegarder la progression)
+            const hist = historique.find(h => h.domaine === currentDomaine);
+            if (hist) {
+                hist.progression = progression.slice();
+                hist.date = new Date().toISOString();
+                sauvegarderTout();
             }
         }
     }
 
-    // Calendrier personnel (21 cases)
-    function afficherCalendrierPersonnel() {
-        const container = document.getElementById('personnelCalendar');
-        if (!container) return;
-        container.innerHTML = '';
-        const nb = progressionPer.length;
-        for (let i=0; i<nb; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'day-cell ' + (progressionPer[i] ? 'completed' : '');
-            cell.innerText = i+1;
-            cell.style.width = '30px'; cell.style.height = '30px';
-            cell.onclick = () => marquerJourPersonnel(i);
-            container.appendChild(cell);
-        }
-    }
-
-    function marquerJourPersonnel(index) {
-        if (!progressionPer[index]) {
-            progressionPer[index] = true;
-            sauvegarderProgression();
-            // messages de félicitations pour le personnel (optionnel)
-            if (progressionPer.every(v => v === true)) {
-                const badge21 = "🎖️ 21 jours de discipline";
-                if (!badges.includes(badge21)) {
-                    badges.push(badge21);
-                    sauvegarderProgression();
-                    alert(`🎉 Nouveau badge gagné : ${badge21} !`);
-                }
-            }
-        }
-    }
-
-    function afficherFelicitation(jour, total, domaine) {
-        if (jour === total) {
-            alert(`🎉 Toutes mes félicitations ! Vous avez achevé votre expertise sur "${domaine}". Vous gagnez un badge "Expert en ${domaine}".`);
-            const expertBadge = `🏆 Expert en ${domaine}`;
-            if (!badges.includes(expertBadge)) {
-                badges.push(expertBadge);
-                sauvegarderProgression();
-            }
-        } else {
-            alert(`🎊 Bravo ! Vous venez d'achever le jour ${jour}/${total}.`);
-        }
-    }
-
-    function afficherBadges() {
-        const container = document.getElementById('badgeContainer');
-        if (!container) return;
-        container.innerHTML = badges.map(b => `<div class="badge earned">${b}</div>`).join('');
-    }
-
-    function miseAJourCompteurVertical() {
-        let total = 0, valide = 0;
-        if (document.querySelector('.mode-btn.active').getAttribute('data-mode') === 'expertise') {
-            total = 7;
-            valide = progressionEx.filter(v => v).length;
-        } else if (document.querySelector('.mode-btn.active').getAttribute('data-mode') === 'personnel') {
-            total = progressionPer.length;
-            valide = progressionPer.filter(v => v).length;
-        } else {
-            document.getElementById('verticalProgressFill').style.height = '0%';
-            return;
-        }
-        const pourcent = (valide / total) * 100;
-        document.getElementById('verticalProgressFill').style.height = pourcent + '%';
-    }
-
-    // ------------------------------------------------------------------
-    // 3. PARTIE EXPERTISE (génération, navigation, etc.)
-    // ------------------------------------------------------------------
-    let domaine = '';
+    // ======================== PARTIE EXPERTISE (génération, navigation) ========================
+    let currentDomaine = '';
     let jours = {};
     let currentPage = 0;
-    const totalPages = 8;
+    const totalPages = 8; // 1 intro + 7 jours
     let currentExpertiseInterval = null;
 
     const PAGE0 = `# 📖 Bienvenue dans votre chapelet d’expertise
@@ -494,10 +384,7 @@
 
 👉 Cliquez sur **“Suivant”** pour commencer le **Jour 1**.`;
 
-    function startExpertiseProgress() { /* (identique avant) */ }
-    function stopExpertiseProgress(interval, complete) { /* (identique avant) */ }
-    // Réintégrer les fonctions de progression (elles sont déjà définies plus loin ? Je vais les recréer)
-    function startExpertiseProgressBar() {
+    function startExpertiseProgress() {
         const area = document.getElementById('expertiseProgressArea');
         const fill = document.getElementById('expertiseProgressFill');
         const text = document.getElementById('expertiseProgressText');
@@ -512,7 +399,7 @@
         }, 150);
         return interval;
     }
-    function stopExpertiseProgressBar(interval, complete) {
+    function stopExpertiseProgress(interval, complete) {
         const area = document.getElementById('expertiseProgressArea');
         const fill = document.getElementById('expertiseProgressFill');
         const text = document.getElementById('expertiseProgressText');
@@ -557,53 +444,47 @@
 
     function chargerJour(jourNum) {
         if (currentExpertiseInterval) clearInterval(currentExpertiseInterval);
-        currentExpertiseInterval = startExpertiseProgressBar();
+        currentExpertiseInterval = startExpertiseProgress();
         fetch('/generer_jour_expertise', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ domaine: domaine, jour: jourNum })
+            body: JSON.stringify({ domaine: currentDomaine, jour: jourNum })
         })
         .then(res => res.json())
         .then(data => {
             if (data.error) throw new Error(data.error);
             jours[jourNum] = data.contenu;
-            stopExpertiseProgressBar(currentExpertiseInterval, true);
+            stopExpertiseProgress(currentExpertiseInterval, true);
             afficherPage(jourNum);
-            // Après chargement, on met à jour la progression (case cochée automatiquement)
-            if (!progressionEx[jourNum-1]) {
-                progressionEx[jourNum-1] = true;
-                sauvegarderProgression();
-                afficherFelicitation(jourNum, 7, domaine);
-            }
         })
         .catch(err => {
             console.error(err);
             jours[jourNum] = `<strong>Erreur de génération</strong><br>Contenu non disponible pour le jour ${jourNum}. Rafraîchissez ou réessayez.`;
-            stopExpertiseProgressBar(currentExpertiseInterval, false);
+            stopExpertiseProgress(currentExpertiseInterval, false);
             afficherPage(jourNum);
         });
     }
 
     document.getElementById('startExpertise').addEventListener('click', () => {
-        domaine = document.getElementById('domaine').value.trim();
-        if (!domaine) { alert('Domaine requis'); return; }
+        currentDomaine = document.getElementById('domaine').value.trim();
+        if (!currentDomaine) { alert('Domaine requis'); return; }
+        // Vérifier si déjà dans historique
+        let hist = historique.find(h => h.domaine === currentDomaine);
+        if (!hist) {
+            hist = { domaine: currentDomaine, date: new Date().toISOString(), progression: [false,false,false,false,false,false,false] };
+            historique.push(hist);
+            sauvegarderTout();
+        } else {
+            progression = hist.progression.slice();
+            afficherBarreSegments();
+        }
         jours = {};
         currentPage = 0;
         afficherPage(0);
         document.getElementById('jourContainer').style.display = 'block';
         document.getElementById('startExpertise').style.display = 'none';
-        // Sauvegarder dans historique
-        const existe = historique.find(h => h.mode === 'expertise' && h.domaine === domaine);
-        if (!existe) {
-            historique.push({
-                mode: 'expertise',
-                domaine: domaine,
-                date: new Date().toISOString(),
-                progression: progressionEx.slice(),
-                chapelets: jours
-            });
-            sauvegarderProgression();
-        }
+        // Afficher les segments
+        afficherBarreSegments();
     });
 
     document.getElementById('prevDay').addEventListener('click', () => {
@@ -613,7 +494,7 @@
         if (currentPage < totalPages - 1) { currentPage++; afficherPage(currentPage); }
     });
 
-    // Feedback expertise (identique)
+    // Feedback expertise
     let currentNoteEx = 0;
     document.querySelectorAll('#starsEx .star').forEach(star => {
         star.addEventListener('click', () => {
@@ -634,7 +515,7 @@
         } catch(err) { alert('Erreur réseau'); }
     });
 
-    // Personnel (inchangé mais avec gestion de progression)
+    // ======================== MODE PERSONNEL ========================
     let currentPersonnelInterval = null;
     function startGenericProgress(areaId, fillId, textId) {
         const area = document.getElementById(areaId);
@@ -676,97 +557,91 @@
             if (data.error) throw new Error(data.error);
             stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText', currentPersonnelInterval, true);
             document.getElementById('personnelResult').innerHTML = data.contenu.replace(/\n/g, '<br>');
-            // enregistrement dans historique personnel
-            const persoHistorique = { mode: 'personnel', defauts: defauts, date: new Date().toISOString(), progression: progressionPer.slice() };
-            historique.push(persoHistorique);
-            sauvegarderProgression();
         } catch(err) { stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressText', currentPersonnelInterval, false); alert('Erreur: ' + err.message); }
     });
 
-    // Consultation (redirection simple)
+    // ======================== MODE CONSULTATION ========================
     document.getElementById('generateConsult').addEventListener('click', () => {
         let msg = document.getElementById('consultMessage').value.trim();
         if (!msg) { alert('Message requis'); return; }
-        domaine = msg;
+        currentDomaine = msg;
         jours = {};
         currentPage = 0;
         afficherPage(0);
         document.getElementById('jourContainer').style.display = 'block';
         document.getElementById('startExpertise').style.display = 'none';
         document.querySelector('.mode-btn[data-mode="expertise"]').click();
+        afficherBarreSegments();
     });
 
-    // ------------------------------------------------------------------
-    // 4. HISTORIQUE ET PARTAGE DE BADGES
-    // ------------------------------------------------------------------
+    // ======================== HISTORIQUE & BADGES (MODALE) ========================
     const historyModal = document.getElementById('historyModal');
     const historyList = document.getElementById('historyList');
-    const shareModal = document.getElementById('shareModal');
-    let currentBadgeToShare = '';
+    const badgesList = document.getElementById('badgesList');
 
-    document.getElementById('historyButton').addEventListener('click', () => {
+    function afficherHistoriqueEtBadges() {
+        // Historique
         historyList.innerHTML = '';
         historique.forEach((item, idx) => {
             const div = document.createElement('div');
             div.className = 'history-item';
-            div.innerHTML = `<strong>${item.mode === 'expertise' ? '📚 Expertise' : '🔥 Personnel'}</strong> – ${item.domaine || item.defauts?.join(', ')}<br><small>${new Date(item.date).toLocaleDateString()}</small>`;
+            div.innerHTML = `<strong>${item.domaine}</strong><br><small>${new Date(item.date).toLocaleDateString()}</small>`;
             div.onclick = () => {
-                // Recharger le contenu (pour expertise, recharger les chapelets)
-                if (item.mode === 'expertise' && item.chapelets) {
-                    domaine = item.domaine;
-                    jours = item.chapelets;
-                    progressionEx = item.progression;
-                    sauvegarderProgression();
-                    currentPage = 1;
-                    afficherPage(1);
-                    historyModal.style.display = 'none';
-                    document.getElementById('startExpertise').style.display = 'none';
-                    document.getElementById('jourContainer').style.display = 'block';
-                } else {
-                    alert('Reconsultation non implémentée pour le personnel');
-                }
+                // Recharger cette formation
+                currentDomaine = item.domaine;
+                progression = item.progression.slice();
+                jours = {};
+                currentPage = 0;
+                afficherPage(0);
+                document.getElementById('jourContainer').style.display = 'block';
+                document.getElementById('startExpertise').style.display = 'none';
+                afficherBarreSegments();
+                historyModal.style.display = 'none';
+                // Changer d'onglet vers expertise
+                document.querySelector('.mode-btn[data-mode="expertise"]').click();
             };
             historyList.appendChild(div);
         });
+        // Badges
+        badgesList.innerHTML = '';
+        badges.forEach((badge, idx) => {
+            const div = document.createElement('div');
+            div.className = 'badge-item';
+            div.innerHTML = `<span>🏅 ${badge}</span>
+                            <button class="share-badge-btn" data-badge="${badge}">Partager</button>`;
+            badgesList.appendChild(div);
+        });
+        // Ajouter les événements de partage
+        document.querySelectorAll('.share-badge-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const badgeText = btn.getAttribute('data-badge');
+                partagerBadge(badgeText);
+            });
+        });
+    }
+
+    async function partagerBadge(badgeName) {
+        const text = `Je viens de gagner le badge "${badgeName}" sur Chapelet Tazzz Bot ! 🎉`;
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: 'Mon badge', text: text });
+            } catch(e) { if(e.name !== 'AbortError') alert('Partage annulé'); }
+        } else {
+            try {
+                await navigator.clipboard.writeText(text);
+                alert('Texte copié ! Partagez-le manuellement.');
+            } catch(err) { alert('Impossible de copier'); }
+        }
+    }
+
+    document.getElementById('historyLink').addEventListener('click', () => {
+        afficherHistoriqueEtBadges();
         historyModal.style.display = 'flex';
     });
     document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
 
-    // Partage de badge : quand on clique sur un badge gagné
-    document.getElementById('badgeContainer').addEventListener('click', (e) => {
-        const badgeDiv = e.target.closest('.badge');
-        if (badgeDiv && badgeDiv.classList.contains('earned')) {
-            currentBadgeToShare = badgeDiv.innerText;
-            document.getElementById('badgeName').innerText = currentBadgeToShare;
-            shareModal.style.display = 'flex';
-        }
-    });
-    document.getElementById('closeShareModal').addEventListener('click', () => shareModal.style.display = 'none');
-    document.getElementById('shareBadgeBtn').addEventListener('click', async () => {
-        const element = document.getElementById('badgePreview');
-        try {
-            const canvas = await html2canvas(element, { scale: 2, backgroundColor: null });
-            canvas.toBlob(async (blob) => {
-                const file = new File([blob], 'badge.png', { type: 'image/png' });
-                if (navigator.share) {
-                    await navigator.share({
-                        title: 'Mon badge Chapelet Tazzz',
-                        text: `Je viens de gagner le badge "${currentBadgeToShare}" !`,
-                        files: [file]
-                    });
-                } else {
-                    // Fallback : téléchargement
-                    const link = document.createElement('a');
-                    link.download = 'badge.png';
-                    link.href = URL.createObjectURL(blob);
-                    link.click();
-                    alert('Image téléchargée. Partagez-la manuellement.');
-                }
-                shareModal.style.display = 'none';
-            });
-        } catch(e) { alert('Erreur génération image'); }
-    });
-
+    // Partager le lien
     document.getElementById('shareButton').addEventListener('click', async () => {
         const url = window.location.href;
         if (navigator.share) {
@@ -774,16 +649,11 @@
                 await navigator.share({ title: 'Chapelet Tazzz Bot', text: 'Découvrez l’outil qui transforme votre structure mentale !', url: url });
             } catch(err) { if(err.name !== 'AbortError') alert('Partage annulé'); }
         } else {
-            try {
-                await navigator.clipboard.writeText(url);
-                alert('Lien copié !');
-            } catch(err) { alert('Impossible de copier'); }
+            try { await navigator.clipboard.writeText(url); alert('Lien copié !'); }
+            catch(err) { alert('Impossible de copier'); }
         }
     });
     document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 L'abonnement n'est pas encore actif.\nPour l'instant, l'accès est gratuit."));
-
-    // Initialisation
-    mettreAJourAffichage();
 </script>
 </body>
 </html>
