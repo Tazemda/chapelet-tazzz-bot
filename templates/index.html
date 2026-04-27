@@ -442,7 +442,7 @@
 <script>
     (function() {
         // --------------------------------------------------------------
-        // 1. Gestion des badges et médailles (affichage)
+        // 1. Gestion des badges et médailles
         // --------------------------------------------------------------
         function updateBadgeCounters() {
             let badges = JSON.parse(localStorage.getItem('badges')) || [];
@@ -469,7 +469,6 @@
             updateBadgeCounters();
         }
 
-        // Rendre les médailles cliquables (ouvrent l'historique)
         document.querySelectorAll('.medal-counter').forEach(medal => {
             medal.addEventListener('click', () => {
                 afficherHistorique();
@@ -477,9 +476,7 @@
             });
         });
 
-        // --------------------------------------------------------------
-        // 2. Onglets
-        // --------------------------------------------------------------
+        // Onglets
         const modeBtns = document.querySelectorAll('.mode-btn');
         const panels = {
             expertise: document.getElementById('expertisePanel'),
@@ -496,9 +493,7 @@
             });
         });
 
-        // --------------------------------------------------------------
-        // 3. Variables globales (expertise)
-        // --------------------------------------------------------------
+        // Variables globales
         let progression = JSON.parse(localStorage.getItem('progression')) || [false,false,false,false,false,false,false];
         let historique = JSON.parse(localStorage.getItem('historique')) || [];
         function sauvegarderTout() {
@@ -513,9 +508,7 @@
         const totalPages = 8;
         let currentExpertiseInterval = null;
 
-        // --------------------------------------------------------------
-        // 4. Lecteur audio (identique, fonctionnel)
-        // --------------------------------------------------------------
+        // ========== AUDIO (identique, fonctionnel) ==========
         let frenchVoice = null;
         function initFrenchVoice() {
             if (!window.speechSynthesis) return;
@@ -640,9 +633,7 @@
             }
         });
 
-        // --------------------------------------------------------------
-        // 5. Gestion des segments et validation (expertise)
-        // --------------------------------------------------------------
+        // ========== GESTION DES SEGMENTS ==========
         function afficherBarreSegments() {
             const container = document.getElementById('segmentsContainer');
             if (!container) return;
@@ -908,17 +899,18 @@
         });
 
         // --------------------------------------------------------------
-        // 6. PARTAGE SÉCURISÉ (sans historique privé)
+        // 6. PARTAGE SÉCURISÉ – AUCUNE DONNÉE HISTORIQUE N'EST TRANSMISE
         // --------------------------------------------------------------
         function genererLienPartage() {
             const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
-            const baseUrl = window.location.href.split('?')[0];
+            const baseUrl = window.location.href.split('?')[0]; // on enlève tout paramètre existant
             if (activeMode === 'expertise' && currentDomaine) {
-                // Partager uniquement le domaine – aucune progression privée
+                // Seul le domaine est partagé – aucune progression, aucun historique
                 return `${baseUrl}?expertise=${encodeURIComponent(currentDomaine)}`;
             } else if (activeMode === 'personnel') {
                 let defauts = document.getElementById('defauts').value.split('\n').filter(l=>l.trim()).slice(0,5);
                 if (defauts.length === 5) {
+                    // Partager uniquement la liste des défauts
                     return `${baseUrl}?personnel=${encodeURIComponent(JSON.stringify(defauts))}`;
                 }
             }
@@ -930,7 +922,7 @@
             let shareText = '';
             const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
             if (activeMode === 'expertise' && currentDomaine) {
-                shareText = `🧠 Découvrez cette expertise "${currentDomaine}" sur Chapelet Tazzz Bot ! Cliquez pour démarrer votre propre parcours.`;
+                shareText = `🧠 Découvrez cette expertise "${currentDomaine}" sur Chapelet Tazzz Bot ! Aucune donnée personnelle n'est partagée. Commencez votre propre parcours.`;
             } else if (activeMode === 'personnel') {
                 shareText = `🔥 Développement personnel – Transformez votre vie avec Chapelet Tazzz Bot ! Rejoignez-moi.`;
             } else {
@@ -943,7 +935,7 @@
             } else {
                 try {
                     await navigator.clipboard.writeText(shareText + ' ' + shareUrl);
-                    alert('Lien partagé ! (aucune donnée personnelle n’a été incluse)');
+                    alert('Lien partagé (aucune donnée personnelle n’a été incluse)');
                 } catch(e) { alert('Impossible de partager'); }
             }
         });
@@ -954,7 +946,6 @@
         function initFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
             const expertiseParam = urlParams.get('expertise');
-            const personnelParam = urlParams.get('personnel');
             if (expertiseParam) {
                 const domaine = decodeURIComponent(expertiseParam);
                 const inputDomaine = document.getElementById('domaine');
@@ -964,11 +955,17 @@
                         const startBtn = document.getElementById('startExpertise');
                         if (startBtn && startBtn.style.display !== 'none') {
                             startBtn.click();
-                            // On marque cette entrée dans l'historique comme "partagée"
+                            // On ajoute cette expertise à l'historique du DESTINATAIRE (pas du partageur)
                             setTimeout(() => {
                                 let entry = historique.find(h => h.domaine === domaine);
                                 if (!entry) {
-                                    entry = { domaine: domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: true };
+                                    entry = {
+                                        domaine: domaine,
+                                        dateDebut: new Date().toISOString(),
+                                        dateFin: null,
+                                        progression: [false,false,false,false,false,false,false],
+                                        shared: true  // mention "partagée"
+                                    };
                                     historique.push(entry);
                                     sauvegarderTout();
                                 } else if (!entry.shared) {
@@ -979,7 +976,10 @@
                         }
                     }, 500);
                 }
-            } else if (personnelParam) {
+            }
+
+            const personnelParam = urlParams.get('personnel');
+            if (personnelParam) {
                 try {
                     const defauts = JSON.parse(decodeURIComponent(personnelParam));
                     if (Array.isArray(defauts) && defauts.length === 5) {
@@ -989,6 +989,7 @@
                             setTimeout(() => {
                                 const btn = document.getElementById('generatePersonnel');
                                 if (btn) btn.click();
+                                // On peut aussi marquer l'historique pour le personnel mais optionnel
                             }, 500);
                         }
                     }
