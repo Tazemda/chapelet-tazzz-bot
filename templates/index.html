@@ -508,7 +508,7 @@
         const totalPages = 8;
         let currentExpertiseInterval = null;
 
-        // ========== AUDIO (identique, fonctionnel) ==========
+        // ========== AUDIO ==========
         let frenchVoice = null;
         function initFrenchVoice() {
             if (!window.speechSynthesis) return;
@@ -820,6 +820,24 @@
             });
         }
 
+        // --------------------------------------------------------------
+        // Lecture automatique du message d'accueil au démarrage de l'expertise
+        // --------------------------------------------------------------
+        function lancerAudioAccueilAuto() {
+            setTimeout(() => {
+                const introText = document.getElementById('jourContent').innerText;
+                if (introText && introText.includes("COMMENT UTILISER LE CHAPELET TAZZZ BOT")) {
+                    playAudioChunks(introText);
+                } else {
+                    // Si le texte n'est pas encore chargé, réessayer après un court délai
+                    setTimeout(() => {
+                        const introText2 = document.getElementById('jourContent').innerText;
+                        if (introText2 && introText2.length > 50) playAudioChunks(introText2);
+                    }, 300);
+                }
+            }, 200);
+        }
+
         document.getElementById('startExpertise').addEventListener('click', () => {
             currentDomaine = document.getElementById('domaine').value.trim();
             if (!currentDomaine) { alert('Domaine requis'); return; }
@@ -838,6 +856,8 @@
             document.getElementById('jourContainer').style.display = 'block';
             document.getElementById('startExpertise').style.display = 'none';
             afficherBarreSegments();
+            // LECTURE AUTOMATIQUE DU MESSAGE D'ACCUEIL
+            lancerAudioAccueilAuto();
         });
 
         document.getElementById('prevDay').addEventListener('click', () => {
@@ -899,18 +919,16 @@
         });
 
         // --------------------------------------------------------------
-        // 6. PARTAGE SÉCURISÉ – AUCUNE DONNÉE HISTORIQUE N'EST TRANSMISE
+        // PARTAGE SÉCURISÉ – AUCUNE DONNÉE HISTORIQUE TRANSMISE
         // --------------------------------------------------------------
         function genererLienPartage() {
             const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
-            const baseUrl = window.location.href.split('?')[0]; // on enlève tout paramètre existant
+            const baseUrl = window.location.href.split('?')[0];
             if (activeMode === 'expertise' && currentDomaine) {
-                // Seul le domaine est partagé – aucune progression, aucun historique
                 return `${baseUrl}?expertise=${encodeURIComponent(currentDomaine)}`;
             } else if (activeMode === 'personnel') {
                 let defauts = document.getElementById('defauts').value.split('\n').filter(l=>l.trim()).slice(0,5);
                 if (defauts.length === 5) {
-                    // Partager uniquement la liste des défauts
                     return `${baseUrl}?personnel=${encodeURIComponent(JSON.stringify(defauts))}`;
                 }
             }
@@ -940,9 +958,7 @@
             }
         });
 
-        // --------------------------------------------------------------
-        // 7. Initialisation depuis les paramètres d'URL (expertise partagée)
-        // --------------------------------------------------------------
+        // Initialisation depuis paramètre URL (expertise partagée)
         function initFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
             const expertiseParam = urlParams.get('expertise');
@@ -955,7 +971,6 @@
                         const startBtn = document.getElementById('startExpertise');
                         if (startBtn && startBtn.style.display !== 'none') {
                             startBtn.click();
-                            // On ajoute cette expertise à l'historique du DESTINATAIRE (pas du partageur)
                             setTimeout(() => {
                                 let entry = historique.find(h => h.domaine === domaine);
                                 if (!entry) {
@@ -964,7 +979,7 @@
                                         dateDebut: new Date().toISOString(),
                                         dateFin: null,
                                         progression: [false,false,false,false,false,false,false],
-                                        shared: true  // mention "partagée"
+                                        shared: true
                                     };
                                     historique.push(entry);
                                     sauvegarderTout();
@@ -977,7 +992,6 @@
                     }, 500);
                 }
             }
-
             const personnelParam = urlParams.get('personnel');
             if (personnelParam) {
                 try {
@@ -989,7 +1003,6 @@
                             setTimeout(() => {
                                 const btn = document.getElementById('generatePersonnel');
                                 if (btn) btn.click();
-                                // On peut aussi marquer l'historique pour le personnel mais optionnel
                             }, 500);
                         }
                     }
@@ -998,9 +1011,7 @@
         }
         initFromUrl();
 
-        // --------------------------------------------------------------
-        // 8. MODE PERSONNEL (inchangé)
-        // --------------------------------------------------------------
+        // Mode Personnel
         let currentPersonnelInterval = null;
         function startGenericProgress(areaId, fillId, percentId) {
             const area = document.getElementById(areaId);
@@ -1070,9 +1081,7 @@
             afficherBarreSegments();
         });
 
-        // --------------------------------------------------------------
-        // 9. Historique (affichage)
-        // --------------------------------------------------------------
+        // Historique
         const historyModal = document.getElementById('historyModal');
         const historyList = document.getElementById('historyList');
         function formaterDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
