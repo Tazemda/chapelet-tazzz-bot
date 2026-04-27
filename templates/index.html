@@ -161,15 +161,12 @@
     </style>
 </head>
 <body>
-    <!-- ÉCRAN DE CHARGEMENT -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-content">
             <div class="loading-chapelet">📿</div>
             <div class="loading-title">Chapelet Tazzz Bot</div>
             <div class="loading-mantra" id="loadingMantra">Je réorganise ma structure mentale…</div>
-            <div class="loading-progress">
-                <div class="loading-progress-bar" id="loadingProgressBar"></div>
-            </div>
+            <div class="loading-progress"><div class="loading-progress-bar" id="loadingProgressBar"></div></div>
             <div class="loading-text">Plasticité cérébrale & répétition rythmée</div>
         </div>
     </div>
@@ -350,7 +347,7 @@
             // Restaurer les jours sauvegardés
             const savedJours = localStorage.getItem('jours');
             if (savedJours) {
-                try { jours = JSON.parse(savedJours); } catch(e) {}
+                try { jours = JSON.parse(savedJours); } catch(e) { jours = {}; }
             }
 
             function sauvegarderTout() {
@@ -447,7 +444,21 @@
                     currentPage = jourNum;
                     afficherPage(currentPage);
                 } else if (jourNum>=1 && jourNum<=7 && !jours[jourNum]) {
-                    alert(`Le contenu du jour ${jourNum} n'a pas encore été généré. Utilisez la navigation “Suivant” pour le créer.`);
+                    // Si le jour est marqué comme complété (case violette) mais le contenu est absent, essayer de le restaurer depuis localStorage
+                    const saved = localStorage.getItem('jours');
+                    if (saved) {
+                        try {
+                            const allJours = JSON.parse(saved);
+                            if (allJours[jourNum]) {
+                                jours = allJours;
+                                sauvegarderTout();
+                                currentPage = jourNum;
+                                afficherPage(currentPage);
+                                return;
+                            }
+                        } catch(e) {}
+                    }
+                    alert(`Le contenu du jour ${jourNum} n'a pas été trouvé. Utilisez la navigation “Suivant” pour le régénérer (attention : le contenu sera différent).`);
                 }
             }
 
@@ -623,9 +634,7 @@
                 } else {
                     progression = histEntry.progression.slice();
                 }
-                // Restaurer les jours sauvegardés pour cette expertise ?
-                // Par simplicité, on garde le cache global (toutes expertises mélangées) – acceptable car les domaines sont différents.
-                jours = savedJours ? JSON.parse(savedJours) : {};
+                // Important : NE PAS vidanger jours ici, on conserve le cache
                 currentPage = 0;
                 afficherPage(0);
                 document.getElementById('jourContainer').style.display = 'block';
@@ -665,7 +674,9 @@
             });
 
             document.getElementById('homeHeader').addEventListener('click', () => {
-                currentDomaine = ''; jours = {}; currentPage = 0;
+                currentDomaine = ''; 
+                // On ne vide pas jours pour conserver le cache des expertises précédentes
+                currentPage = 0;
                 document.getElementById('jourContainer').style.display = 'none';
                 document.getElementById('startExpertise').style.display = 'block';
                 document.getElementById('domaine').value = '';
@@ -772,7 +783,7 @@
                 progression = [false,false,false,false,false,false,false];
                 historique.push({ domaine: currentDomaine, dateDebut: new Date().toISOString(), dateFin: null, progression: progression.slice(), shared: false });
                 sauvegarderTout();
-                jours = {};
+                jours = {}; // Pour une nouvelle consultation, on réinitialise le cache (car nouveau domaine)
                 currentPage = 0;
                 afficherPage(0);
                 document.getElementById('jourContainer').style.display = 'block';
@@ -798,7 +809,15 @@
                     div.onclick = () => {
                         currentDomaine = item.domaine;
                         progression = item.progression.slice();
-                        jours = {};
+                        // Restaurer le cache des jours pour cette expertise (depuis localStorage)
+                        const saved = localStorage.getItem('jours');
+                        if (saved) {
+                            try {
+                                jours = JSON.parse(saved);
+                            } catch(e) { jours = {}; }
+                        } else {
+                            jours = {};
+                        }
                         currentPage = 0;
                         afficherPage(0);
                         document.getElementById('jourContainer').style.display = 'block';
@@ -818,3 +837,4 @@
     </script>
 </body>
 </html>
+```
