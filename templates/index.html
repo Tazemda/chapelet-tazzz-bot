@@ -461,7 +461,6 @@
         }
         updateBadgeCounters();
 
-        // Nettoyage d'anciens badges indésirables
         let anciensBadges = JSON.parse(localStorage.getItem('badges')) || [];
         if (anciensBadges.length > 0) {
             const propres = anciensBadges.filter(b => !b.includes("1 semaine") && !b.includes("trophée") && !b.includes("🏆"));
@@ -508,7 +507,7 @@
         const totalPages = 8;
         let currentExpertiseInterval = null;
 
-        // ========== AUDIO ==========
+        // ========== AUDIO (identique, fonctionnel) ==========
         let frenchVoice = null;
         function initFrenchVoice() {
             if (!window.speechSynthesis) return;
@@ -592,7 +591,7 @@
             updateSeekSlider();
         }
 
-        function playAudioChunks(text) {
+        function playAudioChunks(text, autoStart = true) {
             stopAudio();
             const cleaned = cleanText(text);
             if (!cleaned) return;
@@ -600,8 +599,13 @@
             if (currentAudioChunks.length === 0) return;
             currentChunkIndex = 0;
             updateSeekSlider();
-            playerBar.style.display = 'flex';
-            speakChunk(0);
+            if (autoStart) {
+                playerBar.style.display = 'flex';
+                speakChunk(0);
+            } else {
+                playerBar.style.display = 'flex';
+                playPauseBtn.textContent = '▶';
+            }
         }
 
         function pauseAudio() {
@@ -701,11 +705,13 @@
             }
         }
 
+        // Nouveau message d'accueil (formaté comme demandé)
         const welcomeHTML = `
             <div class="welcome-text">
+                <strong>Bonjour ! Bienvenue dans le Chapelet Tazzz Bot Expertise.</strong><br><br>
                 <strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>
                 - Procurez vous un vrai chapelet pour égrener durant vos lectures.<br>
-                📖 Chaque jour, lisez ou récitez à voix haute le contenu du jour.<br>
+                - Chaque jour, lisez ou récitez à voix haute le contenu du jour.<br>
                 - Respectez les instructions : Tenez le gros grain pour la Méditation du Mystère.<br>
                 - Continuez à égrener le chapelet lors des lectures suivantes. C'est votre fil conducteur.<br>
                 - Les 5 dizaines d’un jour correspondent à 5 concepts clés.<br>
@@ -770,7 +776,7 @@
                 dayAudioBtn.style.display = 'none';
                 welcomeBtn.onclick = () => {
                     const introText = document.getElementById('jourContent').innerText;
-                    if (introText) playAudioChunks(introText);
+                    if (introText) playAudioChunks(introText, true);
                 };
             } else {
                 const jourNum = page;
@@ -784,7 +790,7 @@
                     dayAudioBtn.style.display = 'flex';
                     dayAudioBtn.onclick = () => {
                         const dayText = document.getElementById('jourContent').innerText;
-                        if (dayText) playAudioChunks(dayText);
+                        if (dayText) playAudioChunks(dayText, true);
                     };
                     afficherBarreSegments();
                 } else {
@@ -820,24 +826,6 @@
             });
         }
 
-        // --------------------------------------------------------------
-        // Lecture automatique du message d'accueil au démarrage de l'expertise
-        // --------------------------------------------------------------
-        function lancerAudioAccueilAuto() {
-            setTimeout(() => {
-                const introText = document.getElementById('jourContent').innerText;
-                if (introText && introText.includes("COMMENT UTILISER LE CHAPELET TAZZZ BOT")) {
-                    playAudioChunks(introText);
-                } else {
-                    // Si le texte n'est pas encore chargé, réessayer après un court délai
-                    setTimeout(() => {
-                        const introText2 = document.getElementById('jourContent').innerText;
-                        if (introText2 && introText2.length > 50) playAudioChunks(introText2);
-                    }, 300);
-                }
-            }, 200);
-        }
-
         document.getElementById('startExpertise').addEventListener('click', () => {
             currentDomaine = document.getElementById('domaine').value.trim();
             if (!currentDomaine) { alert('Domaine requis'); return; }
@@ -856,8 +844,14 @@
             document.getElementById('jourContainer').style.display = 'block';
             document.getElementById('startExpertise').style.display = 'none';
             afficherBarreSegments();
-            // LECTURE AUTOMATIQUE DU MESSAGE D'ACCUEIL
-            lancerAudioAccueilAuto();
+
+            // Lecture audio automatique du message d'accueil (après l'affichage)
+            setTimeout(() => {
+                const introText = document.getElementById('jourContent').innerText;
+                if (introText) {
+                    playAudioChunks(introText, true);
+                }
+            }, 300);
         });
 
         document.getElementById('prevDay').addEventListener('click', () => {
@@ -918,9 +912,7 @@
             stopAudio();
         });
 
-        // --------------------------------------------------------------
-        // PARTAGE SÉCURISÉ – AUCUNE DONNÉE HISTORIQUE TRANSMISE
-        // --------------------------------------------------------------
+        // ========== PARTAGE SÉCURISÉ ==========
         function genererLienPartage() {
             const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
             const baseUrl = window.location.href.split('?')[0];
@@ -958,7 +950,7 @@
             }
         });
 
-        // Initialisation depuis paramètre URL (expertise partagée)
+        // Initialisation depuis les paramètres d'URL
         function initFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
             const expertiseParam = urlParams.get('expertise');
