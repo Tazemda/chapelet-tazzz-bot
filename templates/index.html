@@ -68,7 +68,6 @@
             gap: 8px;
         }
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
-        /* Médailles : fond transparent */
         .medal-counter {
             background: transparent;
             color: #f1c40f;
@@ -78,7 +77,10 @@
             font-size: 0.8rem;
             display: inline-block;
             text-shadow: 0 0 2px #000;
+            cursor: pointer;
+            transition: 0.2s;
         }
+        .medal-counter:hover { text-decoration: underline; transform: scale(1.05); }
         .mode-panel { display: none; animation: fadeIn 0.3s ease; }
         .mode-panel.active-panel { display: block; }
         input, textarea {
@@ -141,13 +143,6 @@
             transition: 0.2s;
         }
         .audio-day:hover { background: #e67e22; }
-        .audio-progress {
-            font-size: 0.7rem;
-            text-align: center;
-            margin-top: 5px;
-            color: #e67e22;
-            display: none;
-        }
         .nav-buttons {
             display: flex;
             justify-content: space-between;
@@ -220,6 +215,33 @@
             opacity: 0.4;
             pointer-events: none;
         }
+        /* Barre de progression horizontale avec pourcentage */
+        .progress-container {
+            margin: 15px 0 10px;
+            width: 100%;
+            background: #2c3e4e;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 24px;
+            background-color: #2ecc71;
+            width: 0%;
+            transition: width 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        .progress-text {
+            text-align: center;
+            margin-top: 5px;
+            font-size: 0.7rem;
+            color: #2ecc71;
+        }
         .action-buttons {
             display: flex;
             gap: 12px;
@@ -232,6 +254,49 @@
             margin-top: 0;
             padding: 6px 18px;
             font-size: 0.8rem;
+        }
+        /* Barre audio flottante améliorée */
+        .audio-player-bar {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e2b3c;
+            border-radius: 40px;
+            padding: 10px 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            z-index: 2000;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.2);
+            font-size: 0.8rem;
+        }
+        .audio-player-bar button {
+            background: #2c3e4e;
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1rem;
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+            transition: 0.2s;
+        }
+        .audio-player-bar button:hover { background: #e67e22; }
+        .audio-player-bar input[type="range"] {
+            width: 150px;
+            margin: 0 10px;
+            cursor: pointer;
+        }
+        .chunk-info {
+            font-size: 0.7rem;
+            background: #2c3e4e;
+            padding: 4px 10px;
+            border-radius: 20px;
         }
         .footer { text-align: center; margin-top: 25px; font-size: 0.7rem; opacity: 0.7; }
         .copyright { font-size: 0.65rem; margin-top: 8px; }
@@ -284,11 +349,11 @@
     </div>
     <div class="mode-selector">
         <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
-        <span id="badgeCountExpertise" class="medal-counter">0🏅</span>
+        <span id="badgeCountExpertise" class="medal-counter" style="display:none;">0🏅</span>
         <button class="mode-btn" data-mode="personnel">🔥 Personnel (21/66j)</button>
-        <span id="badgeCountPersonnel" class="medal-counter">0🏅</span>
+        <span id="badgeCountPersonnel" class="medal-counter" style="display:none;">0🏅</span>
         <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
-        <span id="badgeCountConsultation" class="medal-counter">0🏅</span>
+        <span id="badgeCountConsultation" class="medal-counter" style="display:none;">0🏅</span>
     </div>
 
     <!-- Mode Expertise -->
@@ -303,16 +368,16 @@
                 <div id="jourContent" class="result"></div>
                 <button id="audioWelcomeBtn" class="audio-welcome" style="display:none;">🔊</button>
                 <button id="audioDayBtn" class="audio-day" style="display:none;">🔊</button>
-                <div id="audioProgressMsg" class="audio-progress"></div>
             </div>
             <div class="nav-buttons">
                 <button id="prevDay" disabled>◀ Précédent</button>
                 <span id="dayCounter">Intro / 8</span>
                 <button id="nextDay">Suivant ▶</button>
             </div>
+            <!-- Barre de progression horizontale avec pourcentage -->
             <div class="progress-container" id="expertiseProgressArea" style="display:none;">
-                <div class="progress-bar"><div id="expertiseProgressFill" class="progress-fill"></div></div>
-                <div id="expertiseProgressText" class="progress-text">0%</div>
+                <div class="progress-bar" id="expertiseProgressFill">0%</div>
+                <div id="expertiseProgressText" class="progress-text">Chargement en cours...</div>
             </div>
             <div id="feedbackBox" class="feedback-box" style="display:none;">
                 <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
@@ -362,6 +427,16 @@
     </div>
 </div>
 
+<!-- Barre audio dédiée (Play/Pause/Stop/Curseur) -->
+<div id="audioPlayerBar" class="audio-player-bar" style="display: none;">
+    <button id="audioPlayPauseBtn">▶</button>
+    <button id="audioStopBtn">⏹️</button>
+    <span class="chunk-info" id="chunkInfo">0/0</span>
+    <input type="range" id="chunkSlider" min="0" max="0" value="0" step="1" disabled>
+    <button id="audioPrevChunk">◀</button>
+    <button id="audioNextChunk">▶</button>
+</div>
+
 <!-- MODALE HISTORIQUE -->
 <div id="historyModal" class="modal">
     <div class="modal-content">
@@ -373,13 +448,22 @@
 
 <script>
     (function() {
-        // ========== GESTION BADGES & COMPTEUR MÉDAILLES ==========
+        // ========== GESTION BADGES & MÉDAILLES (affichage conditionnel) ==========
         function updateBadgeCounters() {
             let badges = JSON.parse(localStorage.getItem('badges')) || [];
             let count = badges.length;
-            document.getElementById('badgeCountExpertise').innerText = count + '🏅';
-            document.getElementById('badgeCountPersonnel').innerText = count + '🏅';
-            document.getElementById('badgeCountConsultation').innerText = count + '🏅';
+            const counters = ['badgeCountExpertise', 'badgeCountPersonnel', 'badgeCountConsultation'];
+            counters.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    if (count > 0) {
+                        el.style.display = 'inline-block';
+                        el.innerText = count + '🏅';
+                    } else {
+                        el.style.display = 'none';
+                    }
+                }
+            });
         }
         updateBadgeCounters();
 
@@ -389,6 +473,14 @@
             localStorage.setItem('badges', JSON.stringify(propres));
             updateBadgeCounters();
         }
+
+        // Rendre les médailles cliquables pour ouvrir l'historique
+        document.querySelectorAll('.medal-counter').forEach(medal => {
+            medal.addEventListener('click', () => {
+                afficherHistorique();
+                document.getElementById('historyModal').style.display = 'flex';
+            });
+        });
 
         // Onglets
         const modeBtns = document.querySelectorAll('.mode-btn');
@@ -422,7 +514,7 @@
         const totalPages = 8;
         let currentExpertiseInterval = null;
 
-        // ========== AUDIO SÉQUENTIEL MOBILE ==========
+        // ========== LECTEUR AVEC CURSEUR (par chunks) ==========
         let frenchVoice = null;
         function initFrenchVoice() {
             if (!window.speechSynthesis) return;
@@ -460,56 +552,115 @@
         let currentChunkIndex = 0;
         let isPlaying = false;
         let currentUtterance = null;
-        let audioProgressDiv = null;
+        let audioActive = false;
+
+        // Éléments de la barre audio
+        const playerBar = document.getElementById('audioPlayerBar');
+        const playPauseBtn = document.getElementById('audioPlayPauseBtn');
+        const stopBtn = document.getElementById('audioStopBtn');
+        const chunkSlider = document.getElementById('chunkSlider');
+        const chunkInfoSpan = document.getElementById('chunkInfo');
+        const prevChunkBtn = document.getElementById('audioPrevChunk');
+        const nextChunkBtn = document.getElementById('audioNextChunk');
 
         function stopAudio() {
             if (window.speechSynthesis) window.speechSynthesis.cancel();
             isPlaying = false;
-            if (audioProgressDiv) audioProgressDiv.style.display = 'none';
-            currentChunkIndex = 0;
+            audioActive = false;
+            playPauseBtn.textContent = '▶';
+            playerBar.style.display = 'none';
+            currentUtterance = null;
         }
 
-        function speakNextChunk() {
-            if (currentChunkIndex >= currentAudioChunks.length) {
-                stopAudio();
-                if (audioProgressDiv) audioProgressDiv.style.display = 'none';
-                return;
-            }
+        function speakChunk(index) {
+            if (index < 0 || index >= currentAudioChunks.length) return;
+            currentChunkIndex = index;
             const text = currentAudioChunks[currentChunkIndex];
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'fr-FR';
             utterance.rate = 0.9;
             if (frenchVoice) utterance.voice = frenchVoice;
             utterance.onend = () => {
-                currentChunkIndex++;
-                speakNextChunk();
-                if (audioProgressDiv) {
-                    audioProgressDiv.innerText = `Audio: ${currentChunkIndex}/${currentAudioChunks.length}`;
+                if (currentChunkIndex + 1 < currentAudioChunks.length) {
+                    speakChunk(currentChunkIndex + 1);
+                } else {
+                    stopAudio();
                 }
             };
-            utterance.onerror = () => {
-                currentChunkIndex++;
-                speakNextChunk();
-            };
+            utterance.onerror = () => { stopAudio(); };
             currentUtterance = utterance;
             window.speechSynthesis.speak(utterance);
             isPlaying = true;
-            if (audioProgressDiv) {
-                audioProgressDiv.style.display = 'block';
-                audioProgressDiv.innerText = `Audio: ${currentChunkIndex+1}/${currentAudioChunks.length}`;
+            playPauseBtn.textContent = '⏸';
+            updateChunkDisplay();
+        }
+
+        function updateChunkDisplay() {
+            if (currentAudioChunks.length) {
+                chunkSlider.max = currentAudioChunks.length - 1;
+                chunkSlider.value = currentChunkIndex;
+                chunkSlider.disabled = false;
+                chunkInfoSpan.innerText = `${currentChunkIndex+1}/${currentAudioChunks.length}`;
+            } else {
+                chunkSlider.disabled = true;
+                chunkInfoSpan.innerText = '0/0';
             }
         }
 
-        function playAudioChunks(text, progressElementId) {
+        function playAudioChunks(text) {
             stopAudio();
             const cleaned = cleanText(text);
             if (!cleaned) return;
             currentAudioChunks = splitTextIntoChunks(cleaned, 1800);
-            currentChunkIndex = 0;
-            audioProgressDiv = document.getElementById(progressElementId);
             if (currentAudioChunks.length === 0) return;
-            speakNextChunk();
+            currentChunkIndex = 0;
+            updateChunkDisplay();
+            playerBar.style.display = 'flex';
+            speakChunk(0);
         }
+
+        function pauseAudio() {
+            if (window.speechSynthesis && isPlaying) {
+                window.speechSynthesis.cancel();
+                isPlaying = false;
+                playPauseBtn.textContent = '▶';
+            }
+        }
+
+        function resumeAudio() {
+            if (!isPlaying && currentAudioChunks.length > 0 && currentUtterance) {
+                speakChunk(currentChunkIndex);
+            } else if (!isPlaying && currentAudioChunks.length > 0) {
+                speakChunk(currentChunkIndex);
+            }
+        }
+
+        playPauseBtn.addEventListener('click', () => {
+            if (isPlaying) pauseAudio();
+            else resumeAudio();
+        });
+        stopBtn.addEventListener('click', stopAudio);
+        prevChunkBtn.addEventListener('click', () => {
+            if (currentAudioChunks.length && currentChunkIndex > 0) {
+                pauseAudio();
+                speakChunk(currentChunkIndex - 1);
+            }
+        });
+        nextChunkBtn.addEventListener('click', () => {
+            if (currentAudioChunks.length && currentChunkIndex + 1 < currentAudioChunks.length) {
+                pauseAudio();
+                speakChunk(currentChunkIndex + 1);
+            }
+        });
+        chunkSlider.addEventListener('input', (e) => {
+            if (currentAudioChunks.length) {
+                const newIdx = parseInt(e.target.value);
+                if (newIdx !== currentChunkIndex) {
+                    pauseAudio();
+                    speakChunk(newIdx);
+                }
+            }
+        });
 
         // ========== GESTION DES SEGMENTS ==========
         function afficherBarreSegments() {
@@ -593,34 +744,49 @@
             </div>
         `;
 
+        // Barre de progression horizontale avec pourcentage
         function startExpertiseProgressBar() {
             const area = document.getElementById('expertiseProgressArea');
             const fill = document.getElementById('expertiseProgressFill');
-            const text = document.getElementById('expertiseProgressText');
+            const textSpan = document.getElementById('expertiseProgressText');
             if (!area) return null;
             area.style.display = 'block';
             let percent = 0;
+            fill.style.width = '0%';
+            fill.innerText = '0%';
+            textSpan.innerText = 'Chargement en cours...';
             const interval = setInterval(() => {
-                if (percent < 90) { percent += 2; if (percent > 90) percent = 90;
+                if (percent < 90) {
+                    percent += 2;
+                    if (percent > 90) percent = 90;
                     fill.style.width = percent + '%';
-                    text.innerText = percent + '%';
+                    fill.innerText = percent + '%';
+                    textSpan.innerText = `Chargement... ${percent}%`;
                 }
             }, 150);
             return interval;
         }
+
         function stopExpertiseProgressBar(interval, complete) {
             const area = document.getElementById('expertiseProgressArea');
             const fill = document.getElementById('expertiseProgressFill');
-            const text = document.getElementById('expertiseProgressText');
+            const textSpan = document.getElementById('expertiseProgressText');
             if (interval) clearInterval(interval);
             if (complete && fill) {
                 fill.style.width = '100%';
-                text.innerText = '100%';
-                setTimeout(() => { if(area) area.style.display = 'none'; fill.style.width = '0%'; text.innerText = '0%'; }, 300);
+                fill.innerText = '100%';
+                textSpan.innerText = 'Terminé !';
+                setTimeout(() => {
+                    if (area) area.style.display = 'none';
+                    fill.style.width = '0%';
+                    fill.innerText = '0%';
+                    textSpan.innerText = '';
+                }, 800);
             } else {
-                if(area) area.style.display = 'none';
-                if(fill) fill.style.width = '0%';
-                if(text) text.innerText = '0%';
+                if (area) area.style.display = 'none';
+                if (fill) fill.style.width = '0%';
+                if (fill) fill.innerText = '0%';
+                if (textSpan) textSpan.innerText = '';
             }
         }
 
@@ -642,7 +808,7 @@
                 dayAudioBtn.style.display = 'none';
                 welcomeBtn.onclick = () => {
                     const introText = document.getElementById('jourContent').innerText;
-                    if (introText) playAudioChunks(introText, 'audioProgressMsg');
+                    if (introText) playAudioChunks(introText);
                 };
             } else {
                 const jourNum = page;
@@ -656,7 +822,7 @@
                     dayAudioBtn.style.display = 'flex';
                     dayAudioBtn.onclick = () => {
                         const dayText = document.getElementById('jourContent').innerText;
-                        if (dayText) playAudioChunks(dayText, 'audioProgressMsg');
+                        if (dayText) playAudioChunks(dayText);
                     };
                     afficherBarreSegments();
                 } else {
@@ -745,22 +911,15 @@
 
         // ========== RETOUR ACCUEIL ==========
         document.getElementById('homeButton').addEventListener('click', () => {
-            // Réinitialisation de l'état sans rechargement
             currentDomaine = '';
             jours = {};
             currentPage = 0;
-            // Cacher le conteneur d'expertise et réafficher le bouton start
             document.getElementById('jourContainer').style.display = 'none';
             document.getElementById('startExpertise').style.display = 'block';
             document.getElementById('domaine').value = '';
-            // Réinitialiser la progression (optionnel selon votre besoin, on garde les données localStorage intactes)
-            // On efface la session d'expertise en cours
-            // On remet l'onglet expertise actif sans contenu chargé
             document.querySelector('.mode-btn[data-mode="expertise"]').click();
-            // On vide le contenu résultat
             document.getElementById('jourContent').innerHTML = '';
-            // Optionnel : on peut regénérer la page d'accueil dans l'onglet expertise? oui, on affiche le formulaire
-            // Le `startExpertise` redevient visible
+            stopAudio();
         });
 
         // ========== PARTAGE D'EXPÉRIENCE ==========
@@ -792,7 +951,7 @@
             }
         });
 
-        // Personnel (inchangé)
+        // Mode Personnel
         let currentPersonnelInterval = null;
         function startGenericProgress(areaId, fillId, textId) {
             const area = document.getElementById(areaId);
