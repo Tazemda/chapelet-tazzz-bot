@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -560,7 +561,7 @@
     </style>
 </head>
 <body>
-    <!-- ÉCRAN DE CHARGEMENT -->
+    <!-- ÉCRAN DE CHARGEMENT (16 secondes) -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-content">
             <div class="loading-chapelet">📿</div>
@@ -678,7 +679,7 @@
 
     <script>
         (function() {
-            // ---------- ÉCRAN DE CHARGEMENT (25 secondes, séquence A) ----------
+            // ---------- ÉCRAN DE CHARGEMENT (16 secondes, séquence A) ----------
             const loadingScreen = document.getElementById('loadingScreen');
             const mainContent = document.getElementById('mainContent');
             const progressBar = document.getElementById('loadingProgressBar');
@@ -692,8 +693,8 @@
                 "Prêt. Transformons notre esprit."
             ];
 
-            const totalDuration = 25000;   // 25 secondes
-            const stepDuration = totalDuration / mantras.length; // 5 secondes par mantra
+            const totalDuration = 16000;   // 16 secondes
+            const stepDuration = totalDuration / mantras.length; // 3.2 secondes par mantra
             let startTime = null;
             let animationFrame = null;
             let currentMantraIndex = 0;
@@ -705,7 +706,7 @@
                 if (percent > 100) percent = 100;
                 progressBar.style.width = percent + '%';
 
-                // Changer de mantra toutes les 5 secondes
+                // Changer de mantra à chaque stepDuration
                 const newIndex = Math.min(Math.floor(elapsed / stepDuration), mantras.length - 1);
                 if (newIndex !== currentMantraIndex) {
                     currentMantraIndex = newIndex;
@@ -731,7 +732,7 @@
 
             animationFrame = requestAnimationFrame(updateProgress);
 
-            // ---------- TOUT LE RESTE (fonctionnalités complètes) ----------
+            // ---------- TOUT LE RESTE (fonctionnalités complètes, inchangées) ----------
             function updateBadgeCounters() {
                 let badges = JSON.parse(localStorage.getItem('badges')) || [];
                 let count = badges.length;
@@ -1472,3 +1473,4 @@
     </script>
 </body>
 </html>
+```
