@@ -14,6 +14,7 @@
             color: #f0f0f0;
             min-height: 100vh;
         }
+        /* ---------- ÉCRAN DE CHARGEMENT ---------- */
         .loading-screen {
             position: fixed;
             top: 0;
@@ -36,6 +37,7 @@
         .loading-progress { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 30px 0 20px; overflow: hidden; }
         .loading-progress-bar { width: 0%; height: 100%; background: #e67e22; transition: width 0.1s linear; }
         .loading-text { font-size: 0.8rem; opacity: 0.7; }
+        /* ---------- CONTENU PRINCIPAL ---------- */
         .container {
             max-width: 800px;
             margin: 0 auto;
@@ -271,23 +273,15 @@
 
     <script>
         (function() {
-            // ---------- ÉCRAN DE CHARGEMENT (10 secondes) ----------
+            // ---------- ÉCRAN DE CHARGEMENT ----------
             const loadingScreen = document.getElementById('loadingScreen');
             const mainContent = document.getElementById('mainContent');
             const progressBar = document.getElementById('loadingProgressBar');
             const mantraEl = document.getElementById('loadingMantra');
-            const mantras = [
-                "Je réorganise ma structure mentale…",
-                "Un chapelet, une intention…",
-                "Plasticité cérébrale en action…",
-                "Je deviens l’acteur de chaque heure…",
-                "Prêt. Transformons notre esprit."
-            ];
+            const mantras = ["Je réorganise ma structure mentale…","Un chapelet, une intention…","Plasticité cérébrale en action…","Je deviens l’acteur de chaque heure…","Prêt. Transformons notre esprit."];
             const totalDuration = 10000;
             const stepDuration = totalDuration / mantras.length;
-            let startTime = null;
-            let animFrame = null;
-            let mantraIndex = 0;
+            let startTime = null, animFrame = null, mantraIdx = 0;
             function updateProgress(now) {
                 if (!startTime) startTime = now;
                 const elapsed = now - startTime;
@@ -295,59 +289,44 @@
                 if (percent > 100) percent = 100;
                 progressBar.style.width = percent + '%';
                 const newIdx = Math.min(Math.floor(elapsed / stepDuration), mantras.length - 1);
-                if (newIdx !== mantraIndex) {
-                    mantraIndex = newIdx;
+                if (newIdx !== mantraIdx) {
+                    mantraIdx = newIdx;
                     mantraEl.style.opacity = '0';
-                    setTimeout(() => {
-                        mantraEl.textContent = mantras[mantraIndex];
-                        mantraEl.style.opacity = '1';
-                    }, 100);
+                    setTimeout(() => { mantraEl.textContent = mantras[mantraIdx]; mantraEl.style.opacity = '1'; }, 100);
                 }
-                if (elapsed < totalDuration) {
-                    animFrame = requestAnimationFrame(updateProgress);
-                } else {
+                if (elapsed < totalDuration) animFrame = requestAnimationFrame(updateProgress);
+                else {
                     cancelAnimationFrame(animFrame);
                     loadingScreen.classList.add('hide');
-                    setTimeout(() => {
-                        loadingScreen.style.display = 'none';
-                        mainContent.style.display = 'block';
-                    }, 300);
+                    setTimeout(() => { loadingScreen.style.display = 'none'; mainContent.style.display = 'block'; }, 300);
                 }
             }
             requestAnimationFrame(updateProgress);
 
-            // ---------- FONCTIONS PRINCIPALES ----------
+            // ---------- GESTION BADGES ----------
             function updateBadgeCounters() {
                 let badges = JSON.parse(localStorage.getItem('badges')) || [];
                 let count = badges.length;
                 ['expertise', 'personnel', 'consultation'].forEach(mode => {
-                    const el = document.getElementById(`badgeCount${mode.charAt(0).toUpperCase() + mode.slice(1)}`);
+                    const el = document.getElementById(`badgeCount${mode.charAt(0).toUpperCase()+mode.slice(1)}`);
                     if (el) {
-                        if (count > 0) {
-                            el.style.display = 'inline-block';
-                            el.innerText = count + '🏅';
-                        } else {
-                            el.style.display = 'none';
-                        }
+                        if (count > 0) { el.style.display = 'inline-block'; el.innerText = count + '🏅'; }
+                        else { el.style.display = 'none'; }
                     }
                 });
             }
             updateBadgeCounters();
-
-            let anciensBadges = JSON.parse(localStorage.getItem('badges')) || [];
-            if (anciensBadges.length > 0) {
-                const propres = anciensBadges.filter(b => !b.includes("1 semaine") && !b.includes("trophée") && !b.includes("🏆"));
+            let anciens = JSON.parse(localStorage.getItem('badges')) || [];
+            if (anciens.length) {
+                const propres = anciens.filter(b => !b.includes("1 semaine") && !b.includes("trophée") && !b.includes("🏆"));
                 localStorage.setItem('badges', JSON.stringify(propres));
                 updateBadgeCounters();
             }
-
             document.querySelectorAll('.medal-counter').forEach(medal => {
-                medal.addEventListener('click', () => {
-                    afficherHistorique();
-                    document.getElementById('historyModal').style.display = 'flex';
-                });
+                medal.addEventListener('click', () => { afficherHistorique(); document.getElementById('historyModal').style.display = 'flex'; });
             });
 
+            // ---------- ONGLETS ----------
             const modeBtns = document.querySelectorAll('.mode-btn');
             const panels = {
                 expertise: document.getElementById('expertisePanel'),
@@ -364,21 +343,29 @@
                 });
             });
 
-            let progression = JSON.parse(localStorage.getItem('progression')) || [false, false, false, false, false, false, false];
+            // ---------- VARIABLES GLOBALES ----------
+            let progression = JSON.parse(localStorage.getItem('progression')) || [false,false,false,false,false,false,false];
             let historique = JSON.parse(localStorage.getItem('historique')) || [];
+            let jours = {};
+            // Restaurer les jours sauvegardés
+            const savedJours = localStorage.getItem('jours');
+            if (savedJours) {
+                try { jours = JSON.parse(savedJours); } catch(e) {}
+            }
+
             function sauvegarderTout() {
                 localStorage.setItem('progression', JSON.stringify(progression));
                 localStorage.setItem('historique', JSON.stringify(historique));
+                localStorage.setItem('jours', JSON.stringify(jours));
                 updateBadgeCounters();
             }
 
             let currentDomaine = '';
-            let jours = {};
             let currentPage = 0;
             const totalPages = 8;
             let currentExpertiseInterval = null;
 
-            // Audio
+            // ---------- AUDIO ----------
             let frenchVoice = null;
             function initFrenchVoice() {
                 if (!window.speechSynthesis) return;
@@ -391,31 +378,19 @@
                 initFrenchVoice();
             }
 
-            function cleanText(text) {
-                if (!text) return '';
-                return text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/#/g, '').replace(/`/g, '').replace(/_/g, '').replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1').trim();
-            }
-
-            function splitTextIntoChunks(text, maxLen = 1800) {
+            function cleanText(t) { return t ? t.replace(/\*\*/g,'').replace(/\*/g,'').replace(/#/g,'').replace(/`/g,'').replace(/_/g,'').replace(/\[([^\]]+)\]\([^\)]+\)/g,'$1').trim() : ''; }
+            function splitTextIntoChunks(text, maxLen=1800) {
                 let sentences = text.split(/(?<=[.!?])\s+/);
-                let chunks = [];
-                let current = '';
+                let chunks = [], current = '';
                 for (let s of sentences) {
-                    if ((current + s).length > maxLen && current.length > 0) {
-                        chunks.push(current);
-                        current = s;
-                    } else {
-                        current += (current ? ' ' : '') + s;
-                    }
+                    if ((current + s).length > maxLen && current.length) { chunks.push(current); current = s; }
+                    else current += (current ? ' ' : '') + s;
                 }
                 if (current) chunks.push(current);
                 return chunks;
             }
 
-            let currentAudioChunks = [];
-            let currentChunkIndex = 0;
-            let isPlaying = false;
-            let currentUtterance = null;
+            let currentAudioChunks = [], currentChunkIdx = 0, isPlaying = false, currentUtterance = null;
             const playerBar = document.getElementById('audioPlayerBar');
             const playPauseBtn = document.getElementById('audioPlayPauseBtn');
             const stopBtn = document.getElementById('audioStopBtn');
@@ -423,97 +398,55 @@
 
             function stopAudio() {
                 if (window.speechSynthesis) window.speechSynthesis.cancel();
-                isPlaying = false;
-                playPauseBtn.textContent = '▶';
-                playerBar.style.display = 'none';
-                currentUtterance = null;
+                isPlaying = false; playPauseBtn.textContent = '▶'; playerBar.style.display = 'none'; currentUtterance = null;
             }
-
             function updateSeekSlider() {
-                if (currentAudioChunks.length) {
-                    seekSlider.max = currentAudioChunks.length - 1;
-                    seekSlider.value = currentChunkIndex;
-                    seekSlider.disabled = false;
-                } else {
-                    seekSlider.disabled = true;
-                }
+                if (currentAudioChunks.length) { seekSlider.max = currentAudioChunks.length-1; seekSlider.value = currentChunkIdx; seekSlider.disabled = false; }
+                else seekSlider.disabled = true;
             }
-
-            function speakChunk(index) {
-                if (index < 0 || index >= currentAudioChunks.length) return;
-                currentChunkIndex = index;
-                const text = currentAudioChunks[currentChunkIndex];
+            function speakChunk(idx) {
+                if (idx<0 || idx>=currentAudioChunks.length) return;
+                currentChunkIdx = idx;
+                const text = currentAudioChunks[currentChunkIdx];
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'fr-FR';
-                utterance.rate = 0.9;
+                utterance.lang = 'fr-FR'; utterance.rate = 0.9;
                 if (frenchVoice) utterance.voice = frenchVoice;
                 utterance.onend = () => {
-                    if (currentChunkIndex + 1 < currentAudioChunks.length) {
-                        speakChunk(currentChunkIndex + 1);
-                    } else {
-                        stopAudio();
-                    }
+                    if (currentChunkIdx+1 < currentAudioChunks.length) speakChunk(currentChunkIdx+1);
+                    else stopAudio();
                 };
-                utterance.onerror = () => { stopAudio(); };
+                utterance.onerror = () => stopAudio();
                 currentUtterance = utterance;
                 window.speechSynthesis.speak(utterance);
-                isPlaying = true;
-                playPauseBtn.textContent = '⏸';
-                updateSeekSlider();
+                isPlaying = true; playPauseBtn.textContent = '⏸'; updateSeekSlider();
             }
-
-            function playAudioChunks(text, autoStart = true) {
+            function playAudioChunks(text, autoStart=true) {
                 stopAudio();
                 const cleaned = cleanText(text);
                 if (!cleaned) return;
                 currentAudioChunks = splitTextIntoChunks(cleaned, 1800);
-                if (currentAudioChunks.length === 0) return;
-                currentChunkIndex = 0;
-                updateSeekSlider();
-                if (autoStart) {
-                    playerBar.style.display = 'flex';
-                    speakChunk(0);
-                } else {
-                    playerBar.style.display = 'flex';
-                    playPauseBtn.textContent = '▶';
-                }
+                if (!currentAudioChunks.length) return;
+                currentChunkIdx = 0; updateSeekSlider(); playerBar.style.display = 'flex';
+                if (autoStart) speakChunk(0);
+                else playPauseBtn.textContent = '▶';
             }
-
-            function pauseAudio() {
-                if (window.speechSynthesis && isPlaying) {
-                    window.speechSynthesis.cancel();
-                    isPlaying = false;
-                    playPauseBtn.textContent = '▶';
-                }
-            }
-
-            function resumeAudio() {
-                if (!isPlaying && currentAudioChunks.length > 0) {
-                    speakChunk(currentChunkIndex);
-                }
-            }
-
-            playPauseBtn.addEventListener('click', () => {
-                if (isPlaying) pauseAudio();
-                else resumeAudio();
-            });
+            function pauseAudio() { if (isPlaying) { window.speechSynthesis.cancel(); isPlaying=false; playPauseBtn.textContent='▶'; } }
+            function resumeAudio() { if (!isPlaying && currentAudioChunks.length) speakChunk(currentChunkIdx); }
+            playPauseBtn.addEventListener('click', () => { if (isPlaying) pauseAudio(); else resumeAudio(); });
             stopBtn.addEventListener('click', stopAudio);
             seekSlider.addEventListener('input', (e) => {
                 if (currentAudioChunks.length) {
                     const newIdx = parseInt(e.target.value);
-                    if (newIdx !== currentChunkIndex) {
-                        pauseAudio();
-                        speakChunk(newIdx);
-                    }
+                    if (newIdx !== currentChunkIdx) { pauseAudio(); speakChunk(newIdx); }
                 }
             });
 
-            // Navigation simple vers un jour (utilise le cache)
+            // ---------- NAVIGATION ET CACHE ----------
             function naviguerVersJour(jourNum) {
-                if (jourNum >= 1 && jourNum <= 7 && jours[jourNum]) {
+                if (jourNum>=1 && jourNum<=7 && jours[jourNum]) {
                     currentPage = jourNum;
                     afficherPage(currentPage);
-                } else if (jourNum >= 1 && jourNum <= 7 && !jours[jourNum]) {
+                } else if (jourNum>=1 && jourNum<=7 && !jours[jourNum]) {
                     alert(`Le contenu du jour ${jourNum} n'a pas encore été généré. Utilisez la navigation “Suivant” pour le créer.`);
                 }
             }
@@ -522,26 +455,19 @@
                 const container = document.getElementById('segmentsContainer');
                 if (!container) return;
                 container.innerHTML = '';
-                for (let i = 0; i < 7; i++) {
+                for (let i=0; i<7; i++) {
                     const seg = document.createElement('div');
                     seg.className = 'segment';
                     if (progression[i]) {
                         seg.classList.add('completed');
-                        seg.onclick = (function(idx) {
-                            return () => naviguerVersJour(idx + 1);
-                        })(i);
+                        seg.onclick = (function(idx){ return ()=> naviguerVersJour(idx+1); })(i);
                     } else {
                         if (!progression[i] && !jours[i+1]) seg.classList.add('disabled');
                         if (jours[i+1] && !progression[i]) seg.classList.add('loaded');
-                        seg.onclick = (function(idx) {
-                            return () => {
-                                if (!progression[idx] && !jours[idx+1]) {
-                                    alert(`Veuillez d'abord générer le contenu du jour ${idx+1} en naviguant vers ce jour.`);
-                                    return;
-                                }
-                                cocherSegment(idx);
-                            };
-                        })(i);
+                        seg.onclick = (function(idx){ return () => {
+                            if (!progression[idx] && !jours[idx+1]) alert(`Générez d'abord le jour ${idx+1}.`);
+                            else cocherSegment(idx);
+                        }; })(i);
                     }
                     seg.innerHTML = `<div class="day-label">J${i+1}</div><div class="day-status">${progression[i] ? '✓' : (jours[i+1] ? '📖' : '🔒')}</div>`;
                     container.appendChild(seg);
@@ -552,25 +478,18 @@
             function updateValidationMessage() {
                 const msgDiv = document.getElementById('progressHeaderMsg');
                 if (!msgDiv) return;
-                if (currentPage === 0 || !jours[currentPage] || progression[currentPage-1]) {
-                    msgDiv.style.display = 'none';
-                    return;
+                if (currentPage===0 || !jours[currentPage] || progression[currentPage-1]) msgDiv.style.display='none';
+                else {
+                    msgDiv.style.display='block';
+                    msgDiv.innerHTML = '👉 cliquez ici pour valider cette journée !';
+                    const newMsg = msgDiv.cloneNode(true);
+                    msgDiv.parentNode.replaceChild(newMsg, msgDiv);
+                    newMsg.onclick = () => { const idx = currentPage-1; if (idx>=0 && !progression[idx] && jours[currentPage]) cocherSegment(idx); };
                 }
-                msgDiv.style.display = 'block';
-                msgDiv.innerHTML = '👉 cliquez ici pour valider cette journée !';
-                const newMsg = msgDiv.cloneNode(true);
-                msgDiv.parentNode.replaceChild(newMsg, msgDiv);
-                newMsg.onclick = () => {
-                    const idx = currentPage-1;
-                    if (idx >= 0 && !progression[idx] && jours[currentPage]) cocherSegment(idx);
-                };
             }
 
             function cocherSegment(idx) {
-                for (let i = 0; i < idx; i++) if (!progression[i]) {
-                    alert(`Validez d'abord le jour ${i+1}.`);
-                    return;
-                }
+                for (let i=0; i<idx; i++) if (!progression[i]) { alert(`Validez d'abord le jour ${i+1}.`); return; }
                 if (!progression[idx]) {
                     progression[idx] = true;
                     sauvegarderTout();
@@ -579,15 +498,11 @@
                         alert(`🎉 Félicitations ! Vous avez achevé votre expertise. Badge "Expert en ${currentDomaine}" débloqué.`);
                         let badges = JSON.parse(localStorage.getItem('badges')) || [];
                         const expertBadge = `🏅 Expert en ${currentDomaine}`;
-                        if (!badges.includes(expertBadge)) {
-                            badges.push(expertBadge);
-                            localStorage.setItem('badges', JSON.stringify(badges));
-                            updateBadgeCounters();
-                        }
-                        const histEntry = historique.find(h => h.domaine === currentDomaine);
+                        if (!badges.includes(expertBadge)) { badges.push(expertBadge); localStorage.setItem('badges', JSON.stringify(badges)); updateBadgeCounters(); }
+                        const histEntry = historique.find(h=>h.domaine===currentDomaine);
                         if (histEntry) histEntry.dateFin = new Date().toISOString();
                     } else alert(`🎊 Bravo ! Jour ${idx+1}/7 validé.`);
-                    const histEntry = historique.find(h => h.domaine === currentDomaine);
+                    const histEntry = historique.find(h=>h.domaine===currentDomaine);
                     if (histEntry) histEntry.progression = progression.slice();
                     sauvegarderTout();
                     afficherBarreSegments();
@@ -616,35 +531,22 @@
                 const percentSpan = document.getElementById('expertiseProgressPercent');
                 if (!area) return null;
                 area.style.display = 'block';
-                let percent = 0;
+                let p=0;
                 const interval = setInterval(() => {
-                    if (percent < 90) {
-                        percent += 2;
-                        if (percent > 90) percent = 90;
-                        fill.style.width = percent + '%';
-                        percentSpan.innerText = percent + '%';
-                    }
+                    if (p<90) { p+=2; if (p>90) p=90; fill.style.width = p+'%'; percentSpan.innerText = p+'%'; }
                 }, 150);
                 return interval;
             }
-
             function stopExpertiseProgressBar(interval, complete) {
                 const area = document.getElementById('expertiseProgressArea');
                 const fill = document.getElementById('expertiseProgressFill');
                 const percentSpan = document.getElementById('expertiseProgressPercent');
                 if (interval) clearInterval(interval);
                 if (complete && fill) {
-                    fill.style.width = '100%';
-                    percentSpan.innerText = '100%';
-                    setTimeout(() => {
-                        if (area) area.style.display = 'none';
-                        fill.style.width = '0%';
-                        percentSpan.innerText = '';
-                    }, 300);
+                    fill.style.width = '100%'; percentSpan.innerText = '100%';
+                    setTimeout(() => { if (area) area.style.display = 'none'; fill.style.width = '0%'; percentSpan.innerText = ''; }, 300);
                 } else {
-                    if (area) area.style.display = 'none';
-                    if (fill) fill.style.width = '0%';
-                    if (percentSpan) percentSpan.innerText = '';
+                    if (area) area.style.display = 'none'; if (fill) fill.style.width = '0%'; if (percentSpan) percentSpan.innerText = '';
                 }
             }
 
@@ -659,29 +561,20 @@
                 if (page === 0) {
                     contentDiv.innerHTML = welcomeHTML;
                     daySpan.innerText = 'Intro / 8';
-                    prevBtn.disabled = true;
-                    nextBtn.disabled = false;
+                    prevBtn.disabled = true; nextBtn.disabled = false;
                     feedbackBox.style.display = 'none';
-                    welcomeBtn.style.display = 'flex';
-                    dayAudioBtn.style.display = 'none';
-                    welcomeBtn.onclick = () => {
-                        const introText = document.getElementById('jourContent').innerText;
-                        if (introText) playAudioChunks(introText, true);
-                    };
+                    welcomeBtn.style.display = 'flex'; dayAudioBtn.style.display = 'none';
+                    welcomeBtn.onclick = () => { const introText = document.getElementById('jourContent').innerText; if (introText) playAudioChunks(introText, true); };
                 } else {
                     const jourNum = page;
                     welcomeBtn.style.display = 'none';
                     if (jours[jourNum]) {
                         contentDiv.innerHTML = jours[jourNum].replace(/\n/g, '<br>');
                         daySpan.innerText = `Jour ${jourNum} / 7`;
-                        prevBtn.disabled = (jourNum === 1);
-                        nextBtn.disabled = (jourNum === 7);
+                        prevBtn.disabled = (jourNum === 1); nextBtn.disabled = (jourNum === 7);
                         feedbackBox.style.display = 'block';
                         dayAudioBtn.style.display = 'flex';
-                        dayAudioBtn.onclick = () => {
-                            const dayText = document.getElementById('jourContent').innerText;
-                            if (dayText) playAudioChunks(dayText, true);
-                        };
+                        dayAudioBtn.onclick = () => { const dayText = document.getElementById('jourContent').innerText; if (dayText) playAudioChunks(dayText, true); };
                         afficherBarreSegments();
                     } else {
                         contentDiv.innerHTML = '<em>Chargement du jour...</em>';
@@ -703,6 +596,7 @@
                 .then(data => {
                     if (data.error) throw new Error(data.error);
                     jours[jourNum] = data.contenu;
+                    sauvegarderTout();
                     stopExpertiseProgressBar(currentExpertiseInterval, true);
                     afficherPage(jourNum);
                     afficherBarreSegments();
@@ -711,6 +605,7 @@
                     console.error(err);
                     stopExpertiseProgressBar(currentExpertiseInterval, false);
                     jours[jourNum] = `<strong>⚠️ Erreur de génération</strong><br>Contenu non disponible. Vérifiez votre connexion ou réessayez.`;
+                    sauvegarderTout();
                     afficherPage(jourNum);
                     afficherBarreSegments();
                 });
@@ -721,34 +616,25 @@
                 if (!currentDomaine) { alert('Domaine requis'); return; }
                 let histEntry = historique.find(h => h.domaine === currentDomaine);
                 if (!histEntry) {
-                    histEntry = {
-                        domaine: currentDomaine,
-                        dateDebut: new Date().toISOString(),
-                        dateFin: null,
-                        progression: [false, false, false, false, false, false, false],
-                        shared: false
-                    };
+                    histEntry = { domaine: currentDomaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: false };
                     historique.push(histEntry);
                     sauvegarderTout();
                     progression = histEntry.progression;
                 } else {
                     progression = histEntry.progression.slice();
                 }
-                jours = {};
+                // Restaurer les jours sauvegardés pour cette expertise ?
+                // Par simplicité, on garde le cache global (toutes expertises mélangées) – acceptable car les domaines sont différents.
+                jours = savedJours ? JSON.parse(savedJours) : {};
                 currentPage = 0;
                 afficherPage(0);
                 document.getElementById('jourContainer').style.display = 'block';
                 document.getElementById('startExpertise').style.display = 'none';
                 afficherBarreSegments();
-                setTimeout(() => {
-                    const introText = document.getElementById('jourContent').innerText;
-                    if (introText) playAudioChunks(introText, true);
-                }, 300);
+                setTimeout(() => { const introText = document.getElementById('jourContent').innerText; if (introText) playAudioChunks(introText, true); }, 300);
             });
 
-            document.getElementById('prevDay').addEventListener('click', () => {
-                if (currentPage > 0) { currentPage--; afficherPage(currentPage); }
-            });
+            document.getElementById('prevDay').addEventListener('click', () => { if (currentPage > 0) { currentPage--; afficherPage(currentPage); } });
             document.getElementById('nextDay').addEventListener('click', () => {
                 if (currentPage > 0) {
                     const jourIdx = currentPage - 1;
@@ -760,18 +646,13 @@
                 if (currentPage < totalPages - 1) { currentPage++; afficherPage(currentPage); }
             });
 
+            // Feedback étoiles
             let currentNoteEx = 0;
             function refreshStars() {
-                document.querySelectorAll('#starsEx .star').forEach((s, idx) => {
-                    if (idx < currentNoteEx) { s.textContent = '★'; s.classList.add('selected'); }
-                    else { s.textContent = '☆'; s.classList.remove('selected'); }
-                });
+                document.querySelectorAll('#starsEx .star').forEach((s,idx) => { if (idx < currentNoteEx) { s.textContent='★'; s.classList.add('selected'); } else { s.textContent='☆'; s.classList.remove('selected'); } });
             }
             document.querySelectorAll('#starsEx .star').forEach(star => {
-                star.addEventListener('click', () => {
-                    currentNoteEx = parseInt(star.getAttribute('data-value'));
-                    refreshStars();
-                });
+                star.addEventListener('click', () => { currentNoteEx = parseInt(star.getAttribute('data-value')); refreshStars(); });
             });
             document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
                 if (currentNoteEx === 0) { alert('Sélectionnez une note'); return; }
@@ -780,13 +661,11 @@
                     await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) });
                     alert('Merci !');
                     document.getElementById('feedbackBox').style.display = 'none';
-                } catch(err) { alert('Erreur réseau'); }
+                } catch(e) { alert('Erreur réseau'); }
             });
 
             document.getElementById('homeHeader').addEventListener('click', () => {
-                currentDomaine = '';
-                jours = {};
-                currentPage = 0;
+                currentDomaine = ''; jours = {}; currentPage = 0;
                 document.getElementById('jourContainer').style.display = 'none';
                 document.getElementById('startExpertise').style.display = 'block';
                 document.getElementById('domaine').value = '';
@@ -798,33 +677,22 @@
             function genererLienPartage() {
                 const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
                 const baseUrl = window.location.href.split('?')[0];
-                if (activeMode === 'expertise' && currentDomaine) {
-                    return `${baseUrl}?expertise=${encodeURIComponent(currentDomaine)}`;
-                } else if (activeMode === 'personnel') {
-                    let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
-                    if (defauts.length === 5) {
-                        return `${baseUrl}?personnel=${encodeURIComponent(JSON.stringify(defauts))}`;
-                    }
+                if (activeMode === 'expertise' && currentDomaine) return `${baseUrl}?expertise=${encodeURIComponent(currentDomaine)}`;
+                else if (activeMode === 'personnel') {
+                    let defauts = document.getElementById('defauts').value.split('\n').filter(l=>l.trim()).slice(0,5);
+                    if (defauts.length===5) return `${baseUrl}?personnel=${encodeURIComponent(JSON.stringify(defauts))}`;
                 }
                 return baseUrl;
             }
-
             document.getElementById('shareButton').addEventListener('click', async () => {
                 const shareUrl = genererLienPartage();
                 let shareText = '';
                 const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
-                if (activeMode === 'expertise' && currentDomaine) {
-                    shareText = `🧠 Découvrez cette expertise "${currentDomaine}" sur Chapelet Tazzz Bot ! Aucune donnée personnelle n'est partagée. Commencez votre propre parcours.`;
-                } else if (activeMode === 'personnel') {
-                    shareText = `🔥 Développement personnel – Transformez votre vie avec Chapelet Tazzz Bot ! Rejoignez-moi.`;
-                } else {
-                    shareText = `🧠 Transformez votre structure mentale avec Chapelet Tazzz Bot ! Apprenez, progressez, obtenez des badges.`;
-                }
-                if (navigator.share) {
-                    try { await navigator.share({ title: 'Chapelet Tazzz Bot', text: shareText, url: shareUrl }); } catch(e) {}
-                } else {
-                    try { await navigator.clipboard.writeText(shareText + ' ' + shareUrl); alert('Lien partagé (aucune donnée personnelle n’a été incluse)'); } catch(e) { alert('Impossible de partager'); }
-                }
+                if (activeMode === 'expertise' && currentDomaine) shareText = `🧠 Découvrez cette expertise "${currentDomaine}" sur Chapelet Tazzz Bot ! Aucune donnée personnelle n'est partagée. Commencez votre propre parcours.`;
+                else if (activeMode === 'personnel') shareText = `🔥 Développement personnel – Transformez votre vie avec Chapelet Tazzz Bot ! Rejoignez-moi.`;
+                else shareText = `🧠 Transformez votre structure mentale avec Chapelet Tazzz Bot ! Apprenez, progressez, obtenez des badges.`;
+                if (navigator.share) { try { await navigator.share({ title: 'Chapelet Tazzz Bot', text: shareText, url: shareUrl }); } catch(e) {} }
+                else { try { await navigator.clipboard.writeText(shareText + ' ' + shareUrl); alert('Lien partagé (aucune donnée personnelle n’a été incluse)'); } catch(e) { alert('Impossible de partager'); } }
             });
 
             function initFromUrl() {
@@ -844,10 +712,7 @@
                                     entry = { domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: true };
                                     historique.push(entry);
                                     sauvegarderTout();
-                                } else if (!entry.shared) {
-                                    entry.shared = true;
-                                    sauvegarderTout();
-                                }
+                                } else if (!entry.shared) { entry.shared = true; sauvegarderTout(); }
                             }, 500);
                         }, 500);
                     }
@@ -858,56 +723,34 @@
                         const defauts = JSON.parse(decodeURIComponent(personnelParam));
                         if (Array.isArray(defauts) && defauts.length === 5) {
                             const textarea = document.getElementById('defauts');
-                            if (textarea) {
-                                textarea.value = defauts.join('\n');
-                                setTimeout(() => {
-                                    const btn = document.getElementById('generatePersonnel');
-                                    if (btn) btn.click();
-                                }, 500);
-                            }
+                            if (textarea) { textarea.value = defauts.join('\n'); setTimeout(() => { const btn = document.getElementById('generatePersonnel'); if (btn) btn.click(); }, 500); }
                         }
                     } catch(e) {}
                 }
             }
             initFromUrl();
 
+            // MODE PERSONNEL
             let currentPersonnelInterval = null;
             function startGenericProgress(areaId, fillId, percentId) {
-                const area = document.getElementById(areaId);
-                if (!area) return null;
+                const area = document.getElementById(areaId); if (!area) return null;
                 area.style.display = 'block';
-                let p = 0;
+                let p=0;
                 const interval = setInterval(() => {
-                    if (p < 90) {
-                        p += 2;
-                        if (p > 90) p = 90;
-                        document.getElementById(fillId).style.width = p + '%';
-                        document.getElementById(percentId).innerText = p + '%';
-                    }
+                    if (p<90) { p+=2; if (p>90) p=90; document.getElementById(fillId).style.width = p+'%'; document.getElementById(percentId).innerText = p+'%'; }
                 }, 150);
                 return interval;
             }
             function stopGenericProgress(areaId, fillId, percentId, interval, complete) {
-                const area = document.getElementById(areaId);
-                const fill = document.getElementById(fillId);
-                const percentSpan = document.getElementById(percentId);
+                const area = document.getElementById(areaId); const fill = document.getElementById(fillId); const pSpan = document.getElementById(percentId);
                 if (interval) clearInterval(interval);
                 if (complete && fill) {
-                    fill.style.width = '100%';
-                    if (percentSpan) percentSpan.innerText = '100%';
-                    setTimeout(() => {
-                        if (area) area.style.display = 'none';
-                        fill.style.width = '0%';
-                        if (percentSpan) percentSpan.innerText = '';
-                    }, 300);
-                } else {
-                    if (area) area.style.display = 'none';
-                    if (fill) fill.style.width = '0%';
-                    if (percentSpan) percentSpan.innerText = '';
-                }
+                    fill.style.width = '100%'; if (pSpan) pSpan.innerText = '100%';
+                    setTimeout(() => { if (area) area.style.display = 'none'; fill.style.width = '0%'; if (pSpan) pSpan.innerText = ''; }, 300);
+                } else { if (area) area.style.display = 'none'; if (fill) fill.style.width = '0%'; if (pSpan) pSpan.innerText = ''; }
             }
             document.getElementById('generatePersonnel').addEventListener('click', async () => {
-                let defauts = document.getElementById('defauts').value.split('\n').filter(l => l.trim()).slice(0,5);
+                let defauts = document.getElementById('defauts').value.split('\n').filter(l=>l.trim()).slice(0,5);
                 if (defauts.length !== 5) { alert('5 défauts requis'); return; }
                 document.getElementById('personnelResult').innerHTML = '';
                 if (currentPersonnelInterval) clearInterval(currentPersonnelInterval);
@@ -944,17 +787,13 @@
             function afficherHistorique() {
                 historyList.innerHTML = '';
                 historique.forEach(item => {
-                    const completed = item.progression.filter(v => v).length;
-                    const div = document.createElement('div');
-                    div.className = 'history-item';
+                    const completed = item.progression.filter(v=>v).length;
+                    const div = document.createElement('div'); div.className = 'history-item';
                     let text = (completed === 7) ? `Expertise en ${item.domaine} du ${formaterDate(item.dateDebut)} au ${formaterDate(item.dateFin)}` : `Expertise inachevée (${completed}/7) – ${item.domaine}`;
                     if (item.shared) text += ' (partagée)';
                     div.innerHTML = `<strong>${text}</strong><br><small>Début: ${formaterDate(item.dateDebut)}</small>`;
                     if (completed === 7) {
-                        const badgeSpan = document.createElement('div');
-                        badgeSpan.className = 'badge-text';
-                        badgeSpan.innerHTML = `🏅 Expert en ${item.domaine}`;
-                        div.appendChild(badgeSpan);
+                        const badgeSpan = document.createElement('div'); badgeSpan.className = 'badge-text'; badgeSpan.innerHTML = `🏅 Expert en ${item.domaine}`; div.appendChild(badgeSpan);
                     }
                     div.onclick = () => {
                         currentDomaine = item.domaine;
