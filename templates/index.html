@@ -239,7 +239,6 @@
             padding: 6px 18px;
             font-size: 0.8rem;
         }
-        /* Barre audio simplifiée */
         .audio-player-bar {
             position: fixed;
             bottom: 80px;
@@ -314,7 +313,6 @@
             margin: 0;
             padding-right: 40px;
         }
-        /* Barre de progression horizontale avec pourcentage */
         .progress-container {
             margin: 15px 0 10px;
             width: 100%;
@@ -466,6 +464,7 @@
             updateBadgeCounters();
         }
 
+        // Rendre les médailles cliquables pour ouvrir l'historique
         document.querySelectorAll('.medal-counter').forEach(medal => {
             medal.addEventListener('click', () => {
                 afficherHistorique();
@@ -505,7 +504,7 @@
         const totalPages = 8;
         let currentExpertiseInterval = null;
 
-        // ========== LECTEUR AUDIO ==========
+        // ========== AUDIO ==========
         let frenchVoice = null;
         function initFrenchVoice() {
             if (!window.speechSynthesis) return;
@@ -845,10 +844,9 @@
         });
 
         document.getElementById('nextDay').addEventListener('click', () => {
-            // Vérification : si on est sur un jour (pas intro) et que le jour n'est pas validé, bloquer
             if (currentPage > 0) {
-                const jourIndex = currentPage - 1;
-                if (!progression[jourIndex] && jours[currentPage]) {
+                const jourIdx = currentPage - 1;
+                if (!progression[jourIdx] && jours[currentPage]) {
                     alert("Veuillez d'abord valider votre journée en cliquant sur la case qui clignote (ou sur le message '👉 cliquez ici pour valider cette journée !') avant de passer au jour suivant.");
                     return;
                 }
@@ -896,36 +894,54 @@
             stopAudio();
         });
 
-        // ========== PARTAGE ==========
+        // ========== PARTAGE INTELLIGENT ==========
         document.getElementById('shareButton').addEventListener('click', async () => {
-            let shareText = '';
             const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
+            let shareText = '';
+            let shareUrl = window.location.href.split('?')[0]; // base URL sans paramètres
+
             if (activeMode === 'expertise' && currentDomaine) {
-                const totalValid = progression.filter(v => v).length;
-                shareText = `🧠 Chapelet Tazzz Bot : Expertise "${currentDomaine}" – ${totalValid}/7 jours validés ! 🎯 Rejoignez-moi sur cet outil de transformation mentale.`;
-            } else if (activeMode === 'personnel') {
-                let defauts = document.getElementById('defauts').value.trim();
-                if (defauts) {
-                    shareText = `🔥 Chapelet Tazzz Bot : Développement personnel – ${defauts.split('\n').slice(0,2).join(', ')}... Transformez votre vie !`;
-                } else {
-                    shareText = `🔥 Chapelet Tazzz Bot : Développement personnel – programme 21/66 jours pour dépasser vos blocages.`;
-                }
+                // On partage l'expertise en cours : on ajoute le paramètre ?expertise=...
+                shareUrl = shareUrl + '?expertise=' + encodeURIComponent(currentDomaine);
+                shareText = `🧠 Découvrez mon expertise "${currentDomaine}" sur Chapelet Tazzz Bot ! Cliquez pour démarrer le parcours.`;
             } else {
-                shareText = `🧠 Chapelet Tazzz Bot : outil de transformation mentale basé sur la plasticité cérébrale. Découvrez-le !`;
+                // Partage général
+                shareText = `🧠 Transformez votre structure mentale avec Chapelet Tazzz Bot ! Apprenez, progressez, obtenez des badges. Rejoignez-moi :`;
             }
+
             if (navigator.share) {
                 try {
-                    await navigator.share({ title: 'Chapelet Tazzz Bot', text: shareText, url: window.location.href });
+                    await navigator.share({ title: 'Chapelet Tazzz Bot', text: shareText, url: shareUrl });
                 } catch(e) {}
             } else {
                 try {
-                    await navigator.clipboard.writeText(shareText + ' ' + window.location.href);
-                    alert('Expérience copiée dans le presse-papier !');
+                    await navigator.clipboard.writeText(shareText + ' ' + shareUrl);
+                    alert('Lien copié dans le presse-papier !');
                 } catch(e) { alert('Impossible de partager'); }
             }
         });
 
-        // Mode Personnel
+        // ========== LECTURE DU PARAMÈTRE URL POUR PRÉ-REMPLIR L'EXPERTISE ==========
+        function initFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const expertiseParam = urlParams.get('expertise');
+            if (expertiseParam) {
+                const domaineInput = document.getElementById('domaine');
+                if (domaineInput) {
+                    domaineInput.value = decodeURIComponent(expertiseParam);
+                    // Optionnel: afficher un message et démarrer automatiquement après un court délai
+                    setTimeout(() => {
+                        const startBtn = document.getElementById('startExpertise');
+                        if (startBtn && startBtn.style.display !== 'none') {
+                            startBtn.click();
+                        }
+                    }, 500);
+                }
+            }
+        }
+        initFromUrl();
+
+        // Mode Personnel (inchangé)
         let currentPersonnelInterval = null;
         function startGenericProgress(areaId, fillId, percentId) {
             const area = document.getElementById(areaId);
