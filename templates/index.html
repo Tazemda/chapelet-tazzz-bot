@@ -14,6 +14,76 @@
             color: #f0f0f0;
             min-height: 100vh;
         }
+        /* ========== ÉCRAN DE CHARGEMENT ========== */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1e2b3c 0%, #0f1a24 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .loading-screen.hide {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .loading-content {
+            text-align: center;
+            max-width: 400px;
+            padding: 20px;
+        }
+        .loading-chapelet {
+            font-size: 4rem;
+            animation: chapeletBalance 1.5s infinite ease-in-out;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+        @keyframes chapeletBalance {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(15deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .loading-title {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+        }
+        .loading-mantra {
+            font-size: 1rem;
+            font-style: italic;
+            margin: 20px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 30px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .loading-progress {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            margin: 30px 0 20px;
+            overflow: hidden;
+        }
+        .loading-progress-bar {
+            width: 0%;
+            height: 100%;
+            background: #e67e22;
+            transition: width 0.3s ease;
+        }
+        .loading-text {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+        /* ========== CONTENU PRINCIPAL (inchangé) ========== */
         .container {
             max-width: 800px;
             margin: 0 auto;
@@ -339,780 +409,435 @@
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
-    <div class="subtitle">Transforme ta structure mentale</div>
-    <div class="top-bar">
-        <span class="history-link" id="historyLink">📜 Historique</span>
-        <span class="home-header" id="homeHeader">🏠 Accueil</span>
-    </div>
-    <div class="mode-selector">
-        <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
-        <span id="badgeCountExpertise" class="medal-counter" style="display:none;">0🏅</span>
-        <button class="mode-btn" data-mode="personnel">🔥 Personnel (21/66j)</button>
-        <span id="badgeCountPersonnel" class="medal-counter" style="display:none;">0🏅</span>
-        <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
-        <span id="badgeCountConsultation" class="medal-counter" style="display:none;">0🏅</span>
+    <!-- ÉCRAN DE CHARGEMENT ATTRACTIF -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-chapelet">📿</div>
+            <div class="loading-title">Chapelet Tazzz Bot</div>
+            <div class="loading-mantra" id="loadingMantra">"Je prépare ma structure mentale..."</div>
+            <div class="loading-progress">
+                <div class="loading-progress-bar" id="loadingProgressBar"></div>
+            </div>
+            <div class="loading-text">Plasticité cérébrale & répétition rythmée</div>
+        </div>
     </div>
 
-    <!-- Mode Expertise -->
-    <div id="expertisePanel" class="mode-panel active-panel">
-        <p>🔬 Domaine à maîtriser :</p>
-        <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
-        <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
-        <div id="jourContainer" style="display:none;">
-            <div id="progressHeaderMsg" class="progress-header" style="display:none;">👉 cliquez ici pour valider cette journée !</div>
-            <div id="segmentsContainer" class="progress-segments"></div>
-            <div id="jourContentContainer" style="position: relative;">
-                <div id="jourContent" class="result"></div>
-                <button id="audioWelcomeBtn" class="audio-welcome" style="display:none;">🔊</button>
-                <button id="audioDayBtn" class="audio-day" style="display:none;">🔊</button>
-            </div>
-            <div class="nav-buttons">
-                <button id="prevDay" disabled>◀ Précédent</button>
-                <span id="dayCounter">Intro / 8</span>
-                <button id="nextDay">Suivant ▶</button>
-            </div>
-            <div id="expertiseProgressArea" class="progress-container" style="display:none;">
-                <div class="progress-fill" id="expertiseProgressFill"></div>
-                <div class="progress-percent" id="expertiseProgressPercent"></div>
-            </div>
-            <div id="feedbackBox" class="feedback-box" style="display:none;">
-                <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
-                <div class="stars" id="starsEx">
-                    <span class="star" data-value="1">☆</span><span class="star" data-value="2">☆</span>
-                    <span class="star" data-value="3">☆</span><span class="star" data-value="4">☆</span>
-                    <span class="star" data-value="5">☆</span>
+    <!-- CONTENU PRINCIPAL (initialement invisible) -->
+    <div id="mainContent" style="display: none;">
+    <div class="container">
+        <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
+        <div class="subtitle">Transforme ta structure mentale</div>
+        <div class="top-bar">
+            <span class="history-link" id="historyLink">📜 Historique</span>
+            <span class="home-header" id="homeHeader">🏠 Accueil</span>
+        </div>
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
+            <span id="badgeCountExpertise" class="medal-counter" style="display:none;">0🏅</span>
+            <button class="mode-btn" data-mode="personnel">🔥 Personnel (21/66j)</button>
+            <span id="badgeCountPersonnel" class="medal-counter" style="display:none;">0🏅</span>
+            <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
+            <span id="badgeCountConsultation" class="medal-counter" style="display:none;">0🏅</span>
+        </div>
+
+        <!-- Mode Expertise -->
+        <div id="expertisePanel" class="mode-panel active-panel">
+            <p>🔬 Domaine à maîtriser :</p>
+            <input type="text" id="domaine" placeholder="Ex: Prévention du risque thrombo-embolique">
+            <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
+            <div id="jourContainer" style="display:none;">
+                <div id="progressHeaderMsg" class="progress-header" style="display:none;">👉 cliquez ici pour valider cette journée !</div>
+                <div id="segmentsContainer" class="progress-segments"></div>
+                <div id="jourContentContainer" style="position: relative;">
+                    <div id="jourContent" class="result"></div>
+                    <button id="audioWelcomeBtn" class="audio-welcome" style="display:none;">🔊</button>
+                    <button id="audioDayBtn" class="audio-day" style="display:none;">🔊</button>
                 </div>
-                <textarea id="feedbackCommentEx" rows="2" placeholder="Vos remarques (facultatif)"></textarea>
-                <button id="submitFeedbackEx">Envoyer mon avis</button>
+                <div class="nav-buttons">
+                    <button id="prevDay" disabled>◀ Précédent</button>
+                    <span id="dayCounter">Intro / 8</span>
+                    <button id="nextDay">Suivant ▶</button>
+                </div>
+                <div id="expertiseProgressArea" class="progress-container" style="display:none;">
+                    <div class="progress-fill" id="expertiseProgressFill"></div>
+                    <div class="progress-percent" id="expertiseProgressPercent"></div>
+                </div>
+                <div id="feedbackBox" class="feedback-box" style="display:none;">
+                    <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
+                    <div class="stars" id="starsEx">
+                        <span class="star" data-value="1">☆</span><span class="star" data-value="2">☆</span>
+                        <span class="star" data-value="3">☆</span><span class="star" data-value="4">☆</span>
+                        <span class="star" data-value="5">☆</span>
+                    </div>
+                    <textarea id="feedbackCommentEx" rows="2" placeholder="Vos remarques (facultatif)"></textarea>
+                    <button id="submitFeedbackEx">Envoyer mon avis</button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Mode Personnel (simplifié) -->
-    <div id="personnelPanel" class="mode-panel">
-        <p>📝 5 défauts (un par ligne) :</p>
-        <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;..."></textarea>
-        <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
-        <div id="personnelResult" class="result"></div>
-        <div id="personnelLoader" class="progress-container" style="display:none;">
-            <div class="progress-fill" id="personnelProgressFill"></div>
-            <div class="progress-percent" id="personnelProgressPercent"></div>
-        </div>
-    </div>
-
-    <!-- Mode Consultation -->
-    <div id="consultationPanel" class="mode-panel">
-        <p>💬 Décrivez votre besoin :</p>
-        <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser ..."></textarea>
-        <button id="generateConsult">✨ GÉNÉRER ✨</button>
-        <div id="consultResult" class="result"></div>
-        <div id="consultLoader" class="progress-container" style="display:none;">
-            <div class="progress-fill" id="consultProgressFill"></div>
-            <div class="progress-percent" id="consultProgressPercent"></div>
-        </div>
-    </div>
-
-    <div class="action-buttons">
-        <button id="shareButton">📤 Partager</button>
-        <button id="subscribeButton">🔒 S'abonner</button>
-    </div>
-    <div class="footer">
-        <div class="copyright">Plasticité cérébrale & répétition rythmée.<br>© Dr Tazzz</div>
-    </div>
-</div>
-
-<!-- Barre audio simplifiée -->
-<div id="audioPlayerBar" class="audio-player-bar" style="display: none;">
-    <button id="audioPlayPauseBtn">▶</button>
-    <input type="range" id="audioSeekSlider" min="0" max="0" value="0" step="1" disabled>
-    <button id="audioStopBtn">⏹️</button>
-</div>
-
-<!-- MODALE HISTORIQUE -->
-<div id="historyModal" class="modal">
-    <div class="modal-content">
-        <h3>📜 Historique des formations</h3>
-        <div id="historyList"></div>
-        <button id="closeHistoryModal" style="margin-top:15px;">Fermer</button>
-    </div>
-</div>
-
-<script>
-    (function() {
-        // --------------------------------------------------------------
-        // 1. Gestion des badges et médailles
-        // --------------------------------------------------------------
-        function updateBadgeCounters() {
-            let badges = JSON.parse(localStorage.getItem('badges')) || [];
-            let count = badges.length;
-            ['expertise', 'personnel', 'consultation'].forEach(mode => {
-                const el = document.getElementById(`badgeCount${mode.charAt(0).toUpperCase()+mode.slice(1)}`);
-                if (el) {
-                    if (count > 0) {
-                        el.style.display = 'inline-block';
-                        el.innerText = count + '🏅';
-                    } else {
-                        el.style.display = 'none';
-                    }
-                }
-            });
-        }
-        updateBadgeCounters();
-
-        let anciensBadges = JSON.parse(localStorage.getItem('badges')) || [];
-        if (anciensBadges.length > 0) {
-            const propres = anciensBadges.filter(b => !b.includes("1 semaine") && !b.includes("trophée") && !b.includes("🏆"));
-            localStorage.setItem('badges', JSON.stringify(propres));
-            updateBadgeCounters();
-        }
-
-        document.querySelectorAll('.medal-counter').forEach(medal => {
-            medal.addEventListener('click', () => {
-                afficherHistorique();
-                document.getElementById('historyModal').style.display = 'flex';
-            });
-        });
-
-        // Onglets
-        const modeBtns = document.querySelectorAll('.mode-btn');
-        const panels = {
-            expertise: document.getElementById('expertisePanel'),
-            personnel: document.getElementById('personnelPanel'),
-            consultation: document.getElementById('consultationPanel')
-        };
-        modeBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                modeBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                const mode = btn.getAttribute('data-mode');
-                Object.values(panels).forEach(p => p.classList.remove('active-panel'));
-                panels[mode].classList.add('active-panel');
-            });
-        });
-
-        // Variables globales
-        let progression = JSON.parse(localStorage.getItem('progression')) || [false,false,false,false,false,false,false];
-        let historique = JSON.parse(localStorage.getItem('historique')) || [];
-        function sauvegarderTout() {
-            localStorage.setItem('progression', JSON.stringify(progression));
-            localStorage.setItem('historique', JSON.stringify(historique));
-            updateBadgeCounters();
-        }
-
-        let currentDomaine = '';
-        let jours = {};
-        let currentPage = 0;
-        const totalPages = 8;
-        let currentExpertiseInterval = null;
-
-        // ========== AUDIO (identique, fonctionnel) ==========
-        let frenchVoice = null;
-        function initFrenchVoice() {
-            if (!window.speechSynthesis) return;
-            const voices = window.speechSynthesis.getVoices();
-            frenchVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Thomas') || v.name.includes('Amélie')));
-            if (!frenchVoice) frenchVoice = voices.find(v => v.lang === 'fr-FR');
-        }
-        if (window.speechSynthesis) {
-            window.speechSynthesis.onvoiceschanged = initFrenchVoice;
-            initFrenchVoice();
-        }
-
-        function cleanText(text) {
-            if (!text) return '';
-            return text.replace(/\*\*/g,'').replace(/\*/g,'').replace(/#/g,'').replace(/`/g,'').replace(/_/g,'').replace(/\[([^\]]+)\]\([^\)]+\)/g,'$1').trim();
-        }
-
-        function splitTextIntoChunks(text, maxLen = 1800) {
-            let sentences = text.split(/(?<=[.!?])\s+/);
-            let chunks = [];
-            let current = '';
-            for (let s of sentences) {
-                if ((current + s).length > maxLen && current.length > 0) {
-                    chunks.push(current);
-                    current = s;
-                } else {
-                    current += (current ? ' ' : '') + s;
-                }
-            }
-            if (current) chunks.push(current);
-            return chunks;
-        }
-
-        let currentAudioChunks = [];
-        let currentChunkIndex = 0;
-        let isPlaying = false;
-        let currentUtterance = null;
-        const playerBar = document.getElementById('audioPlayerBar');
-        const playPauseBtn = document.getElementById('audioPlayPauseBtn');
-        const stopBtn = document.getElementById('audioStopBtn');
-        const seekSlider = document.getElementById('audioSeekSlider');
-
-        function stopAudio() {
-            if (window.speechSynthesis) window.speechSynthesis.cancel();
-            isPlaying = false;
-            playPauseBtn.textContent = '▶';
-            playerBar.style.display = 'none';
-            currentUtterance = null;
-        }
-
-        function updateSeekSlider() {
-            if (currentAudioChunks.length) {
-                seekSlider.max = currentAudioChunks.length - 1;
-                seekSlider.value = currentChunkIndex;
-                seekSlider.disabled = false;
-            } else {
-                seekSlider.disabled = true;
-            }
-        }
-
-        function speakChunk(index) {
-            if (index < 0 || index >= currentAudioChunks.length) return;
-            currentChunkIndex = index;
-            const text = currentAudioChunks[currentChunkIndex];
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'fr-FR';
-            utterance.rate = 0.9;
-            if (frenchVoice) utterance.voice = frenchVoice;
-            utterance.onend = () => {
-                if (currentChunkIndex + 1 < currentAudioChunks.length) {
-                    speakChunk(currentChunkIndex + 1);
-                } else {
-                    stopAudio();
-                }
-            };
-            utterance.onerror = () => { stopAudio(); };
-            currentUtterance = utterance;
-            window.speechSynthesis.speak(utterance);
-            isPlaying = true;
-            playPauseBtn.textContent = '⏸';
-            updateSeekSlider();
-        }
-
-        function playAudioChunks(text, autoStart = true) {
-            stopAudio();
-            const cleaned = cleanText(text);
-            if (!cleaned) return;
-            currentAudioChunks = splitTextIntoChunks(cleaned, 1800);
-            if (currentAudioChunks.length === 0) return;
-            currentChunkIndex = 0;
-            updateSeekSlider();
-            if (autoStart) {
-                playerBar.style.display = 'flex';
-                speakChunk(0);
-            } else {
-                playerBar.style.display = 'flex';
-                playPauseBtn.textContent = '▶';
-            }
-        }
-
-        function pauseAudio() {
-            if (window.speechSynthesis && isPlaying) {
-                window.speechSynthesis.cancel();
-                isPlaying = false;
-                playPauseBtn.textContent = '▶';
-            }
-        }
-
-        function resumeAudio() {
-            if (!isPlaying && currentAudioChunks.length > 0) {
-                speakChunk(currentChunkIndex);
-            }
-        }
-
-        playPauseBtn.addEventListener('click', () => {
-            if (isPlaying) pauseAudio();
-            else resumeAudio();
-        });
-        stopBtn.addEventListener('click', stopAudio);
-        seekSlider.addEventListener('input', (e) => {
-            if (currentAudioChunks.length) {
-                const newIdx = parseInt(e.target.value);
-                if (newIdx !== currentChunkIndex) {
-                    pauseAudio();
-                    speakChunk(newIdx);
-                }
-            }
-        });
-
-        // ========== GESTION DES SEGMENTS ==========
-        function afficherBarreSegments() {
-            const container = document.getElementById('segmentsContainer');
-            if (!container) return;
-            container.innerHTML = '';
-            for (let i=0; i<7; i++) {
-                const seg = document.createElement('div');
-                seg.className = 'segment';
-                if (progression[i]) seg.classList.add('completed');
-                if (!progression[i] && !jours[i+1]) seg.classList.add('disabled');
-                if (jours[i+1] && !progression[i]) seg.classList.add('loaded');
-                const dayNum = i+1;
-                seg.innerHTML = `<div class="day-label">J${dayNum}</div><div class="day-status">${progression[i] ? '✓' : (jours[i+1] ? '📖' : '🔒')}</div>`;
-                seg.onclick = (function(idx) { return () => {
-                    if (!progression[idx] && !jours[idx+1]) {
-                        alert(`Veuillez d'abord générer le contenu du jour ${idx+1} en naviguant vers ce jour.`);
-                        return;
-                    }
-                    cocherSegment(idx);
-                }; })(i);
-                container.appendChild(seg);
-            }
-            updateValidationMessage();
-        }
-
-        function updateValidationMessage() {
-            const msgDiv = document.getElementById('progressHeaderMsg');
-            if (!msgDiv) return;
-            if (currentPage === 0 || !jours[currentPage] || progression[currentPage-1]) {
-                msgDiv.style.display = 'none';
-                return;
-            }
-            msgDiv.style.display = 'block';
-            msgDiv.innerHTML = '👉 cliquez ici pour valider cette journée !';
-            const newMsg = msgDiv.cloneNode(true);
-            msgDiv.parentNode.replaceChild(newMsg, msgDiv);
-            newMsg.onclick = () => {
-                const idx = currentPage-1;
-                if (idx >=0 && !progression[idx] && jours[currentPage]) cocherSegment(idx);
-            };
-        }
-
-        function cocherSegment(idx) {
-            for (let i=0; i<idx; i++) if (!progression[i]) { alert(`Validez d'abord le jour ${i+1}.`); return; }
-            if (!progression[idx]) {
-                progression[idx] = true;
-                sauvegarderTout();
-                afficherBarreSegments();
-                if (idx+1 === 7) {
-                    alert(`🎉 Félicitations ! Vous avez achevé votre expertise. Badge "Expert en ${currentDomaine}" débloqué.`);
-                    let badges = JSON.parse(localStorage.getItem('badges')) || [];
-                    const expertBadge = `🏅 Expert en ${currentDomaine}`;
-                    if (!badges.includes(expertBadge)) {
-                        badges.push(expertBadge);
-                        localStorage.setItem('badges', JSON.stringify(badges));
-                        updateBadgeCounters();
-                    }
-                    const histEntry = historique.find(h => h.domaine === currentDomaine);
-                    if (histEntry) histEntry.dateFin = new Date().toISOString();
-                } else alert(`🎊 Bravo ! Jour ${idx+1}/7 validé.`);
-                const histEntry = historique.find(h => h.domaine === currentDomaine);
-                if (histEntry) histEntry.progression = progression.slice();
-                sauvegarderTout();
-                afficherBarreSegments();
-                updateValidationMessage();
-            }
-        }
-
-        // Nouveau message d'accueil (formaté comme demandé)
-        const welcomeHTML = `
-            <div class="welcome-text">
-                <strong>Bonjour ! Bienvenue dans le Chapelet Tazzz Bot Expertise.</strong><br><br>
-                <strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>
-                - Procurez vous un vrai chapelet pour égrener durant vos lectures.<br>
-                - Chaque jour, lisez ou récitez à voix haute le contenu du jour.<br>
-                - Respectez les instructions : Tenez le gros grain pour la Méditation du Mystère.<br>
-                - Continuez à égrener le chapelet lors des lectures suivantes. C'est votre fil conducteur.<br>
-                - Les 5 dizaines d’un jour correspondent à 5 concepts clés.<br>
-                - Vous pouvez lire ou écouter chaque journée : un bouton 🔊 apparaît en haut à droite du contenu.<br>
-                - N'oubliez pas de cocher la case qui clignote dans la barre de progression pour valider votre journée !<br>
-                - Cliquez sur <strong>“Suivant”</strong> pour commencer le <strong>Jour 1</strong>.
+        <!-- Mode Personnel (simplifié) -->
+        <div id="personnelPanel" class="mode-panel">
+            <p>📝 5 défauts (un par ligne) :</p>
+            <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis paresseux&#10;..."></textarea>
+            <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
+            <div id="personnelResult" class="result"></div>
+            <div id="personnelLoader" class="progress-container" style="display:none;">
+                <div class="progress-fill" id="personnelProgressFill"></div>
+                <div class="progress-percent" id="personnelProgressPercent"></div>
             </div>
-        `;
+        </div>
 
-        function startExpertiseProgressBar() {
-            const container = document.getElementById('expertiseProgressArea');
-            const fill = document.getElementById('expertiseProgressFill');
-            const percentSpan = document.getElementById('expertiseProgressPercent');
-            if (!container) return null;
-            container.style.display = 'block';
-            let percent = 0;
-            const interval = setInterval(() => {
-                if (percent < 90) {
-                    percent += 2;
-                    if (percent > 90) percent = 90;
-                    fill.style.width = percent + '%';
-                    percentSpan.innerText = percent + '%';
-                }
-            }, 150);
-            return interval;
-        }
-        function stopExpertiseProgressBar(interval, complete) {
-            const container = document.getElementById('expertiseProgressArea');
-            const fill = document.getElementById('expertiseProgressFill');
-            const percentSpan = document.getElementById('expertiseProgressPercent');
-            if (interval) clearInterval(interval);
-            if (complete && fill) {
-                fill.style.width = '100%';
-                percentSpan.innerText = '100%';
-                setTimeout(() => {
-                    if (container) container.style.display = 'none';
-                    fill.style.width = '0%';
-                    percentSpan.innerText = '';
-                }, 300);
-            } else {
-                if (container) container.style.display = 'none';
-                if (fill) fill.style.width = '0%';
-                if (percentSpan) percentSpan.innerText = '';
-            }
-        }
+        <!-- Mode Consultation -->
+        <div id="consultationPanel" class="mode-panel">
+            <p>💬 Décrivez votre besoin :</p>
+            <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser ..."></textarea>
+            <button id="generateConsult">✨ GÉNÉRER ✨</button>
+            <div id="consultResult" class="result"></div>
+            <div id="consultLoader" class="progress-container" style="display:none;">
+                <div class="progress-fill" id="consultProgressFill"></div>
+                <div class="progress-percent" id="consultProgressPercent"></div>
+            </div>
+        </div>
 
-        function afficherPage(page) {
-            const contentDiv = document.getElementById('jourContent');
-            const daySpan = document.getElementById('dayCounter');
-            const prevBtn = document.getElementById('prevDay');
-            const nextBtn = document.getElementById('nextDay');
-            const feedbackBox = document.getElementById('feedbackBox');
-            const welcomeBtn = document.getElementById('audioWelcomeBtn');
-            const dayAudioBtn = document.getElementById('audioDayBtn');
-            if (page === 0) {
-                contentDiv.innerHTML = welcomeHTML;
-                daySpan.innerText = 'Intro / 8';
-                prevBtn.disabled = true;
-                nextBtn.disabled = false;
-                feedbackBox.style.display = 'none';
-                welcomeBtn.style.display = 'flex';
-                dayAudioBtn.style.display = 'none';
-                welcomeBtn.onclick = () => {
-                    const introText = document.getElementById('jourContent').innerText;
-                    if (introText) playAudioChunks(introText, true);
-                };
-            } else {
-                const jourNum = page;
-                welcomeBtn.style.display = 'none';
-                if (jours[jourNum]) {
-                    contentDiv.innerHTML = jours[jourNum].replace(/\n/g, '<br>');
-                    daySpan.innerText = `Jour ${jourNum} / 7`;
-                    prevBtn.disabled = false;
-                    nextBtn.disabled = (jourNum === 7);
-                    feedbackBox.style.display = 'block';
-                    dayAudioBtn.style.display = 'flex';
-                    dayAudioBtn.onclick = () => {
-                        const dayText = document.getElementById('jourContent').innerText;
-                        if (dayText) playAudioChunks(dayText, true);
-                    };
-                    afficherBarreSegments();
-                } else {
-                    contentDiv.innerHTML = '<em>Chargement du jour...</em>';
-                    chargerJour(jourNum);
-                }
-            }
-            updateValidationMessage();
-        }
+        <div class="action-buttons">
+            <button id="shareButton">📤 Partager</button>
+            <button id="subscribeButton">🔒 S'abonner</button>
+        </div>
+        <div class="footer">
+            <div class="copyright">Plasticité cérébrale & répétition rythmée.<br>© Dr Tazzz</div>
+        </div>
+    </div>
+    </div>
 
-        function chargerJour(jourNum) {
-            if (currentExpertiseInterval) clearInterval(currentExpertiseInterval);
-            currentExpertiseInterval = startExpertiseProgressBar();
-            fetch('/generer_jour_expertise', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ domaine: currentDomaine, jour: jourNum })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) throw new Error(data.error);
-                jours[jourNum] = data.contenu;
-                stopExpertiseProgressBar(currentExpertiseInterval, true);
-                afficherPage(jourNum);
-                afficherBarreSegments();
-            })
-            .catch(err => {
-                console.error(err);
-                stopExpertiseProgressBar(currentExpertiseInterval, false);
-                jours[jourNum] = `<strong>⚠️ Erreur de génération</strong><br>Contenu non disponible. Vérifiez votre connexion ou réessayez.`;
-                afficherPage(jourNum);
-                afficherBarreSegments();
-            });
-        }
+    <!-- Barre audio simplifiée -->
+    <div id="audioPlayerBar" class="audio-player-bar" style="display: none;">
+        <button id="audioPlayPauseBtn">▶</button>
+        <input type="range" id="audioSeekSlider" min="0" max="0" value="0" step="1" disabled>
+        <button id="audioStopBtn">⏹️</button>
+    </div>
 
-        document.getElementById('startExpertise').addEventListener('click', () => {
-            currentDomaine = document.getElementById('domaine').value.trim();
-            if (!currentDomaine) { alert('Domaine requis'); return; }
-            let histEntry = historique.find(h => h.domaine === currentDomaine);
-            if (!histEntry) {
-                histEntry = { domaine: currentDomaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: false };
-                historique.push(histEntry);
-                sauvegarderTout();
-                progression = histEntry.progression;
-            } else {
-                progression = histEntry.progression.slice();
-            }
-            jours = {};
-            currentPage = 0;
-            afficherPage(0);
-            document.getElementById('jourContainer').style.display = 'block';
-            document.getElementById('startExpertise').style.display = 'none';
-            afficherBarreSegments();
+    <!-- MODALE HISTORIQUE -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <h3>📜 Historique des formations</h3>
+            <div id="historyList"></div>
+            <button id="closeHistoryModal" style="margin-top:15px;">Fermer</button>
+        </div>
+    </div>
 
-            // Lecture audio automatique du message d'accueil (après l'affichage)
-            setTimeout(() => {
-                const introText = document.getElementById('jourContent').innerText;
-                if (introText) {
-                    playAudioChunks(introText, true);
+    <script>
+        (function() {
+            // ---------- SIMULATION DE CHARGEMENT PROGRESSIF ----------
+            const loadingScreen = document.getElementById('loadingScreen');
+            const mainContent = document.getElementById('mainContent');
+            const progressBar = document.getElementById('loadingProgressBar');
+            const mantraEl = document.getElementById('loadingMantra');
+            
+            const mantras = [
+                '"Je prépare ma structure mentale..."',
+                '"Plasticité cérébrale en action..."',
+                '"Un chapelet, un mantra, une transformation..."',
+                '"La répétition crée l’ancrage..."',
+                '"Je deviens l’acteur de chaque heure..."',
+                '"Presque prêt..."'
+            ];
+            
+            let progress = 0;
+            let mantraIndex = 0;
+            
+            // Animation de la barre de progression
+            const progressInterval = setInterval(() => {
+                if (progress < 100) {
+                    progress += Math.floor(Math.random() * 15) + 5;
+                    if (progress > 100) progress = 100;
+                    progressBar.style.width = progress + '%';
                 }
             }, 300);
-        });
-
-        document.getElementById('prevDay').addEventListener('click', () => {
-            if (currentPage > 0) {
-                currentPage--;
-                afficherPage(currentPage);
-            }
-        });
-
-        document.getElementById('nextDay').addEventListener('click', () => {
-            if (currentPage > 0) {
-                const jourIdx = currentPage - 1;
-                if (!progression[jourIdx] && jours[currentPage]) {
-                    alert("Veuillez d'abord valider votre journée en cliquant sur la case qui clignote (ou sur le message '👉 cliquez ici pour valider cette journée !') avant de passer au jour suivant.");
-                    return;
-                }
-            }
-            if (currentPage < totalPages - 1) {
-                currentPage++;
-                afficherPage(currentPage);
-            }
-        });
-
-        // Feedback étoiles
-        let currentNoteEx = 0;
-        function refreshStars() {
-            document.querySelectorAll('#starsEx .star').forEach((s, idx) => {
-                if (idx < currentNoteEx) { s.textContent = '★'; s.classList.add('selected'); }
-                else { s.textContent = '☆'; s.classList.remove('selected'); }
-            });
-        }
-        document.querySelectorAll('#starsEx .star').forEach(star => {
-            star.addEventListener('click', () => {
-                currentNoteEx = parseInt(star.getAttribute('data-value'));
-                refreshStars();
-            });
-        });
-        document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
-            if (currentNoteEx === 0) { alert('Sélectionnez une note'); return; }
-            const comment = document.getElementById('feedbackCommentEx').value.trim();
-            try {
-                await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) });
-                alert('Merci !');
-                document.getElementById('feedbackBox').style.display = 'none';
-            } catch(err) { alert('Erreur réseau'); }
-        });
-
-        // ========== RETOUR ACCUEIL ==========
-        document.getElementById('homeHeader').addEventListener('click', () => {
-            currentDomaine = '';
-            jours = {};
-            currentPage = 0;
-            document.getElementById('jourContainer').style.display = 'none';
-            document.getElementById('startExpertise').style.display = 'block';
-            document.getElementById('domaine').value = '';
-            document.querySelector('.mode-btn[data-mode="expertise"]').click();
-            document.getElementById('jourContent').innerHTML = '';
-            stopAudio();
-        });
-
-        // ========== PARTAGE SÉCURISÉ ==========
-        function genererLienPartage() {
-            const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
-            const baseUrl = window.location.href.split('?')[0];
-            if (activeMode === 'expertise' && currentDomaine) {
-                return `${baseUrl}?expertise=${encodeURIComponent(currentDomaine)}`;
-            } else if (activeMode === 'personnel') {
-                let defauts = document.getElementById('defauts').value.split('\n').filter(l=>l.trim()).slice(0,5);
-                if (defauts.length === 5) {
-                    return `${baseUrl}?personnel=${encodeURIComponent(JSON.stringify(defauts))}`;
-                }
-            }
-            return baseUrl;
-        }
-
-        document.getElementById('shareButton').addEventListener('click', async () => {
-            const shareUrl = genererLienPartage();
-            let shareText = '';
-            const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
-            if (activeMode === 'expertise' && currentDomaine) {
-                shareText = `🧠 Découvrez cette expertise "${currentDomaine}" sur Chapelet Tazzz Bot ! Aucune donnée personnelle n'est partagée. Commencez votre propre parcours.`;
-            } else if (activeMode === 'personnel') {
-                shareText = `🔥 Développement personnel – Transformez votre vie avec Chapelet Tazzz Bot ! Rejoignez-moi.`;
-            } else {
-                shareText = `🧠 Transformez votre structure mentale avec Chapelet Tazzz Bot ! Apprenez, progressez, obtenez des badges.`;
-            }
-            if (navigator.share) {
-                try {
-                    await navigator.share({ title: 'Chapelet Tazzz Bot', text: shareText, url: shareUrl });
-                } catch(e) {}
-            } else {
-                try {
-                    await navigator.clipboard.writeText(shareText + ' ' + shareUrl);
-                    alert('Lien partagé (aucune donnée personnelle n’a été incluse)');
-                } catch(e) { alert('Impossible de partager'); }
-            }
-        });
-
-        // Initialisation depuis les paramètres d'URL
-        function initFromUrl() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const expertiseParam = urlParams.get('expertise');
-            if (expertiseParam) {
-                const domaine = decodeURIComponent(expertiseParam);
-                const inputDomaine = document.getElementById('domaine');
-                if (inputDomaine) {
-                    inputDomaine.value = domaine;
+            
+            // Changement de mantra toutes les 2 secondes
+            const mantraInterval = setInterval(() => {
+                mantraIndex = (mantraIndex + 1) % mantras.length;
+                mantraEl.style.opacity = '0';
+                setTimeout(() => {
+                    mantraEl.textContent = mantras[mantraIndex];
+                    mantraEl.style.opacity = '1';
+                }, 200);
+            }, 2000);
+            
+            // Simuler le chargement complet après 3 à 4 secondes
+            setTimeout(() => {
+                clearInterval(progressInterval);
+                clearInterval(mantraInterval);
+                progressBar.style.width = '100%';
+                mantraEl.textContent = '"Prêt ! Transformez votre structure mentale."';
+                
+                setTimeout(() => {
+                    loadingScreen.classList.add('hide');
                     setTimeout(() => {
-                        const startBtn = document.getElementById('startExpertise');
-                        if (startBtn && startBtn.style.display !== 'none') {
-                            startBtn.click();
-                            setTimeout(() => {
-                                let entry = historique.find(h => h.domaine === domaine);
-                                if (!entry) {
-                                    entry = {
-                                        domaine: domaine,
-                                        dateDebut: new Date().toISOString(),
-                                        dateFin: null,
-                                        progression: [false,false,false,false,false,false,false],
-                                        shared: true
-                                    };
-                                    historique.push(entry);
-                                    sauvegarderTout();
-                                } else if (!entry.shared) {
-                                    entry.shared = true;
-                                    sauvegarderTout();
-                                }
-                            }, 500);
-                        }
+                        loadingScreen.style.display = 'none';
+                        mainContent.style.display = 'block';
                     }, 500);
-                }
-            }
-            const personnelParam = urlParams.get('personnel');
-            if (personnelParam) {
-                try {
-                    const defauts = JSON.parse(decodeURIComponent(personnelParam));
-                    if (Array.isArray(defauts) && defauts.length === 5) {
-                        const textarea = document.getElementById('defauts');
-                        if (textarea) {
-                            textarea.value = defauts.join('\n');
-                            setTimeout(() => {
-                                const btn = document.getElementById('generatePersonnel');
-                                if (btn) btn.click();
-                            }, 500);
+                }, 800);
+            }, 3500);
+
+            // ---------- SUITE DU CODE (fonctionnalités complètes inchangées) ----------
+            function updateBadgeCounters() {
+                let badges = JSON.parse(localStorage.getItem('badges')) || [];
+                let count = badges.length;
+                ['expertise', 'personnel', 'consultation'].forEach(mode => {
+                    const el = document.getElementById(`badgeCount${mode.charAt(0).toUpperCase()+mode.slice(1)}`);
+                    if (el) {
+                        if (count > 0) {
+                            el.style.display = 'inline-block';
+                            el.innerText = count + '🏅';
+                        } else {
+                            el.style.display = 'none';
                         }
                     }
-                } catch(e) {}
+                });
             }
-        }
-        initFromUrl();
+            updateBadgeCounters();
 
-        // Mode Personnel
-        let currentPersonnelInterval = null;
-        function startGenericProgress(areaId, fillId, percentId) {
-            const area = document.getElementById(areaId);
-            if (!area) return null;
-            area.style.display = 'block';
-            let p = 0;
-            const fill = document.getElementById(fillId);
-            const percentSpan = document.getElementById(percentId);
-            return setInterval(() => {
-                if (p < 90) {
-                    p += 2;
-                    if (p > 90) p = 90;
-                    if (fill) fill.style.width = p + '%';
-                    if (percentSpan) percentSpan.innerText = p + '%';
-                }
-            }, 150);
-        }
-        function stopGenericProgress(areaId, fillId, percentId, interval, complete) {
-            const area = document.getElementById(areaId);
-            const fill = document.getElementById(fillId);
-            const percentSpan = document.getElementById(percentId);
-            if (interval) clearInterval(interval);
-            if (complete && fill) {
-                fill.style.width = '100%';
-                if (percentSpan) percentSpan.innerText = '100%';
-                setTimeout(() => {
-                    if (area) area.style.display = 'none';
-                    if (fill) fill.style.width = '0%';
-                    if (percentSpan) percentSpan.innerText = '';
-                }, 300);
-            } else {
-                if (area) area.style.display = 'none';
-                if (fill) fill.style.width = '0%';
-                if (percentSpan) percentSpan.innerText = '';
+            let anciensBadges = JSON.parse(localStorage.getItem('badges')) || [];
+            if (anciensBadges.length > 0) {
+                const propres = anciensBadges.filter(b => !b.includes("1 semaine") && !b.includes("trophée") && !b.includes("🏆"));
+                localStorage.setItem('badges', JSON.stringify(propres));
+                updateBadgeCounters();
             }
-        }
-        document.getElementById('generatePersonnel').addEventListener('click', async () => {
-            let defauts = document.getElementById('defauts').value.split('\n').filter(l=>l.trim()).slice(0,5);
-            if (defauts.length !== 5) { alert('5 défauts requis'); return; }
-            document.getElementById('personnelResult').innerHTML = '';
-            if (currentPersonnelInterval) clearInterval(currentPersonnelInterval);
-            currentPersonnelInterval = startGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressPercent');
-            try {
-                const res = await fetch('/generer_personnel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ defauts: defauts }) });
-                const data = await res.json();
-                if (data.error) throw new Error(data.error);
-                stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressPercent', currentPersonnelInterval, true);
-                document.getElementById('personnelResult').innerHTML = data.contenu.replace(/\n/g, '<br>');
-            } catch(err) { stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressPercent', currentPersonnelInterval, false); alert('Erreur: ' + err.message); }
-        });
 
-        // Consultation -> redirige expertise
-        document.getElementById('generateConsult').addEventListener('click', () => {
-            let msg = document.getElementById('consultMessage').value.trim();
-            if (!msg) { alert('Message requis'); return; }
-            currentDomaine = msg;
-            historique = historique.filter(h => h.domaine !== currentDomaine);
-            progression = [false,false,false,false,false,false,false];
-            historique.push({ domaine: currentDomaine, dateDebut: new Date().toISOString(), dateFin: null, progression: progression.slice(), shared: false });
-            sauvegarderTout();
-            jours = {};
-            currentPage = 0;
-            afficherPage(0);
-            document.getElementById('jourContainer').style.display = 'block';
-            document.getElementById('startExpertise').style.display = 'none';
-            document.querySelector('.mode-btn[data-mode="expertise"]').click();
-            afficherBarreSegments();
-        });
-
-        // Historique
-        const historyModal = document.getElementById('historyModal');
-        const historyList = document.getElementById('historyList');
-        function formaterDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
-        function afficherHistorique() {
-            historyList.innerHTML = '';
-            historique.forEach(item => {
-                const completed = item.progression.filter(v=>v).length;
-                const div = document.createElement('div');
-                div.className = 'history-item';
-                let text = (completed === 7) ? `Expertise en ${item.domaine} du ${formaterDate(item.dateDebut)} au ${formaterDate(item.dateFin)}` : `Expertise inachevée (${completed}/7) – ${item.domaine}`;
-                if (item.shared) text += ' (partagée)';
-                div.innerHTML = `<strong>${text}</strong><br><small>Début: ${formaterDate(item.dateDebut)}</small>`;
-                if (completed === 7) {
-                    const badgeSpan = document.createElement('div');
-                    badgeSpan.className = 'badge-text';
-                    badgeSpan.innerHTML = `🏅 Expert en ${item.domaine}`;
-                    div.appendChild(badgeSpan);
-                }
-                div.onclick = () => {
-                    currentDomaine = item.domaine;
-                    progression = item.progression.slice();
-                    jours = {};
-                    currentPage = 0;
-                    afficherPage(0);
-                    document.getElementById('jourContainer').style.display = 'block';
-                    document.getElementById('startExpertise').style.display = 'none';
-                    afficherBarreSegments();
-                    historyModal.style.display = 'none';
-                    document.querySelector('.mode-btn[data-mode="expertise"]').click();
-                };
-                historyList.appendChild(div);
+            document.querySelectorAll('.medal-counter').forEach(medal => {
+                medal.addEventListener('click', () => {
+                    afficherHistorique();
+                    document.getElementById('historyModal').style.display = 'flex';
+                });
             });
-        }
-        document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display = 'flex'; });
-        document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
-        window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
 
-        document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 L'abonnement n'est pas encore actif.\nAccès gratuit pour l'instant."));
-    })();
-</script>
-</body>
-</html>
+            const modeBtns = document.querySelectorAll('.mode-btn');
+            const panels = {
+                expertise: document.getElementById('expertisePanel'),
+                personnel: document.getElementById('personnelPanel'),
+                consultation: document.getElementById('consultationPanel')
+            };
+            modeBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    modeBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const mode = btn.getAttribute('data-mode');
+                    Object.values(panels).forEach(p => p.classList.remove('active-panel'));
+                    panels[mode].classList.add('active-panel');
+                });
+            });
+
+            let progression = JSON.parse(localStorage.getItem('progression')) || [false,false,false,false,false,false,false];
+            let historique = JSON.parse(localStorage.getItem('historique')) || [];
+            function sauvegarderTout() {
+                localStorage.setItem('progression', JSON.stringify(progression));
+                localStorage.setItem('historique', JSON.stringify(historique));
+                updateBadgeCounters();
+            }
+
+            let currentDomaine = '';
+            let jours = {};
+            let currentPage = 0;
+            const totalPages = 8;
+            let currentExpertiseInterval = null;
+
+            let frenchVoice = null;
+            function initFrenchVoice() {
+                if (!window.speechSynthesis) return;
+                const voices = window.speechSynthesis.getVoices();
+                frenchVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Thomas') || v.name.includes('Amélie')));
+                if (!frenchVoice) frenchVoice = voices.find(v => v.lang === 'fr-FR');
+            }
+            if (window.speechSynthesis) {
+                window.speechSynthesis.onvoiceschanged = initFrenchVoice;
+                initFrenchVoice();
+            }
+
+            function cleanText(text) {
+                if (!text) return '';
+                return text.replace(/\*\*/g,'').replace(/\*/g,'').replace(/#/g,'').replace(/`/g,'').replace(/_/g,'').replace(/\[([^\]]+)\]\([^\)]+\)/g,'$1').trim();
+            }
+
+            function splitTextIntoChunks(text, maxLen = 1800) {
+                let sentences = text.split(/(?<=[.!?])\s+/);
+                let chunks = [];
+                let current = '';
+                for (let s of sentences) {
+                    if ((current + s).length > maxLen && current.length > 0) {
+                        chunks.push(current);
+                        current = s;
+                    } else {
+                        current += (current ? ' ' : '') + s;
+                    }
+                }
+                if (current) chunks.push(current);
+                return chunks;
+            }
+
+            let currentAudioChunks = [];
+            let currentChunkIndex = 0;
+            let isPlaying = false;
+            let currentUtterance = null;
+            const playerBar = document.getElementById('audioPlayerBar');
+            const playPauseBtn = document.getElementById('audioPlayPauseBtn');
+            const stopBtn = document.getElementById('audioStopBtn');
+            const seekSlider = document.getElementById('audioSeekSlider');
+
+            function stopAudio() {
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+                isPlaying = false;
+                playPauseBtn.textContent = '▶';
+                playerBar.style.display = 'none';
+                currentUtterance = null;
+            }
+
+            function updateSeekSlider() {
+                if (currentAudioChunks.length) {
+                    seekSlider.max = currentAudioChunks.length - 1;
+                    seekSlider.value = currentChunkIndex;
+                    seekSlider.disabled = false;
+                } else {
+                    seekSlider.disabled = true;
+                }
+            }
+
+            function speakChunk(index) {
+                if (index < 0 || index >= currentAudioChunks.length) return;
+                currentChunkIndex = index;
+                const text = currentAudioChunks[currentChunkIndex];
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'fr-FR';
+                utterance.rate = 0.9;
+                if (frenchVoice) utterance.voice = frenchVoice;
+                utterance.onend = () => {
+                    if (currentChunkIndex + 1 < currentAudioChunks.length) {
+                        speakChunk(currentChunkIndex + 1);
+                    } else {
+                        stopAudio();
+                    }
+                };
+                utterance.onerror = () => { stopAudio(); };
+                currentUtterance = utterance;
+                window.speechSynthesis.speak(utterance);
+                isPlaying = true;
+                playPauseBtn.textContent = '⏸';
+                updateSeekSlider();
+            }
+
+            function playAudioChunks(text, autoStart = true) {
+                stopAudio();
+                const cleaned = cleanText(text);
+                if (!cleaned) return;
+                currentAudioChunks = splitTextIntoChunks(cleaned, 1800);
+                if (currentAudioChunks.length === 0) return;
+                currentChunkIndex = 0;
+                updateSeekSlider();
+                if (autoStart) {
+                    playerBar.style.display = 'flex';
+                    speakChunk(0);
+                } else {
+                    playerBar.style.display = 'flex';
+                    playPauseBtn.textContent = '▶';
+                }
+            }
+
+            function pauseAudio() {
+                if (window.speechSynthesis && isPlaying) {
+                    window.speechSynthesis.cancel();
+                    isPlaying = false;
+                    playPauseBtn.textContent = '▶';
+                }
+            }
+
+            function resumeAudio() {
+                if (!isPlaying && currentAudioChunks.length > 0) {
+                    speakChunk(currentChunkIndex);
+                }
+            }
+
+            playPauseBtn.addEventListener('click', () => {
+                if (isPlaying) pauseAudio();
+                else resumeAudio();
+            });
+            stopBtn.addEventListener('click', stopAudio);
+            seekSlider.addEventListener('input', (e) => {
+                if (currentAudioChunks.length) {
+                    const newIdx = parseInt(e.target.value);
+                    if (newIdx !== currentChunkIndex) {
+                        pauseAudio();
+                        speakChunk(newIdx);
+                    }
+                }
+            });
+
+            function afficherBarreSegments() {
+                const container = document.getElementById('segmentsContainer');
+                if (!container) return;
+                container.innerHTML = '';
+                for (let i=0; i<7; i++) {
+                    const seg = document.createElement('div');
+                    seg.className = 'segment';
+                    if (progression[i]) seg.classList.add('completed');
+                    if (!progression[i] && !jours[i+1]) seg.classList.add('disabled');
+                    if (jours[i+1] && !progression[i]) seg.classList.add('loaded');
+                    const dayNum = i+1;
+                    seg.innerHTML = `<div class="day-label">J${dayNum}</div><div class="day-status">${progression[i] ? '✓' : (jours[i+1] ? '📖' : '🔒')}</div>`;
+                    seg.onclick = (function(idx) { return () => {
+                        if (!progression[idx] && !jours[idx+1]) {
+                            alert(`Veuillez d'abord générer le contenu du jour ${idx+1} en naviguant vers ce jour.`);
+                            return;
+                        }
+                        cocherSegment(idx);
+                    }; })(i);
+                    container.appendChild(seg);
+                }
+                updateValidationMessage();
+            }
+
+            function updateValidationMessage() {
+                const msgDiv = document.getElementById('progressHeaderMsg');
+                if (!msgDiv) return;
+                if (currentPage === 0 || !jours[currentPage] || progression[currentPage-1]) {
+                    msgDiv.style.display = 'none';
+                    return;
+                }
+                msgDiv.style.display = 'block';
+                msgDiv.innerHTML = '👉 cliquez ici pour valider cette journée !';
+                const newMsg = msgDiv.cloneNode(true);
+                msgDiv.parentNode.replaceChild(newMsg, msgDiv);
+                newMsg.onclick = () => {
+                    const idx = currentPage-1;
+                    if (idx >=0 && !progression[idx] && jours[currentPage]) cocherSegment(idx);
+                };
+            }
+
+            function cocherSegment(idx) {
+                for (let i=0; i<idx; i++) if (!progression[i]) { alert(`Validez d'abord le jour ${i+1}.`); return; }
+                if (!progression[idx]) {
+                    progression[idx] = true;
+                    sauvegarderTout();
+                    afficherBarreSegments();
+                    if (idx+1 === 7) {
+                        alert(`🎉 Félicitations ! Vous avez achevé votre expertise. Badge "Expert en ${currentDomaine}" débloqué.`);
+                        let badges = JSON.parse(localStorage.getItem('badges')) || [];
+                        const expertBadge = `🏅 Expert en ${currentDomaine}`;
+                        if (!badges.includes(expertBadge)) {
+                            badges.push(expertBadge);
+                            localStorage.setItem('badges', JSON.stringify(badges));
+                            updateBadgeCounters();
+                        }
+                        const histEntry = historique.find(h => h.domaine === currentDomaine);
+                        if (histEntry) histEntry.dateFin = new Date().toISOString();
+                    } else alert(`🎊 Bravo ! Jour ${idx+1}/7 validé.`);
+                    const histEntry = historique.find(h => h.domaine === currentDomaine);
+                    if (histEntry) histEntry.progression = progression.slice();
+                    sauvegarderTout();
+                    afficherBarreSegments();
+                    updateValidationMessage();
+                }
+            }
+
+            const welcomeHTML = `
+                <div class="w
+      
