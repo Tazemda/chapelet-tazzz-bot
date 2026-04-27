@@ -68,6 +68,7 @@
             gap: 8px;
         }
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
+        /* Médailles : seulement si gagnées (affichage conditionnel via JS) */
         .medal-counter {
             background: transparent;
             color: #f1c40f;
@@ -215,33 +216,6 @@
             opacity: 0.4;
             pointer-events: none;
         }
-        /* Barre de progression horizontale avec pourcentage */
-        .progress-container {
-            margin: 15px 0 10px;
-            width: 100%;
-            background: #2c3e4e;
-            border-radius: 20px;
-            overflow: hidden;
-        }
-        .progress-bar {
-            height: 24px;
-            background-color: #2ecc71;
-            width: 0%;
-            transition: width 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-right: 10px;
-            color: white;
-            font-size: 0.7rem;
-            font-weight: bold;
-        }
-        .progress-text {
-            text-align: center;
-            margin-top: 5px;
-            font-size: 0.7rem;
-            color: #2ecc71;
-        }
         .action-buttons {
             display: flex;
             gap: 12px;
@@ -374,10 +348,9 @@
                 <span id="dayCounter">Intro / 8</span>
                 <button id="nextDay">Suivant ▶</button>
             </div>
-            <!-- Barre de progression horizontale avec pourcentage -->
             <div class="progress-container" id="expertiseProgressArea" style="display:none;">
-                <div class="progress-bar" id="expertiseProgressFill">0%</div>
-                <div id="expertiseProgressText" class="progress-text">Chargement en cours...</div>
+                <div class="progress-bar"><div id="expertiseProgressFill" class="progress-fill"></div></div>
+                <div id="expertiseProgressText" class="progress-text">0%</div>
             </div>
             <div id="feedbackBox" class="feedback-box" style="display:none;">
                 <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
@@ -452,6 +425,7 @@
         function updateBadgeCounters() {
             let badges = JSON.parse(localStorage.getItem('badges')) || [];
             let count = badges.length;
+            // Afficher le compteur seulement si > 0
             const counters = ['badgeCountExpertise', 'badgeCountPersonnel', 'badgeCountConsultation'];
             counters.forEach(id => {
                 const el = document.getElementById(id);
@@ -629,6 +603,7 @@
 
         function resumeAudio() {
             if (!isPlaying && currentAudioChunks.length > 0 && currentUtterance) {
+                // reprendre depuis le chunk courant
                 speakChunk(currentChunkIndex);
             } else if (!isPlaying && currentAudioChunks.length > 0) {
                 speakChunk(currentChunkIndex);
@@ -744,49 +719,34 @@
             </div>
         `;
 
-        // Barre de progression horizontale avec pourcentage
         function startExpertiseProgressBar() {
             const area = document.getElementById('expertiseProgressArea');
             const fill = document.getElementById('expertiseProgressFill');
-            const textSpan = document.getElementById('expertiseProgressText');
+            const text = document.getElementById('expertiseProgressText');
             if (!area) return null;
             area.style.display = 'block';
             let percent = 0;
-            fill.style.width = '0%';
-            fill.innerText = '0%';
-            textSpan.innerText = 'Chargement en cours...';
             const interval = setInterval(() => {
-                if (percent < 90) {
-                    percent += 2;
-                    if (percent > 90) percent = 90;
+                if (percent < 90) { percent += 2; if (percent > 90) percent = 90;
                     fill.style.width = percent + '%';
-                    fill.innerText = percent + '%';
-                    textSpan.innerText = `Chargement... ${percent}%`;
+                    text.innerText = percent + '%';
                 }
             }, 150);
             return interval;
         }
-
         function stopExpertiseProgressBar(interval, complete) {
             const area = document.getElementById('expertiseProgressArea');
             const fill = document.getElementById('expertiseProgressFill');
-            const textSpan = document.getElementById('expertiseProgressText');
+            const text = document.getElementById('expertiseProgressText');
             if (interval) clearInterval(interval);
             if (complete && fill) {
                 fill.style.width = '100%';
-                fill.innerText = '100%';
-                textSpan.innerText = 'Terminé !';
-                setTimeout(() => {
-                    if (area) area.style.display = 'none';
-                    fill.style.width = '0%';
-                    fill.innerText = '0%';
-                    textSpan.innerText = '';
-                }, 800);
+                text.innerText = '100%';
+                setTimeout(() => { if(area) area.style.display = 'none'; fill.style.width = '0%'; text.innerText = '0%'; }, 300);
             } else {
-                if (area) area.style.display = 'none';
-                if (fill) fill.style.width = '0%';
-                if (fill) fill.innerText = '0%';
-                if (textSpan) textSpan.innerText = '';
+                if(area) area.style.display = 'none';
+                if(fill) fill.style.width = '0%';
+                if(text) text.innerText = '0%';
             }
         }
 
