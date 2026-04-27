@@ -84,7 +84,7 @@
             font-size: 0.8rem;
             opacity: 0.7;
         }
-        /* ---------- CONTENU PRINCIPAL (inchangé) ---------- */
+        /* ---------- CONTENU PRINCIPAL ---------- */
         .container {
             max-width: 800px;
             margin: 0 auto;
@@ -245,7 +245,6 @@
             cursor: pointer;
             transition: 0.2s;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            color: #ccc;
         }
         .segment .day-label { font-weight: bold; font-size: 1rem; margin-bottom: 2px; }
         .segment .day-status { font-size: 0.6rem; }
@@ -350,7 +349,7 @@
     </style>
 </head>
 <body>
-    <!-- ÉCRAN DE CHARGEMENT (10 secondes, 5 messages) -->
+    <!-- ÉCRAN DE CHARGEMENT (10 secondes) -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-content">
             <div class="loading-chapelet">📿</div>
@@ -363,7 +362,7 @@
         </div>
     </div>
 
-    <!-- CONTENU PRINCIPAL (initialement masqué) -->
+    <!-- CONTENU PRINCIPAL -->
     <div id="mainContent" style="display: none;">
         <div class="container">
             <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
@@ -450,7 +449,7 @@
         </div>
     </div>
 
-    <!-- Barre audio (commune) -->
+    <!-- Barre audio commune -->
     <div id="audioPlayerBar" class="audio-player-bar" style="display: none;">
         <button id="audioPlayPauseBtn">▶</button>
         <input type="range" id="audioSeekSlider" min="0" max="0" value="0" step="1" disabled>
@@ -468,12 +467,11 @@
 
     <script>
         (function() {
-            // ---------- ÉCRAN DE CHARGEMENT (10 secondes, 5 messages) ----------
+            // ---------- ÉCRAN DE CHARGEMENT (10 secondes) ----------
             const loadingScreen = document.getElementById('loadingScreen');
             const mainContent = document.getElementById('mainContent');
             const progressBar = document.getElementById('loadingProgressBar');
             const mantraEl = document.getElementById('loadingMantra');
-
             const mantras = [
                 "Je réorganise ma structure mentale…",
                 "Un chapelet, une intention…",
@@ -481,8 +479,8 @@
                 "Je deviens l’acteur de chaque heure…",
                 "Prêt. Transformons notre esprit."
             ];
-            const totalDuration = 10000; // 10 secondes
-            const stepDuration = totalDuration / mantras.length; // 2 secondes par message
+            const totalDuration = 10000;
+            const stepDuration = totalDuration / mantras.length;
             let startTime = null;
             let animationFrame = null;
             let currentMantraIndex = 0;
@@ -493,7 +491,6 @@
                 let percent = (elapsed / totalDuration) * 100;
                 if (percent > 100) percent = 100;
                 progressBar.style.width = percent + '%';
-
                 const newIndex = Math.min(Math.floor(elapsed / stepDuration), mantras.length - 1);
                 if (newIndex !== currentMantraIndex) {
                     currentMantraIndex = newIndex;
@@ -503,7 +500,6 @@
                         mantraEl.style.opacity = '1';
                     }, 100);
                 }
-
                 if (elapsed < totalDuration) {
                     animationFrame = requestAnimationFrame(updateProgress);
                 } else {
@@ -512,13 +508,12 @@
                     setTimeout(() => {
                         loadingScreen.style.display = 'none';
                         mainContent.style.display = 'block';
-                        // Petit délai supplémentaire pour éviter tout flash de contenu mal positionné
                     }, 300);
                 }
             }
             animationFrame = requestAnimationFrame(updateProgress);
 
-            // ---------- TOUT LE RESTE (fonctionnalités complètes) ----------
+            // ---------- FONCTIONS PRINCIPALES ----------
             function updateBadgeCounters() {
                 let badges = JSON.parse(localStorage.getItem('badges')) || [];
                 let count = badges.length;
@@ -580,6 +575,7 @@
             const totalPages = 8;
             let currentExpertiseInterval = null;
 
+            // Audio
             let frenchVoice = null;
             function initFrenchVoice() {
                 if (!window.speechSynthesis) return;
@@ -709,6 +705,15 @@
                 }
             });
 
+            // Navigation vers un jour (utilisée par les segments validés)
+            function naviguerVersJour(jourNum) {
+                if (jourNum >= 1 && jourNum <= 7 && jours[jourNum]) {
+                    currentPage = jourNum;
+                    afficherPage(currentPage);
+                }
+            }
+
+            // Barre des segments : les cases validées (violet) permettent de naviguer, les autres permettent de cocher
             function afficherBarreSegments() {
                 const container = document.getElementById('segmentsContainer');
                 if (!container) return;
@@ -716,19 +721,27 @@
                 for (let i = 0; i < 7; i++) {
                     const seg = document.createElement('div');
                     seg.className = 'segment';
-                    if (progression[i]) seg.classList.add('completed');
-                    if (!progression[i] && !jours[i + 1]) seg.classList.add('disabled');
-                    if (jours[i + 1] && !progression[i]) seg.classList.add('loaded');
+                    if (progression[i]) {
+                        seg.classList.add('completed');
+                        // Case validée : navigation vers le jour correspondant
+                        seg.onclick = (function(idx) {
+                            return () => naviguerVersJour(idx + 1);
+                        })(i);
+                    } else {
+                        if (!progression[i] && !jours[i+1]) seg.classList.add('disabled');
+                        if (jours[i+1] && !progression[i]) seg.classList.add('loaded');
+                        // Case non validée : tentative de cocher (avec ordre)
+                        seg.onclick = (function(idx) {
+                            return () => {
+                                if (!progression[idx] && !jours[idx+1]) {
+                                    alert(`Veuillez d'abord générer le contenu du jour ${idx+1} en naviguant vers ce jour.`);
+                                    return;
+                                }
+                                cocherSegment(idx);
+                            };
+                        })(i);
+                    }
                     seg.innerHTML = `<div class="day-label">J${i+1}</div><div class="day-status">${progression[i] ? '✓' : (jours[i+1] ? '📖' : '🔒')}</div>`;
-                    seg.onclick = (function(idx) {
-                        return () => {
-                            if (!progression[idx] && !jours[idx+1]) {
-                                alert(`Veuillez d'abord générer le contenu du jour ${idx+1} en naviguant vers ce jour.`);
-                                return;
-                            }
-                            cocherSegment(idx);
-                        };
-                    })(i);
                     container.appendChild(seg);
                 }
                 updateValidationMessage();
@@ -859,7 +872,7 @@
                     if (jours[jourNum]) {
                         contentDiv.innerHTML = jours[jourNum].replace(/\n/g, '<br>');
                         daySpan.innerText = `Jour ${jourNum} / 7`;
-                        prevBtn.disabled = false;
+                        prevBtn.disabled = (jourNum === 1);
                         nextBtn.disabled = (jourNum === 7);
                         feedbackBox.style.display = 'block';
                         dayAudioBtn.style.display = 'flex';
