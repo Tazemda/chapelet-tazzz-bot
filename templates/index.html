@@ -24,17 +24,19 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
             position: relative;
         }
-        h1 { text-align: center; font-size: 1.9rem; margin-bottom: 5px; letter-spacing: 1px; }
+        h1 { text-align: center; font-size: 1.9rem; margin-bottom: 0px; letter-spacing: 1px; }
         .subtitle {
             text-align: center;
             font-size: 0.9rem;
             opacity: 0.8;
             margin-bottom: 30px;
             margin-top: 5px;
-            position: relative;
+        }
+        .top-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 15px;
         }
         .history-link {
             background: #2c3e4e;
@@ -54,7 +56,6 @@
             cursor: pointer;
             transition: 0.2s;
             white-space: nowrap;
-            margin-left: auto;
         }
         .home-header:hover { background: #e67e22; }
         .mode-selector {
@@ -340,7 +341,8 @@
 <body>
 <div class="container">
     <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
-    <div class="subtitle">
+    <div class="subtitle">Transforme ta structure mentale</div>
+    <div class="top-bar">
         <span class="history-link" id="historyLink">📜 Historique</span>
         <span class="home-header" id="homeHeader">🏠 Accueil</span>
     </div>
@@ -439,7 +441,9 @@
 
 <script>
     (function() {
-        // ========== GESTION BADGES & MÉDAILLES ==========
+        // --------------------------------------------------------------
+        // 1. Gestion des badges et médailles (affichage)
+        // --------------------------------------------------------------
         function updateBadgeCounters() {
             let badges = JSON.parse(localStorage.getItem('badges')) || [];
             let count = badges.length;
@@ -457,6 +461,7 @@
         }
         updateBadgeCounters();
 
+        // Nettoyage d'anciens badges indésirables
         let anciensBadges = JSON.parse(localStorage.getItem('badges')) || [];
         if (anciensBadges.length > 0) {
             const propres = anciensBadges.filter(b => !b.includes("1 semaine") && !b.includes("trophée") && !b.includes("🏆"));
@@ -464,7 +469,7 @@
             updateBadgeCounters();
         }
 
-        // Rendre les médailles cliquables pour ouvrir l'historique
+        // Rendre les médailles cliquables (ouvrent l'historique)
         document.querySelectorAll('.medal-counter').forEach(medal => {
             medal.addEventListener('click', () => {
                 afficherHistorique();
@@ -472,7 +477,9 @@
             });
         });
 
-        // Onglets
+        // --------------------------------------------------------------
+        // 2. Onglets
+        // --------------------------------------------------------------
         const modeBtns = document.querySelectorAll('.mode-btn');
         const panels = {
             expertise: document.getElementById('expertisePanel'),
@@ -489,7 +496,9 @@
             });
         });
 
-        // Variables globales
+        // --------------------------------------------------------------
+        // 3. Variables globales (expertise)
+        // --------------------------------------------------------------
         let progression = JSON.parse(localStorage.getItem('progression')) || [false,false,false,false,false,false,false];
         let historique = JSON.parse(localStorage.getItem('historique')) || [];
         function sauvegarderTout() {
@@ -504,7 +513,9 @@
         const totalPages = 8;
         let currentExpertiseInterval = null;
 
-        // ========== AUDIO ==========
+        // --------------------------------------------------------------
+        // 4. Lecteur audio (identique, fonctionnel)
+        // --------------------------------------------------------------
         let frenchVoice = null;
         function initFrenchVoice() {
             if (!window.speechSynthesis) return;
@@ -629,7 +640,9 @@
             }
         });
 
-        // ========== GESTION DES SEGMENTS ==========
+        // --------------------------------------------------------------
+        // 5. Gestion des segments et validation (expertise)
+        // --------------------------------------------------------------
         function afficherBarreSegments() {
             const container = document.getElementById('segmentsContainer');
             if (!container) return;
@@ -821,7 +834,7 @@
             if (!currentDomaine) { alert('Domaine requis'); return; }
             let histEntry = historique.find(h => h.domaine === currentDomaine);
             if (!histEntry) {
-                histEntry = { domaine: currentDomaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false] };
+                histEntry = { domaine: currentDomaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: false };
                 historique.push(histEntry);
                 sauvegarderTout();
                 progression = histEntry.progression;
@@ -894,21 +907,35 @@
             stopAudio();
         });
 
-        // ========== PARTAGE INTELLIGENT ==========
-        document.getElementById('shareButton').addEventListener('click', async () => {
+        // --------------------------------------------------------------
+        // 6. PARTAGE SÉCURISÉ (sans historique privé)
+        // --------------------------------------------------------------
+        function genererLienPartage() {
             const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
-            let shareText = '';
-            let shareUrl = window.location.href.split('?')[0]; // base URL sans paramètres
-
+            const baseUrl = window.location.href.split('?')[0];
             if (activeMode === 'expertise' && currentDomaine) {
-                // On partage l'expertise en cours : on ajoute le paramètre ?expertise=...
-                shareUrl = shareUrl + '?expertise=' + encodeURIComponent(currentDomaine);
-                shareText = `🧠 Découvrez mon expertise "${currentDomaine}" sur Chapelet Tazzz Bot ! Cliquez pour démarrer le parcours.`;
-            } else {
-                // Partage général
-                shareText = `🧠 Transformez votre structure mentale avec Chapelet Tazzz Bot ! Apprenez, progressez, obtenez des badges. Rejoignez-moi :`;
+                // Partager uniquement le domaine – aucune progression privée
+                return `${baseUrl}?expertise=${encodeURIComponent(currentDomaine)}`;
+            } else if (activeMode === 'personnel') {
+                let defauts = document.getElementById('defauts').value.split('\n').filter(l=>l.trim()).slice(0,5);
+                if (defauts.length === 5) {
+                    return `${baseUrl}?personnel=${encodeURIComponent(JSON.stringify(defauts))}`;
+                }
             }
+            return baseUrl;
+        }
 
+        document.getElementById('shareButton').addEventListener('click', async () => {
+            const shareUrl = genererLienPartage();
+            let shareText = '';
+            const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
+            if (activeMode === 'expertise' && currentDomaine) {
+                shareText = `🧠 Découvrez cette expertise "${currentDomaine}" sur Chapelet Tazzz Bot ! Cliquez pour démarrer votre propre parcours.`;
+            } else if (activeMode === 'personnel') {
+                shareText = `🔥 Développement personnel – Transformez votre vie avec Chapelet Tazzz Bot ! Rejoignez-moi.`;
+            } else {
+                shareText = `🧠 Transformez votre structure mentale avec Chapelet Tazzz Bot ! Apprenez, progressez, obtenez des badges.`;
+            }
             if (navigator.share) {
                 try {
                     await navigator.share({ title: 'Chapelet Tazzz Bot', text: shareText, url: shareUrl });
@@ -916,32 +943,63 @@
             } else {
                 try {
                     await navigator.clipboard.writeText(shareText + ' ' + shareUrl);
-                    alert('Lien copié dans le presse-papier !');
+                    alert('Lien partagé ! (aucune donnée personnelle n’a été incluse)');
                 } catch(e) { alert('Impossible de partager'); }
             }
         });
 
-        // ========== LECTURE DU PARAMÈTRE URL POUR PRÉ-REMPLIR L'EXPERTISE ==========
+        // --------------------------------------------------------------
+        // 7. Initialisation depuis les paramètres d'URL (expertise partagée)
+        // --------------------------------------------------------------
         function initFromUrl() {
             const urlParams = new URLSearchParams(window.location.search);
             const expertiseParam = urlParams.get('expertise');
+            const personnelParam = urlParams.get('personnel');
             if (expertiseParam) {
-                const domaineInput = document.getElementById('domaine');
-                if (domaineInput) {
-                    domaineInput.value = decodeURIComponent(expertiseParam);
-                    // Optionnel: afficher un message et démarrer automatiquement après un court délai
+                const domaine = decodeURIComponent(expertiseParam);
+                const inputDomaine = document.getElementById('domaine');
+                if (inputDomaine) {
+                    inputDomaine.value = domaine;
                     setTimeout(() => {
                         const startBtn = document.getElementById('startExpertise');
                         if (startBtn && startBtn.style.display !== 'none') {
                             startBtn.click();
+                            // On marque cette entrée dans l'historique comme "partagée"
+                            setTimeout(() => {
+                                let entry = historique.find(h => h.domaine === domaine);
+                                if (!entry) {
+                                    entry = { domaine: domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: true };
+                                    historique.push(entry);
+                                    sauvegarderTout();
+                                } else if (!entry.shared) {
+                                    entry.shared = true;
+                                    sauvegarderTout();
+                                }
+                            }, 500);
                         }
                     }, 500);
                 }
+            } else if (personnelParam) {
+                try {
+                    const defauts = JSON.parse(decodeURIComponent(personnelParam));
+                    if (Array.isArray(defauts) && defauts.length === 5) {
+                        const textarea = document.getElementById('defauts');
+                        if (textarea) {
+                            textarea.value = defauts.join('\n');
+                            setTimeout(() => {
+                                const btn = document.getElementById('generatePersonnel');
+                                if (btn) btn.click();
+                            }, 500);
+                        }
+                    }
+                } catch(e) {}
             }
         }
         initFromUrl();
 
-        // Mode Personnel (inchangé)
+        // --------------------------------------------------------------
+        // 8. MODE PERSONNEL (inchangé)
+        // --------------------------------------------------------------
         let currentPersonnelInterval = null;
         function startGenericProgress(areaId, fillId, percentId) {
             const area = document.getElementById(areaId);
@@ -1000,7 +1058,7 @@
             currentDomaine = msg;
             historique = historique.filter(h => h.domaine !== currentDomaine);
             progression = [false,false,false,false,false,false,false];
-            historique.push({ domaine: currentDomaine, dateDebut: new Date().toISOString(), dateFin: null, progression: progression.slice() });
+            historique.push({ domaine: currentDomaine, dateDebut: new Date().toISOString(), dateFin: null, progression: progression.slice(), shared: false });
             sauvegarderTout();
             jours = {};
             currentPage = 0;
@@ -1011,7 +1069,9 @@
             afficherBarreSegments();
         });
 
-        // Historique
+        // --------------------------------------------------------------
+        // 9. Historique (affichage)
+        // --------------------------------------------------------------
         const historyModal = document.getElementById('historyModal');
         const historyList = document.getElementById('historyList');
         function formaterDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
@@ -1022,6 +1082,7 @@
                 const div = document.createElement('div');
                 div.className = 'history-item';
                 let text = (completed === 7) ? `Expertise en ${item.domaine} du ${formaterDate(item.dateDebut)} au ${formaterDate(item.dateFin)}` : `Expertise inachevée (${completed}/7) – ${item.domaine}`;
+                if (item.shared) text += ' (partagée)';
                 div.innerHTML = `<strong>${text}</strong><br><small>Début: ${formaterDate(item.dateDebut)}</small>`;
                 if (completed === 7) {
                     const badgeSpan = document.createElement('div');
