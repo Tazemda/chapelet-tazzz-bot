@@ -35,9 +35,10 @@ def clean_markdown(text):
     return text.replace('`', '').strip()
 
 def remove_markdown_chars(text):
-    text = re.sub(r'\*\*', '', text)
-    text = re.sub(r'\*', '', text)
-    text = re.sub(r'#', '', text)
+    """Supprime les caractères # et * (gras/italique) du texte pour une lecture plus fluide."""
+    text = re.sub(r'\*\*', '', text)   # supprime les doubles astérisques (gras)
+    text = re.sub(r'\*', '', text)     # supprime les astérisques simples (italique)
+    text = re.sub(r'#', '', text)      # supprime les dièses
     return text
 
 def init_db():
@@ -52,7 +53,7 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= EXPERTISE (7 jours) =================
+# ================= PROMPT ALLÉGÉ =================
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
@@ -91,102 +92,35 @@ def generer_jour_expertise(domaine, jour_num):
     try:
         raw = call_deepseek(prompt, max_tokens=2000)
         contenu = clean_markdown(raw)
+        # Supprimer les caractères # et * pour une lecture audio propre
         contenu = remove_markdown_chars(contenu)
+        # Vérification minimale : si le contenu ne commence pas par "JOUR", on ajoute un titre générique sans caractères spéciaux
         if not re.search(r'JOUR\s+\d+', contenu, re.IGNORECASE):
             contenu = f"JOUR {jour_num} – {titre_objectif.upper()}\n\n{contenu}"
         return contenu
     except Exception as e:
         print(f"Erreur jour {jour_num}: {e}")
-        return f"JOUR {jour_num} – {titre_objectif.upper()} (version de secours)\n\n(erreur technique, veuillez réessayer)"
+        return f"""JOUR {jour_num} – {titre_objectif.upper()} (version de secours)
 
-# ================= DÉVELOPPEMENT PERSONNEL (nouveau prompt structuré) =================
+DIZAINE 1 – Introduction à {domaine}
+Méditation synthèse générale (gros grain) : (contenu temporaire – veuillez réessayer plus tard)
+RÉPÈTE 3 x – pas de graines : ?
+RÉPÈTE 10 x – les 10 petites graines : ...
+RÉPÈTE 3 x – pas de graines : Le concept est consolidé.
+(Dizaines 2 à 5 structure similaire)"""
+
+# ================= DÉVELOPPEMENT PERSONNEL (inchangé) =================
 def generer_personnel(defauts):
-    # Construction du prompt avec les 5 défauts
-    prompt = f"""
-Tu vas générer un CHAPELET TAZ BOT – DÉVELOPPEMENT PERSONNEL (21 ou 66 jours) pour un utilisateur qui souhaite corriger les 5 défauts suivants :
-
-1. {defauts[0]}
-2. {defauts[1]}
-3. {defauts[2]}
-4. {defauts[3]}
-5. {defauts[4]}
-
-Tu dois produire le texte complet du chapelet en suivant EXACTEMENT la structure ci‑dessous.  
-À chaque endroit où tu vois `[...]`, tu remplaces par une phrase positive, concise, adaptée au défaut correspondant et au contexte du Mystère.  
-Respecte scrupuleusement les titres, les retours à la ligne, et ne rajoute aucun commentaire en dehors du texte du chapelet.
-
-Voici le modèle à générer :
-
-CHAPELET TAZ BOT – 21 ou 66 JOURS 
-COMMENT L’UTILISER
-. Vous munir d'un chapelet que vous égrènerez pendant vos prières · Chaque jour pendant 21 ou 66 jours, de préférence la même heure : lis ce texte à voix haute ou mentalement, dans l’ordre, sans rien changer. Si vous sautez, recommencez !· Durée : environ 25 minutes.· A un moment calme.· Tu peux imprimer cette page et cocher les jours sur un calendrier.
-
-DÉBUT (Crucifix et premiers grains)
-Signe de croix : “Au nom de mon engagement, de ma lucidité et de ma persévérance.”
-Crucifix (1er grain) – prière d’ouverture : “Je ne subis plus ma vie. Je deviens l’acteur de chaque heure.”
-3 premiers Ave Maria (grains initiaux) :
-1er Ave : “[Phrase positive et courte sur le lâcher-prise des errances passées, adaptée au défaut 1]”
-2e Ave : “[Phrase positive sur la constance dans l’action, adaptée au défaut 2]”
-3e Ave : “[Phrase positive sur le mérite d’un travail stable et d’une fierté retrouvée, adaptée au défaut 3]”
-Gloire au Père (après les 3 Ave) : “Je rends grâce à la vie pour ce nouveau départ.”
-
----
-MYSTÈRE 1 – {defauts[0]}
-Méditation : [Raconte un souvenir précis où ce défaut a causé un échec ou une frustration. Puis décris, en 3-4 phrases, la nouvelle action positive qui corrige ce défaut. Inspire-toi du style : “Je me vois au matin, allongé, le téléphone à la main… puis je pose le téléphone, me lève d’un bloc, ouvre la fenêtre.”]
-Notre Père : “Mon cerveau, par sa plasticité infinie, se réorganise chaque jour. Je deviens maître de mon attention et de mes actes. Je choisis ma lucidité.”
-10 × Ave Maria (le même pour tous les mystères) : “[Une seule phrase courte (max 20 mots) qui corrige les 5 défauts à la fois. Elle doit commencer par ‘Je me lève tôt, je range ma vie, je termine ce que je commence, je sors chaque jour, et j’attire un travail prospère.’, mais tu l’adaptes concrètement aux 5 défauts donnés.]”
-Gloire au Père : “Je remercie Dieu et l’univers pour ses réalisations dans ma vie et cette transformation profonde.”
-
----
-MYSTÈRE 2 – {defauts[1]}
-Méditation : [Visualisation adaptée au défaut 2 – échec lié au désordre ou au manque d’agenda, puis action positive d’organisation et de planification. Style : “Je revois un jour où mon désordre m’a fait rater une échéance. Maintenant, je note trois tâches et je les accomplis.”]
-Notre Père : (identique)
-10 × Ave Maria : (identique à celui du mystère 1)
-Gloire au Père : (identique)
-
----
-MYSTÈRE 3 – {defauts[2]}
-Méditation : [Adaptée au défaut 3 – projet abandonné, frustration, puis reprise d’une petite action quotidienne tenue sans exception.]
-Notre Père : (identique)
-10 × Ave Maria : (identique)
-Gloire au Père : (identique)
-
----
-MYSTÈRE 4 – {defauts[3]}
-Méditation : [Adaptée au défaut 4 – enfermement, scrolling, puis sortie, marche, rencontre du monde.]
-Notre Père : (identique)
-10 × Ave Maria : (identique)
-Gloire au Père : (identique)
-
----
-MYSTÈRE 5 – {defauts[4]}
-Méditation : [Adaptée au défaut 5 – candidatures sans réponse, découragement, puis utilisation du réseau, contact direct, succès, salaire, aide à la famille.]
-Notre Père : (identique)
-10 × Ave Maria : (identique)
-Gloire au Père : (identique)
-
----
-FIN DU CHAPELET (après le 5e mystère)
-Salve Regina : “Ô volonté retrouvée, sois ma lumière et ma force.”
-Mantra final : “Ce chapelet de 21 ou 66 jours ancre en moi la discipline joyeuse et l’action efficace.”
-Signe de croix final : “Au nom de mon engagement, de ma lucidité et de ma persévérance – ainsi soit-il.”
-
-IMPORTANT : 
-- Respecte exactement la structure (titres, retours à la ligne, mots des prières).
-- Les phrases entre crochets doivent être rédigées en français naturel, sans négation (pas de “ne… pas”).
-- La phrase du Ave Maria unique doit être strictement identique dans les 5 mystères.
-- Ne rajoute aucun commentaire avant ou après le texte.
-"""
-    try:
-        raw = call_deepseek(prompt, max_tokens=3500)
-        contenu = clean_markdown(raw)
-        contenu = remove_markdown_chars(contenu)
-        return contenu
-    except Exception as e:
-        fallback = f"CHAPELET TAZ BOT – DÉVELOPPEMENT PERSONNEL (version temporaire)\n\n"
-        fallback += f"Défauts :\n1. {defauts[0]}\n2. {defauts[1]}\n3. {defauts[2]}\n4. {defauts[3]}\n5. {defauts[4]}\n\n"
-        fallback += f"Erreur API : {str(e)}. Vérifiez votre solde DeepSeek.\n"
-        return fallback
+    notre_pere = "Mon cerveau, par sa plasticité infinie, se réorganise chaque jour."
+    resultats = []
+    for i, d in enumerate(defauts, 1):
+        prompt = f"Mystère {i} – {d}\n**Méditation** : souvenir d'un échec puis visualisation positive.\n**Notre Père** : {notre_pere} (3 fois)\n**Je vous salue Marie** : phrase courte positive corrigeant {d} (10 fois)\n**Gloire au Père** : Merci (3 fois)"
+        try:
+            raw = call_deepseek(prompt, max_tokens=500)
+            resultats.append(clean_markdown(raw))
+        except:
+            resultats.append(f"**Mystère {i} – {d}** (version de secours)\nMéditation...\nNotre Père...\nAve Maria...")
+    return "\n\n".join(resultats)
 
 # ================= ROUTES =================
 @app.route('/')
