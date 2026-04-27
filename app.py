@@ -60,19 +60,19 @@ Tu es un expert pédagogique. Domaine : "{domaine}".
 Génère le contenu complet du **Jour {jour_num}** sur 7 jours.  
 L'objectif général du jour {jour_num} est : {titre_objectif}.
 
-Commence par le titre : `## **JOUR {jour_num} – [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**`
+Commence par le titre : `## **JOUR {jour_num} : [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**`
 
 Puis, EXACTEMENT 5 DIZAINES. Chaque dizaine doit suivre ce format (concis) :
 
-**DIZAINE X – Concept : [nom du concept]**
+**DIZAINE X : Concept : [nom du concept]**
 
 **Méditation synthèse générale (gros grain)** : exactement 7 phrases moyennement denses non numérotés (toutes les méditations, tous les jours) : définition + rôle + exemple court.
 
-A la place du **Notre Père**, écrire : RÉPÈTE 3 x – pas de graines : une seule phrase, question centrale.
+A la place du **Notre Père**, écrire : RÉPÈTE 3 fois : pas de graines : une seule phrase, question centrale.
 
-A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 x – les 10 petites graines: exactement 5 phrases (toutes les méditations, tous les jours) synthétiques, numérotées et mémorisables.
+A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois : les 10 petites graines: exactement 5 phrases (toutes les méditations, tous les jours) synthétiques, numérotées et mémorisables.
 
-A la place du **Gloire au Père**, écrire / RÉPÈTE 3 x – pas de graines : "Le concept [nom] est consolidé."
+A la place du **Gloire au Père**, écrire : RÉPÈTE 3 fois : pas de graines : "Le concept [nom] est consolidé."
 
 Soigne la qualité. Ne dépasse pas 2000 tokens au total.
 """
