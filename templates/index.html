@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>🧠 CHAPELET TAZZZ BOT – EXPERTISE 7 JOURS</title>
     <style>
-        /* (styles inchangés, garde ceux que tu avais) */
+        /* ... (styles identiques à avant, inchangés pour la lisibilité) ... */
         * { box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -293,7 +293,7 @@
 
     <script>
         (function() {
-            // ---------- ÉCRAN DE CHARGEMENT (inchangé) ----------
+            // ---------- ÉCRAN DE CHARGEMENT ----------
             const loadingScreen = document.getElementById('loadingScreen');
             const mainContent = document.getElementById('mainContent');
             const progressBar = document.getElementById('loadingProgressBar');
@@ -354,53 +354,72 @@
                 });
             });
 
+            // ---------- STRUCTURE DES JOURS PAR DOMAINE ----------
+            function getJoursParDomaine() {
+                let jpd = localStorage.getItem('joursParDomaine');
+                if (!jpd) {
+                    return {};
+                }
+                try {
+                    return JSON.parse(jpd);
+                } catch(e) {
+                    return {};
+                }
+            }
+            function sauvegarderJours(domaine, joursObj) {
+                let jpd = getJoursParDomaine();
+                jpd[domaine] = joursObj;
+                localStorage.setItem('joursParDomaine', JSON.stringify(jpd));
+            }
+            function getJoursPourDomaine(domaine) {
+                let jpd = getJoursParDomaine();
+                return jpd[domaine] || {};
+            }
+            function reinitialiserJoursPourDomaine(domaine) {
+                let jpd = getJoursParDomaine();
+                jpd[domaine] = {};
+                localStorage.setItem('joursParDomaine', JSON.stringify(jpd));
+            }
+
             // ---------- VARIABLES GLOBALES ----------
-            let currentEntryId = null; // identifiant unique de l'expertise courante
-            let progression = [false,false,false,false,false,false,false];
-            let jours = {};
+            let progression = JSON.parse(localStorage.getItem('progression')) || [false,false,false,false,false,false,false];
+            let historique = JSON.parse(localStorage.getItem('historique')) || [];
+            let jours = {}; // ne sert que pour l'affichage courant, chargé depuis le domaine
             let currentDomaine = '';
             let currentPage = 0;
             const totalPages = 8;
             let currentExpertiseInterval = null;
 
-            // ---------- FONCTIONS DE SAUVEGARDE AVEC ID ----------
-            function genererId() {
-                return Date.now() + '-' + Math.random().toString(36).substr(2, 8);
+            function sauvegarderTout() {
+                localStorage.setItem('progression', JSON.stringify(progression));
+                localStorage.setItem('historique', JSON.stringify(historique));
+                // jours est sauvegardé dans la structure par domaine via sauvegarderJours, appelée après chaque modification
+                updateBadgeCounters();
             }
 
-            function sauvegarderExpertiseCourante() {
-                if (!currentEntryId) return;
-                let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                const index = historique.findIndex(e => e.id === currentEntryId);
-                if (index !== -1) {
-                    historique[index].progression = progression.slice();
-                    historique[index].jours = JSON.parse(JSON.stringify(jours));
-                    historique[index].dateDerniereModif = new Date().toISOString();
-                    if (progression.every(v => v === true) && !historique[index].dateFin) {
-                        historique[index].dateFin = new Date().toISOString();
-                    }
-                    localStorage.setItem('historique', JSON.stringify(historique));
+            // Charger une expertise (nouvelle ou depuis historique)
+            function chargerExpertise(domaine, progressionExistante = null, joursExistants = null) {
+                currentDomaine = domaine;
+                if (progressionExistante) {
+                    progression = progressionExistante.slice();
+                } else {
+                    progression = [false,false,false,false,false,false,false];
                 }
-            }
-
-            function chargerExpertiseParId(id) {
-                const historique = JSON.parse(localStorage.getItem('historique')) || [];
-                const entry = historique.find(e => e.id === id);
-                if (!entry) return false;
-                currentEntryId = entry.id;
-                currentDomaine = entry.domaine;
-                progression = entry.progression.slice();
-                jours = JSON.parse(JSON.stringify(entry.jours || {}));
+                if (joursExistants) {
+                    jours = JSON.parse(JSON.stringify(joursExistants));
+                } else {
+                    jours = getJoursPourDomaine(domaine);
+                }
                 currentPage = 0;
                 afficherPage(0);
                 document.getElementById('jourContainer').style.display = 'block';
                 document.getElementById('startExpertise').style.display = 'none';
                 afficherBarreSegments();
                 setTimeout(() => { const introText = document.getElementById('jourContent').innerText; if (introText) playAudioChunks(introText, true); }, 300);
-                return true;
+                sauvegarderTout();
             }
 
-            // ---------- AUDIO (inchangé) ----------
+            // ---------- AUDIO ----------
             let frenchVoice = null;
             function initFrenchVoice() {
                 if (!window.speechSynthesis) return;
@@ -527,15 +546,19 @@
                 for (let i=0; i<idx; i++) if (!progression[i]) { alert(`Validez d'abord le jour ${i+1}.`); return; }
                 if (!progression[idx]) {
                     progression[idx] = true;
-                    sauvegarderExpertiseCourante();
+                    sauvegarderTout();
                     afficherBarreSegments();
                     if (idx+1 === 7) {
                         alert(`🎉 Félicitations ! Vous avez achevé votre expertise. Badge "Expert en ${currentDomaine}" débloqué.`);
                         let badges = JSON.parse(localStorage.getItem('badges')) || [];
                         const expertBadge = `🏅 Expert en ${currentDomaine}`;
                         if (!badges.includes(expertBadge)) { badges.push(expertBadge); localStorage.setItem('badges', JSON.stringify(badges)); updateBadgeCounters(); }
-                        sauvegarderExpertiseCourante(); // met à jour dateFin
+                        const histEntry = historique.find(h=>h.domaine===currentDomaine);
+                        if (histEntry) histEntry.dateFin = new Date().toISOString();
                     } else alert(`🎊 Bravo ! Jour ${idx+1}/7 validé.`);
+                    const histEntry = historique.find(h=>h.domaine===currentDomaine);
+                    if (histEntry) histEntry.progression = progression.slice();
+                    sauvegarderTout();
                     afficherBarreSegments();
                     updateValidationMessage();
                 }
@@ -627,7 +650,8 @@
                 .then(data => {
                     if (data.error) throw new Error(data.error);
                     jours[jourNum] = data.contenu;
-                    sauvegarderExpertiseCourante();
+                    sauvegarderJours(currentDomaine, jours);
+                    sauvegarderTout();
                     stopExpertiseProgressBar(currentExpertiseInterval, true);
                     afficherPage(jourNum);
                     afficherBarreSegments();
@@ -636,32 +660,27 @@
                     console.error(err);
                     stopExpertiseProgressBar(currentExpertiseInterval, false);
                     jours[jourNum] = `<strong>⚠️ Erreur de génération</strong><br>Contenu non disponible. Vérifiez votre connexion ou réessayez.`;
-                    sauvegarderExpertiseCourante();
+                    sauvegarderJours(currentDomaine, jours);
+                    sauvegarderTout();
                     afficherPage(jourNum);
                     afficherBarreSegments();
                 });
             }
 
-            // Démarrer une nouvelle expertise
+            // Événement Démarrer expertise
             document.getElementById('startExpertise').addEventListener('click', () => {
                 const domaine = document.getElementById('domaine').value.trim();
                 if (!domaine) { alert('Domaine requis'); return; }
-                // Créer une nouvelle entrée dans l'historique
-                const newId = genererId();
-                const newEntry = {
-                    id: newId,
-                    domaine: domaine,
-                    dateDebut: new Date().toISOString(),
-                    dateFin: null,
-                    progression: [false,false,false,false,false,false,false],
-                    jours: {},
-                    shared: false
-                };
-                let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                historique.unshift(newEntry); // ajoute au début
-                localStorage.setItem('historique', JSON.stringify(historique));
-                // Charger cette nouvelle expertise
-                chargerExpertiseParId(newId);
+                let histEntry = historique.find(h => h.domaine === domaine);
+                if (!histEntry) {
+                    histEntry = { domaine: domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: false };
+                    historique.push(histEntry);
+                    sauvegarderTout();
+                }
+                // Réinitialiser les jours pour ce domaine (on efface l'ancien contenu pour cette nouvelle expertise)
+                reinitialiserJoursPourDomaine(domaine);
+                jours = {};
+                chargerExpertise(domaine, histEntry.progression.slice(), null);
             });
 
             document.getElementById('prevDay').addEventListener('click', () => { if (currentPage > 0) { currentPage--; afficherPage(currentPage); } });
@@ -695,11 +714,8 @@
             });
 
             document.getElementById('homeHeader').addEventListener('click', () => {
-                currentEntryId = null;
                 currentDomaine = '';
                 currentPage = 0;
-                jours = {};
-                progression = [false,false,false,false,false,false,false];
                 document.getElementById('jourContainer').style.display = 'none';
                 document.getElementById('startExpertise').style.display = 'block';
                 document.getElementById('domaine').value = '';
@@ -709,16 +725,20 @@
             });
 
             function genererLienPartage() {
-                if (currentEntryId) {
-                    return window.location.href.split('?')[0] + '?expertiseId=' + currentEntryId;
+                const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
+                const baseUrl = window.location.href.split('?')[0];
+                if (activeMode === 'expertise' && currentDomaine) return `${baseUrl}?expertise=${encodeURIComponent(currentDomaine)}`;
+                else if (activeMode === 'personnel') {
+                    let defauts = document.getElementById('defauts').value.split('\n').filter(l=>l.trim()).slice(0,5);
+                    if (defauts.length===5) return `${baseUrl}?personnel=${encodeURIComponent(JSON.stringify(defauts))}`;
                 }
-                return window.location.href;
+                return baseUrl;
             }
             document.getElementById('shareButton').addEventListener('click', async () => {
                 const shareUrl = genererLienPartage();
                 let shareText = '';
                 const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
-                if (activeMode === 'expertise' && currentDomaine) shareText = `🧠 Découvrez l'expertise "${currentDomaine}" sur Chapelet Tazzz Bot !`;
+                if (activeMode === 'expertise' && currentDomaine) shareText = `🧠 Découvrez cette expertise "${currentDomaine}" sur Chapelet Tazzz Bot ! Aucune donnée personnelle n'est partagée.`;
                 else if (activeMode === 'personnel') shareText = `🔥 Développement personnel – Transformez votre vie avec Chapelet Tazzz Bot !`;
                 else shareText = `🧠 Transformez votre structure mentale avec Chapelet Tazzz Bot !`;
                 if (navigator.share) { try { await navigator.share({ title: 'Chapelet Tazzz Bot', text: shareText, url: shareUrl }); } catch(e) {} }
@@ -727,9 +747,32 @@
 
             function initFromUrl() {
                 const urlParams = new URLSearchParams(window.location.search);
-                const expertiseId = urlParams.get('expertiseId');
-                if (expertiseId) {
-                    chargerExpertiseParId(expertiseId);
+                const expertiseParam = urlParams.get('expertise');
+                if (expertiseParam) {
+                    const domaine = decodeURIComponent(expertiseParam);
+                    document.getElementById('domaine').value = domaine;
+                    setTimeout(() => {
+                        const startBtn = document.getElementById('startExpertise');
+                        if (startBtn && startBtn.style.display !== 'none') startBtn.click();
+                        setTimeout(() => {
+                            let entry = historique.find(h => h.domaine === domaine);
+                            if (!entry) {
+                                entry = { domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: true };
+                                historique.push(entry);
+                                sauvegarderTout();
+                            } else if (!entry.shared) { entry.shared = true; sauvegarderTout(); }
+                        }, 500);
+                    }, 500);
+                }
+                const personnelParam = urlParams.get('personnel');
+                if (personnelParam) {
+                    try {
+                        const defauts = JSON.parse(decodeURIComponent(personnelParam));
+                        if (Array.isArray(defauts) && defauts.length === 5) {
+                            const textarea = document.getElementById('defauts');
+                            if (textarea) { textarea.value = defauts.join('\n'); setTimeout(() => { const btn = document.getElementById('generatePersonnel'); if (btn) btn.click(); }, 500); }
+                        }
+                    } catch(e) {}
                 }
             }
             initFromUrl();
@@ -771,65 +814,61 @@
             document.getElementById('generateConsult').addEventListener('click', () => {
                 let msg = document.getElementById('consultMessage').value.trim();
                 if (!msg) { alert('Message requis'); return; }
-                // Création rapide d'une expertise via consultation
-                const newId = genererId();
-                const newEntry = {
-                    id: newId,
-                    domaine: msg,
-                    dateDebut: new Date().toISOString(),
-                    dateFin: null,
-                    progression: [false,false,false,false,false,false,false],
-                    jours: {},
-                    shared: false
-                };
-                let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                historique.unshift(newEntry);
-                localStorage.setItem('historique', JSON.stringify(historique));
-                chargerExpertiseParId(newId);
+                currentDomaine = msg;
+                historique = historique.filter(h => h.domaine !== currentDomaine);
+                progression = [false,false,false,false,false,false,false];
+                historique.push({ domaine: currentDomaine, dateDebut: new Date().toISOString(), dateFin: null, progression: progression.slice(), shared: false });
+                sauvegarderTout();
+                reinitialiserJoursPourDomaine(currentDomaine);
+                jours = {};
+                currentPage = 0;
+                afficherPage(0);
+                document.getElementById('jourContainer').style.display = 'block';
+                document.getElementById('startExpertise').style.display = 'none';
+                document.querySelector('.mode-btn[data-mode="expertise"]').click();
+                afficherBarreSegments();
             });
 
-            // HISTORIQUE avec suppression et rechargement
+            // HISTORIQUE avec suppression
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
             function formaterDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
 
-            function supprimerEntree(id) {
+            function supprimerEntree(index) {
                 if (confirm('Supprimer définitivement cette formation ?')) {
-                    let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                    const item = historique.find(e => e.id === id);
-                    if (item && item.progression && item.progression.filter(v=>v).length === 7) {
+                    const item = historique[index];
+                    if (item.progression && item.progression.filter(v=>v).length === 7) {
                         let badges = JSON.parse(localStorage.getItem('badges')) || [];
                         const expertBadge = `🏅 Expert en ${item.domaine}`;
                         const newBadges = badges.filter(b => b !== expertBadge);
                         localStorage.setItem('badges', JSON.stringify(newBadges));
                         updateBadgeCounters();
                     }
-                    historique = historique.filter(e => e.id !== id);
-                    localStorage.setItem('historique', JSON.stringify(historique));
+                    // Supprimer aussi les jours associés
+                    let jpd = getJoursParDomaine();
+                    delete jpd[item.domaine];
+                    localStorage.setItem('joursParDomaine', JSON.stringify(jpd));
+                    historique.splice(index, 1);
+                    sauvegarderTout();
                     afficherHistorique();
-                    if (currentEntryId === id) {
-                        // on réinitialise l'affichage
-                        document.getElementById('homeHeader').click();
-                    }
                 }
             }
 
             function afficherHistorique() {
-                const historique = JSON.parse(localStorage.getItem('historique')) || [];
                 historyList.innerHTML = '';
-                historique.forEach(entry => {
-                    const completed = entry.progression.filter(v=>v).length;
+                historique.forEach((item, idx) => {
+                    const completed = item.progression.filter(v=>v).length;
                     const containerDiv = document.createElement('div');
                     containerDiv.className = 'history-item';
                     const textDiv = document.createElement('div');
                     textDiv.className = 'history-item-text';
-                    let text = (completed === 7) ? `Expertise en ${entry.domaine} du ${formaterDate(entry.dateDebut)} au ${formaterDate(entry.dateFin)}` : `Expertise inachevée (${completed}/7) – ${entry.domaine}`;
-                    if (entry.shared) text += ' (partagée)';
-                    textDiv.innerHTML = `<strong>${text}</strong><br><small>Début: ${formaterDate(entry.dateDebut)}</small>`;
-                    if (completed === 7 && entry.domaine) {
+                    let text = (completed === 7) ? `Expertise en ${item.domaine} du ${formaterDate(item.dateDebut)} au ${formaterDate(item.dateFin)}` : `Expertise inachevée (${completed}/7) – ${item.domaine}`;
+                    if (item.shared) text += ' (partagée)';
+                    textDiv.innerHTML = `<strong>${text}</strong><br><small>Début: ${formaterDate(item.dateDebut)}</small>`;
+                    if (completed === 7 && item.domaine) {
                         const badgeSpan = document.createElement('div');
                         badgeSpan.className = 'badge-text';
-                        badgeSpan.innerHTML = `🏅 Expert en ${entry.domaine}`;
+                        badgeSpan.innerHTML = `🏅 Expert en ${item.domaine}`;
                         textDiv.appendChild(badgeSpan);
                     }
                     const delBtn = document.createElement('button');
@@ -837,13 +876,15 @@
                     delBtn.className = 'delete-history-item';
                     delBtn.onclick = (e) => {
                         e.stopPropagation();
-                        supprimerEntree(entry.id);
+                        supprimerEntree(idx);
                     };
                     containerDiv.appendChild(textDiv);
                     containerDiv.appendChild(delBtn);
                     textDiv.style.cursor = 'pointer';
                     textDiv.onclick = () => {
-                        chargerExpertiseParId(entry.id);
+                        // Charger l'expertise depuis l'historique avec ses propres jours
+                        const savedJours = getJoursPourDomaine(item.domaine);
+                        chargerExpertise(item.domaine, item.progression.slice(), savedJours);
                         historyModal.style.display = 'none';
                         document.querySelector('.mode-btn[data-mode="expertise"]').click();
                     };
