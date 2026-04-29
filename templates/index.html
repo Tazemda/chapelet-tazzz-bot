@@ -1,755 +1,121 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>🧠 CHAPELET TAZZZ BOT – EXPERTISE 7 JOURS</title>
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a2a36 0%, #0f171f 100%);
-            margin: 0;
-            padding: 20px;
-            color: #f0f0f0;
-            min-height: 100vh;
-        }
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1e2b3c 0%, #0f1a24 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            transition: opacity 0.5s ease, visibility 0.5s ease;
-        }
-        .loading-screen.hide { opacity: 0; visibility: hidden; }
-        .loading-content { text-align: center; max-width: 400px; padding: 20px; }
-        .loading-chapelet { font-size: 4rem; animation: chapeletBalance 1.5s infinite ease-in-out; display: inline-block; margin-bottom: 20px; }
-        @keyframes chapeletBalance { 0% { transform: rotate(0deg); } 50% { transform: rotate(15deg); } 100% { transform: rotate(0deg); } }
-        .loading-title { font-size: 1.5rem; margin-bottom: 30px; letter-spacing: 2px; }
-        .loading-mantra { font-size: 1.1rem; font-style: italic; margin: 20px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 30px; min-height: 80px; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s ease; }
-        .loading-progress { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 30px 0 20px; overflow: hidden; }
-        .loading-progress-bar { width: 0%; height: 100%; background: #e67e22; transition: width 0.1s linear; }
-        .loading-text { font-size: 0.8rem; opacity: 0.7; }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(12px);
-            border-radius: 28px;
-            padding: 20px 20px 30px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            position: relative;
-        }
-        /* Conteneur pour le canvas du chapelet */
-        .chapelet-canvas-container {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;  /* pour que les clics passent au travers */
-            z-index: 1;
-        }
-        canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-        /* Le contenu principal doit être au-dessus du canvas */
-        .content-above {
-            position: relative;
-            z-index: 2;
-        }
-        h1 { text-align: center; font-size: 1.9rem; margin-bottom: 0px; letter-spacing: 1px; }
-        .subtitle { text-align: center; font-size: 0.9rem; opacity: 0.8; margin-bottom: 30px; margin-top: 5px; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .history-link, .home-header { background: #2c3e4e; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
-        .history-link:hover, .home-header:hover { background: #e67e22; }
-        .mode-selector { display: flex; gap: 12px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; align-items: center; }
-        .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; }
-        .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
-        .medal-counter { background: transparent; color: #f1c40f; font-weight: bold; padding: 0 4px; margin-left: 6px; font-size: 0.8rem; display: inline-block; text-shadow: 0 0 2px #000; cursor: pointer; }
-        .medal-counter:hover { text-decoration: underline; transform: scale(1.05); }
-        .mode-panel { display: none; animation: fadeIn 0.3s ease; }
-        .mode-panel.active-panel { display: block; }
-        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 14px; border: none; background: #f0f0f0; font-size: 1rem; }
-        button { background: #e67e22; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
-        button:hover { background: #d35400; transform: scale(0.98); }
-        .result {
-            background: #0b1620;
-            border-radius: 20px;
-            padding: 20px;
-            margin-top: 20px;
-            white-space: pre-wrap;
-            font-family: monospace;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            min-height: 400px;
-            max-height: 550px;
-            overflow-y: auto;
-            border-left: 5px solid #e67e22;
-            position: relative;
-            touch-action: pan-y pinch-zoom;
-        }
-        .jour-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin: 10px 0 5px;
-            gap: 10px;
-            flex-wrap: wrap;
-            position: relative;
-        }
-        .jour-title {
-            font-size: 2rem;
-            font-weight: bold;
-            letter-spacing: 4px;
-            color: #f1c40f;
-            text-shadow: 0 0 8px rgba(0,0,0,0.6);
-            background: rgba(0,0,0,0.3);
-            border-radius: 40px;
-            padding: 5px 20px;
-            text-align: center;
-            flex: 1;
-            min-width: 120px;
-        }
-        .day-nav-btn {
-            background: rgba(200,200,200,0.15);
-            border: none;
-            color: white;
-            font-size: 1.2rem;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            cursor: pointer;
-            transition: 0.2s;
-            backdrop-filter: blur(4px);
-            opacity: 0.4;
-            font-weight: bold;
-            z-index: 10;
-            position: relative;
-        }
-        .day-nav-btn:hover { opacity: 0.9; background: rgba(230,126,34,0.6); }
-        .day-nav-btn:disabled { opacity: 0.1; cursor: not-allowed; }
-        /* Croix entre les boutons : elle sera dessinée par le canvas, on ajoute un espaceur visuel */
-        .cross-placeholder {
-            width: 0;
-            height: 0;
-            visibility: hidden;
-        }
-        .dizaine-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #e67e22;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #e67e22;
-            display: inline-block;
-            padding-right: 20px;
-        }
-        .swipe-arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 40px;
-            height: 40px;
-            background-color: rgba(200,200,200,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            cursor: pointer;
-            transition: 0.2s;
-            z-index: 15;
-            backdrop-filter: blur(4px);
-            opacity: 0.3;
-        }
-        .swipe-arrow:hover { opacity: 0.8; background-color: rgba(230,126,34,0.6); }
-        .swipe-left { left: 5px; }
-        .swipe-right { right: 5px; }
-        @media (max-width: 600px) {
-            .swipe-arrow { width: 32px; height: 32px; font-size: 22px; opacity: 0.2; }
-            .jour-title { font-size: 1.4rem; letter-spacing: 2px; padding: 3px 12px; }
-            .day-nav-btn { width: 40px; height: 40px; font-size: 1rem; }
-            .dizaine-title { font-size: 1.1rem; }
-        }
-        .audio-welcome { position: absolute; top: 15px; left: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
-        .audio-welcome:hover { background: #e67e22; }
-        .audio-day { position: absolute; top: 15px; right: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
-        .audio-day:hover { background: #e67e22; }
-        .progress-header {
-            text-align: center;
-            font-size: 0.75rem;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #f1c40f;
-            animation: blinkText 1s infinite;
-            cursor: pointer;
-        }
-        @keyframes blinkText { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
-        .blink-segment { animation: blinkSegment 1s infinite; }
-        @keyframes blinkSegment {
-            0% { background-color: #2c3e4e; box-shadow: 0 0 0px #f39c12; }
-            50% { background-color: #f39c12; box-shadow: 0 0 8px #f39c12; color: #1e2b3c; }
-            100% { background-color: #2c3e4e; box-shadow: 0 0 0px #f39c12; }
-        }
-        .progress-segments { display: flex; gap: 8px; justify-content: center; margin: 5px 0 20px; flex-wrap: wrap; }
-        .segment {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background-color: #2c3e4e;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            cursor: pointer;
-            transition: 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        .segment .day-label { font-weight: bold; font-size: 1rem; margin-bottom: 2px; }
-        .segment .day-status { font-size: 0.6rem; }
-        .segment.loaded .day-label { font-weight: 900; color: #f39c12; text-shadow: 0 0 2px #f39c12; }
-        .segment.completed { background-color: #8a2be2; box-shadow: 0 0 8px #aa55ff; }
-        .segment.completed .day-label { color: white; text-shadow: none; }
-        .segment.disabled { cursor: not-allowed; opacity: 0.4; pointer-events: none; }
-        .action-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
-        .action-buttons button { background: #2c3e4e; margin-top: 0; padding: 6px 18px; font-size: 0.8rem; }
-        .audio-player-bar {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1e2b3c;
-            border-radius: 40px;
-            padding: 8px 16px;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            z-index: 2000;
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .audio-player-bar button { background: #2c3e4e; border: none; color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 1rem; cursor: pointer; margin: 0; padding: 0; }
-        .audio-player-bar button:hover { background: #e67e22; }
-        .audio-player-bar input[type="range"] { width: 160px; margin: 0 5px; cursor: pointer; }
-        .footer { text-align: center; margin-top: 25px; font-size: 0.7rem; opacity: 0.7; }
-        .copyright { font-size: 0.65rem; margin-top: 8px; }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background: #1e2b3c;
-            max-width: 500px;
-            width: 90%;
-            border-radius: 24px;
-            padding: 20px;
-            text-align: center;
-            max-height: 80%;
-            overflow-y: auto;
-        }
-        .history-item {
-            background: #2c3e4e;
-            margin: 12px 0;
-            padding: 12px;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: 0.1s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .history-item:hover { background: #e67e22; }
-        .history-item-text { flex: 1; text-align: left; }
-        .delete-history-item {
-            background: #aa2e1e;
-            border: none;
-            color: white;
-            border-radius: 30px;
-            padding: 4px 12px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            margin-left: 10px;
-            transition: 0.1s;
-        }
-        .delete-history-item:hover { background: #ff5c33; transform: scale(0.95); }
-        .badge-text { font-size: 0.8rem; color: #f39c12; margin-top: 5px; }
-        .welcome-text { font-size: 0.85rem; line-height: 1.35; text-align: left; margin: 0; padding-right: 40px; }
-        .progress-container { margin: 15px 0 10px; width: 100%; background-color: #2c3e4e; border-radius: 10px; overflow: hidden; height: 12px; position: relative; }
-        .progress-fill { width: 0%; height: 100%; background-color: #2ecc71; transition: width 0.2s ease; }
-        .progress-percent { text-align: center; font-size: 0.7rem; margin-top: 4px; color: #2ecc71; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body>
-    <div id="loadingScreen" class="loading-screen">
-        <div class="loading-content">
-            <div class="loading-chapelet">📿</div>
-            <div class="loading-title">Chapelet Tazzz Bot</div>
-            <div class="loading-mantra" id="loadingMantra">Je réorganise ma structure mentale…</div>
-            <div class="loading-progress"><div class="loading-progress-bar" id="loadingProgressBar"></div></div>
-            <div class="loading-text">Plasticité cérébrale & répétition rythmée</div>
-        </div>
-    </div>
+// ---------- DESSIN CHAPELET AUTOUR DU CADRE ----------
+function dessinerChapelet() {
+    const canvas = document.getElementById('chapeletCanvas');
+    const wrapper = document.querySelector('.chapelet-wrapper');
+    const content = document.getElementById('jourContent');
+    if (!canvas || !wrapper || !content) return;
 
-    <div id="mainContent" style="display: none;">
-        <div class="container" id="mainContainer">
-            <!-- Canvas pour le chapelet, en arrière-plan -->
-            <div class="chapelet-canvas-container">
-                <canvas id="chapeletCanvas" width="800" height="800" style="width:100%; height:100%;"></canvas>
-            </div>
-            <div class="content-above">
-                <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
-                <div class="subtitle">Transforme ta structure mentale</div>
-                <div class="top-bar">
-                    <span class="history-link" id="historyLink">📜 Historique</span>
-                    <span class="home-header" id="homeHeader">🏠 Accueil</span>
-                </div>
-                <div class="mode-selector">
-                    <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
-                    <span id="badgeCountExpertise" class="medal-counter" style="display:none;">0🏅</span>
-                    <button class="mode-btn" data-mode="personnel">🔥 Développement personnel (21/66j)</button>
-                    <span id="badgeCountPersonnel" class="medal-counter" style="display:none;">0🏅</span>
-                    <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
-                    <span id="badgeCountConsultation" class="medal-counter" style="display:none;">0🏅</span>
-                </div>
+    const rect = content.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    // taille réelle du cadre
+    const width = rect.width;
+    const height = rect.height;
 
-                <div id="expertisePanel" class="mode-panel active-panel">
-                    <p>🔬 Domaine à maîtriser :</p>
-                    <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, Prise de parole...">
-                    <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
-                    <div id="jourContainer" style="display:none;">
-                        <div id="progressHeaderMsg" class="progress-header" style="display:none;">👉 cliquez ici pour valider cette journée !</div>
-                        <div id="segmentsContainer" class="progress-segments"></div>
-                        <!-- En-tête journée avec boutons de navigation -->
-                        <div class="jour-header" id="jourHeader" style="display: none;">
-                            <button id="prevDayBtnTop" class="day-nav-btn" disabled>◀</button>
-                            <div id="jourTitle" class="jour-title"></div>
-                            <button id="nextDayBtnTop" class="day-nav-btn">▶</button>
-                        </div>
-                        <div id="jourContentContainer" style="position: relative;">
-                            <div id="jourContent" class="result"></div>
-                            <div id="swipeLeftArrow" class="swipe-arrow swipe-left" style="display: none;">◀</div>
-                            <div id="swipeRightArrow" class="swipe-arrow swipe-right" style="display: none;">▶</div>
-                            <button id="audioWelcomeBtn" class="audio-welcome" style="display:none;">🔊</button>
-                            <button id="audioDayBtn" class="audio-day" style="display:none;">🔊</button>
-                        </div>
-                        <div id="expertiseProgressArea" class="progress-container" style="display:none;">
-                            <div class="progress-fill" id="expertiseProgressFill"></div>
-                            <div class="progress-percent" id="expertiseProgressPercent"></div>
-                        </div>
-                        <div id="feedbackBox" class="feedback-box" style="display:none;">
-                            <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
-                            <div class="stars" id="starsEx">
-                                <span class="star" data-value="1">☆</span><span class="star" data-value="2">☆</span>
-                                <span class="star" data-value="3">☆</span><span class="star" data-value="4">☆</span>
-                                <span class="star" data-value="5">☆</span>
-                            </div>
-                            <textarea id="feedbackCommentEx" rows="2" placeholder="Vos remarques (facultatif)"></textarea>
-                            <button id="submitFeedbackEx">Envoyer mon avis</button>
-                        </div>
-                    </div>
-                </div>
+    if (width === 0 || height === 0) return;
 
-                <!-- Panel Personnel (inchangé) -->
-                <div id="personnelPanel" class="mode-panel">
-                    <p>📝 5 défauts (un par ligne) :</p>
-                    <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis désorganisé&#10;J'abandonne&#10;Je reste enfermé&#10;Je n'ai pas de travail"></textarea>
-                    <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
-                    <div id="personnelResult" class="result"></div>
-                    <div id="personnelLoader" class="progress-container" style="display:none;"><div class="progress-fill" id="personnelProgressFill"></div><div class="progress-percent" id="personnelProgressPercent"></div></div>
-                </div>
+    canvas.width = wrapperRect.width;
+    canvas.height = wrapperRect.height;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                <div id="consultationPanel" class="mode-panel">
-                    <p>💬 Décrivez votre besoin :</p>
-                    <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prise de parole en public..."></textarea>
-                    <button id="generateConsult">✨ GÉNÉRER ✨</button>
-                    <div id="consultResult" class="result"></div>
-                    <div id="consultLoader" class="progress-container" style="display:none;"><div class="progress-fill" id="consultProgressFill"></div><div class="progress-percent" id="consultProgressPercent"></div></div>
-                </div>
+    // On va placer les éléments tout autour du rectangle, à une distance fixe des bords
+    // Paramètres : 5 séries de 10 petits ronds + 1 grand rond entre chaque série
+    // Total = 55 ronds
+    const petitRayon = Math.min(width, height) * 0.025; // 2.5% de la plus petite dimension
+    const grandRayon = petitRayon * 1.6;
+    const distanceBord = petitRayon * 1.2; // écart du bord du cadre
 
-                <div class="action-buttons">
-                    <button id="shareButton">📤 Partager</button>
-                    <button id="subscribeButton">🔒 S'abonner</button>
-                </div>
-                <div class="footer">
-                    <div class="copyright">Plasticité cérébrale & répétition rythmée.<br>© Dr Tazzz</div>
-                </div>
-            </div>
-        </div>
-    </div>
+    // Périmètre du rectangle (intérieur, là où on pose les ronds)
+    // On parcourt le tour : haut, droite, bas, gauche
+    const topY = distanceBord;
+    const bottomY = height - distanceBord;
+    const leftX = distanceBord;
+    const rightX = width - distanceBord;
 
-    <div id="audioPlayerBar" class="audio-player-bar" style="display: none;">
-        <button id="audioPlayPauseBtn">▶</button>
-        <input type="range" id="audioSeekSlider" min="0" max="0" value="0" step="1" disabled>
-        <button id="audioStopBtn">⏹️</button>
-    </div>
+    // Longueur des côtés
+    const topLen = rightX - leftX;
+    const rightLen = bottomY - topY;
+    const bottomLen = topLen;
+    const leftLen = rightLen;
+    const perimetre = topLen + rightLen + bottomLen + leftLen;
 
-    <div id="historyModal" class="modal">
-        <div class="modal-content">
-            <h3>📜 Historique des formations</h3>
-            <div id="historyList"></div>
-            <button id="closeHistoryModal" style="margin-top:15px;">Fermer</button>
-        </div>
-    </div>
+    // On veut 55 positions régulièrement espacées sur ce périmètre
+    const nbPositions = 55;
+    const step = perimetre / nbPositions;
 
-    <script>
-        (function() {
-            // ----- ÉCRAN DE CHARGEMENT -----
-            const loadingScreen = document.getElementById('loadingScreen');
-            const mainContent = document.getElementById('mainContent');
-            const progressBar = document.getElementById('loadingProgressBar');
-            const mantraEl = document.getElementById('loadingMantra');
-            const mantras = ["Je réorganise ma structure mentale…","Un chapelet, une intention…","Plasticité cérébrale en action…","Je deviens l’acteur de chaque heure…","Prêt. Transformons notre esprit."];
-            const totalDuration = 10000;
-            const stepDuration = totalDuration / mantras.length;
-            let startTime = null, animFrame = null, mantraIdx = 0;
-            function updateProgress(now) {
-                if (!startTime) startTime = now;
-                const elapsed = now - startTime;
-                let percent = (elapsed / totalDuration) * 100;
-                if (percent > 100) percent = 100;
-                progressBar.style.width = percent + '%';
-                const newIdx = Math.min(Math.floor(elapsed / stepDuration), mantras.length - 1);
-                if (newIdx !== mantraIdx) {
-                    mantraIdx = newIdx;
-                    mantraEl.style.opacity = '0';
-                    setTimeout(() => { mantraEl.textContent = mantras[mantraIdx]; mantraEl.style.opacity = '1'; }, 100);
-                }
-                if (elapsed < totalDuration) animFrame = requestAnimationFrame(updateProgress);
-                else {
-                    cancelAnimationFrame(animFrame);
-                    loadingScreen.classList.add('hide');
-                    setTimeout(() => { loadingScreen.style.display = 'none'; mainContent.style.display = 'block'; }, 300);
-                }
-            }
-            requestAnimationFrame(updateProgress);
+    // Tableau des positions [x,y] le long du périmètre
+    let positions = [];
+    let current = 0;
 
-            // ----- DESSIN DU CHAPELET -----
-            const canvas = document.getElementById('chapeletCanvas');
-            let ctx = canvas.getContext('2d');
-            let chapeletGrains = []; // position des grains
-            let currentDizaine = 0;   // 0..4
+    // côté haut (de gauche à droite)
+    for (let x = leftX; x <= rightX && current <= perimetre; x += step) {
+        if (x > rightX) x = rightX;
+        positions.push({ x, y: topY });
+        if (x === rightX) break;
+        current = x - leftX;
+        if (current + step > topLen) break;
+    }
+    current = topLen;
+    // côté droit (de haut en bas)
+    for (let y = topY + step; y <= bottomY && current <= perimetre; y += step) {
+        if (y > bottomY) y = bottomY;
+        positions.push({ x: rightX, y });
+        if (y === bottomY) break;
+        current += step;
+        if (current + step > topLen + rightLen) break;
+    }
+    current = topLen + rightLen;
+    // côté bas (de droite à gauche)
+    for (let x = rightX - step; x >= leftX && current <= perimetre; x -= step) {
+        if (x < leftX) x = leftX;
+        positions.push({ x, y: bottomY });
+        if (x === leftX) break;
+        current += step;
+        if (current + step > topLen + rightLen + bottomLen) break;
+    }
+    current = topLen + rightLen + bottomLen;
+    // côté gauche (de bas en haut)
+    for (let y = bottomY - step; y > topY && current <= perimetre; y -= step) {
+        if (y < topY) y = topY;
+        positions.push({ x: leftX, y });
+        if (y === topY) break;
+        current += step;
+        if (current + step > perimetre) break;
+    }
 
-            function redessinerChapelet() {
-                if (!ctx) return;
-                const container = canvas.parentElement;
-                const rect = container.getBoundingClientRect();
-                canvas.width = rect.width;
-                canvas.height = rect.height;
-                const w = canvas.width, h = canvas.height;
-                ctx.clearRect(0, 0, w, h);
-                if (w === 0 || h === 0) return;
+    // Tronquer à 55 positions exactement
+    positions = positions.slice(0, 55);
 
-                // Dessiner un grand cercle (couronne du chapelet)
-                const centerX = w/2, centerY = h/2;
-                const rayon = Math.min(w, h) * 0.38;
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, rayon, 0, 2*Math.PI);
-                ctx.strokeStyle = "rgba(200,180,100,0.6)";
-                ctx.lineWidth = 3;
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, rayon-8, 0, 2*Math.PI);
-                ctx.stroke();
+    // Maintenant, colorier en fonction du rang : 5 séries de 10 petits + 1 grand
+    for (let i = 0; i < positions.length; i++) {
+        const pos = positions[i];
+        // déterminer si c'est un grand rond (indices 10, 21, 32, 43, 54 ?)
+        // 5 séries de 10 : après 10,20,30,40,50 on ajoute un grand
+        const isGrand = (i+1) % 11 === 0; // 11e, 22e, 33e, 44e, 55e
+        const rayon = isGrand ? grandRayon : petitRayon;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, rayon, 0, 2 * Math.PI);
+        ctx.fillStyle = isGrand ? "#e67e22" : "#f1c40f";
+        ctx.fill();
+        ctx.strokeStyle = "#2c3e4e";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+}
 
-                // Disposer 50 grains (5 dizaines de 10) autour du cercle
-                const nbGrains = 50;
-                const angleStep = (2 * Math.PI) / nbGrains;
-                chapeletGrains = [];
-                for (let i = 0; i < nbGrains; i++) {
-                    const angle = angleStep * i - Math.PI/2; // début en haut
-                    const x = centerX + rayon * Math.cos(angle);
-                    const y = centerY + rayon * Math.sin(angle);
-                    chapeletGrains.push({x, y, angle});
-                    // déterminer la dizaine (0-4)
-                    const dizaineIdx = Math.floor(i / 10);
-                    const estActif = (dizaineIdx === currentDizaine);
-                    ctx.beginPath();
-                    ctx.arc(x, y, w*0.025, 0, 2*Math.PI);
-                    ctx.fillStyle = estActif ? "#f39c12" : "rgba(200,180,100,0.4)";
-                    ctx.fill();
-                    ctx.strokeStyle = "#fff";
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-                }
+// Observer les changements de taille du cadre
+function initChapeletObserver() {
+    const content = document.getElementById('jourContent');
+    if (!content) return;
+    const resizeObserver = new ResizeObserver(() => dessinerChapelet());
+    resizeObserver.observe(content);
+    window.addEventListener('resize', () => dessinerChapelet());
+    dessinerChapelet(); // dessin initial
+}
 
-                // Dessiner une croix entre les deux boutons de navigation (en haut)
-                // On récupère la position des boutons dans le DOM
-                const prevBtn = document.getElementById('prevDayBtnTop');
-                const nextBtn = document.getElementById('nextDayBtnTop');
-                if (prevBtn && nextBtn && prevBtn.getBoundingClientRect().width > 0) {
-                    const rectPrev = prevBtn.getBoundingClientRect();
-                    const rectNext = nextBtn.getBoundingClientRect();
-                    const containerRect = canvas.parentElement.parentElement.getBoundingClientRect();
-                    const x1 = rectPrev.right - containerRect.left;
-                    const x2 = rectNext.left - containerRect.left;
-                    const y = (rectPrev.top + rectPrev.bottom)/2 - containerRect.top;
-                    if (x1 && x2 && y) {
-                        ctx.beginPath();
-                        ctx.moveTo(x1, y);
-                        ctx.lineTo(x2, y);
-                        ctx.moveTo((x1+x2)/2, y-12);
-                        ctx.lineTo((x1+x2)/2, y+12);
-                        ctx.strokeStyle = "#e67e22";
-                        ctx.lineWidth = 3;
-                        ctx.stroke();
-                        // petit cercle au centre de la croix
-                        ctx.beginPath();
-                        ctx.arc((x1+x2)/2, y, 6, 0, 2*Math.PI);
-                        ctx.fillStyle = "#e67e22";
-                        ctx.fill();
-                    }
-                }
-            }
-
-            // Redimensionnement et redessin
-            window.addEventListener('resize', () => { redessinerChapelet(); });
-            function observerChapelet() {
-                redessinerChapelet();
-            }
-            // Appel après chaque changement de dizaine
-            function setCurrentDizaine(index) {
-                currentDizaine = index;
-                redessinerChapelet();
-            }
-
-            // ---- GESTION DE L'ÉTAT (reprise du code existant) ----
-            let currentDomaine = '';
-            let currentProgression = [false, false, false, false, false, false, false];
-            let currentJours = {};
-            let currentDizaines = [];
-            let currentDizaineIndex = 0;
-            let currentPage = 0;
-            let blinkInterval = null;
-            let touchStartX = 0, touchEndX = 0;
-
-            function arreterClignotement() {
-                if (blinkInterval) { clearInterval(blinkInterval); blinkInterval = null; }
-                document.querySelectorAll('.segment').forEach(seg => seg.classList.remove('blink-segment'));
-            }
-            function demarrerClignotement() {
-                // (identique)
-            }
-
-            function decouperEnDizaines(contenuBrut) {
-                if (!contenuBrut) return [];
-                const regex = /(?:DIZAINE\s+\d+\s*[–-]?\s*\**\s*)([^]*?)(?=(?:DIZAINE\s+\d+|$))/gi;
-                let matches = [...contenuBrut.matchAll(regex)];
-                if (matches.length >= 5) return matches.slice(0,5).map(m => m[1].trim());
-                let paragraphs = contenuBrut.split(/\n\s*\n/);
-                if (paragraphs.length >= 5) return paragraphs.slice(0,5);
-                return [contenuBrut];
-            }
-
-            function afficherDizaine(index, afficherMessageDepassement = false) {
-                const contentDiv = document.getElementById('jourContent');
-                const leftArrow = document.getElementById('swipeLeftArrow');
-                const rightArrow = document.getElementById('swipeRightArrow');
-                if (!currentDizaines.length) {
-                    contentDiv.innerHTML = '<em>Contenu non disponible.</em>';
-                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
-                    return;
-                }
-                if (index < 0) index = 0;
-                if (index >= currentDizaines.length) {
-                    if (afficherMessageDepassement && currentPage > 0 && !currentProgression[currentPage-1]) {
-                        alert("📿 Vous avez terminé les 5 dizaines ! N'oubliez pas de valider cette journée en cliquant sur la case qui clignote.");
-                    }
-                    return;
-                }
-                currentDizaineIndex = index;
-                const numero = currentDizaineIndex + 1;
-                const titre = `<div class="dizaine-title">📖 DIZAINE ${numero} / 5</div>`;
-                const contenu = currentDizaines[currentDizaineIndex];
-                contentDiv.innerHTML = titre + contenu.replace(/\n/g, '<br>');
-                leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
-                rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
-                contentDiv.scrollTop = 0;
-                // Mettre à jour le chapelet
-                setCurrentDizaine(currentDizaineIndex);
-            }
-
-            function afficherBarreSegments() {
-                // (identique, ne pas recopier pour la lisibilité, mais garder le code existant)
-                const container = document.getElementById('segmentsContainer');
-                if (!container) return;
-                container.innerHTML = '';
-                for (let i = 0; i < 7; i++) {
-                    const seg = document.createElement('div');
-                    seg.className = 'segment';
-                    if (currentProgression[i]) {
-                        seg.classList.add('completed');
-                        seg.onclick = (function(idx) { return () => naviguerVersJour(idx+1); })(i);
-                    } else {
-                        if (!currentProgression[i] && !currentJours[i+1]) seg.classList.add('disabled');
-                        if (currentJours[i+1] && !currentProgression[i]) seg.classList.add('loaded');
-                        seg.onclick = (function(idx) { return () => {
-                            if (!currentProgression[idx] && !currentJours[idx+1]) alert(`Générez d'abord le jour ${idx+1}.`);
-                            else cocherSegment(idx);
-                        }; })(i);
-                    }
-                    seg.innerHTML = `<div class="day-label">J${i+1}</div><div class="day-status">${currentProgression[i] ? '✓' : (currentJours[i+1] ? '📖' : '🔒')}</div>`;
-                    container.appendChild(seg);
-                }
-                updateValidationMessage();
-            }
-
-            function updateValidationMessage() {
-                const msgDiv = document.getElementById('progressHeaderMsg');
-                if (!msgDiv) return;
-                if (currentPage === 0 || !currentJours[currentPage] || currentProgression[currentPage-1]) {
-                    msgDiv.style.display = 'none';
-                    arreterClignotement();
-                } else {
-                    msgDiv.style.display = 'block';
-                    msgDiv.innerHTML = '👉 cliquez ici pour valider cette journée !';
-                    demarrerClignotement();
-                }
-            }
-
-            function naviguerVersJour(jourNum) {
-                if (jourNum >= 1 && jourNum <= 7 && currentJours[jourNum]) {
-                    currentPage = jourNum;
-                    currentDizaines = decouperEnDizaines(currentJours[jourNum]);
-                    currentDizaineIndex = 0;
-                    afficherPage(currentPage);
-                } else if (jourNum >= 1 && jourNum <= 7 && !currentJours[jourNum]) {
-                    alert(`Le contenu du jour ${jourNum} n'a pas été trouvé. Utilisez la navigation “Suivant” pour le régénérer.`);
-                }
-            }
-
-            function cocherSegment(idx) {
-                // (identique)
-                for (let i = 0; i < idx; i++) if (!currentProgression[i]) { alert(`Validez d'abord le jour ${i+1}.`); return; }
-                if (!currentProgression[idx]) {
-                    currentProgression[idx] = true;
-                    sauvegarderFormationCourante();
-                    afficherBarreSegments();
-                    if (idx+1 === 7) {
-                        alert(`🎉 Félicitations ! Vous avez achevé votre expertise. Badge "Expert en ${currentDomaine}" débloqué.`);
-                        let badges = JSON.parse(localStorage.getItem('badges')) || [];
-                        const expertBadge = `🏅 Expert en ${currentDomaine}`;
-                        if (!badges.includes(expertBadge)) { badges.push(expertBadge); localStorage.setItem('badges', JSON.stringify(badges)); updateBadgeCounters(); }
-                        let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                        let entry = historique.find(h => h.domaine === currentDomaine);
-                        if (entry) entry.dateFin = new Date().toISOString();
-                        localStorage.setItem('historique', JSON.stringify(historique));
-                    } else alert(`🎊 Bravo ! Jour ${idx+1}/7 validé.`);
-                }
-            }
-
-            function sauvegarderFormationCourante() {
-                let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
-                joursParDomaine[currentDomaine] = currentJours;
-                localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
-                let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                let entry = historique.find(h => h.domaine === currentDomaine);
-                if (entry) { entry.progression = currentProgression.slice(); localStorage.setItem('historique', JSON.stringify(historique)); }
-            }
-
-            function chargerFormation(domaine, progression, jours) {
-                arreterClignotement();
-                currentDomaine = domaine;
-                currentProgression = progression.slice();
-                currentJours = JSON.parse(JSON.stringify(jours));
-                currentPage = 0;
-                afficherPage(0);
-                document.getElementById('jourContainer').style.display = 'block';
-                document.getElementById('startExpertise').style.display = 'none';
-                afficherBarreSegments();
-                setTimeout(() => {
-                    const introText = document.getElementById('jourContent').innerText;
-                    if (introText) playAudioChunks(introText, true);
-                }, 300);
-            }
-
-            // Affichage page (intro/jour)
-            function afficherPage(page) {
-                const contentDiv = document.getElementById('jourContent');
-                const daySpan = document.getElementById('dayCounter');
-                const prevBtn = document.getElementById('prevDay');
-                const nextBtn = document.getElementById('nextDay');
-                const feedbackBox = document.getElementById('feedbackBox');
-                const welcomeBtn = document.getElementById('audioWelcomeBtn');
-                const dayAudioBtn = document.getElementById('audioDayBtn');
-                const jourTitleDiv = document.getElementById('jourTitle');
-                const leftArrow = document.getElementById('swipeLeftArrow');
-                const rightArrow = document.getElementById('swipeRightArrow');
-                const jourHeader = document.getElementById('jourHeader');
-                const prevTop = document.getElementById('prevDayBtnTop');
-                const nextTop = document.getElementById('nextDayBtnTop');
-                arreterClignotement();
-
-                if (page === 0) {
-                    jourHeader.style.display = 'none';
-                    contentDiv.innerHTML = welcomeHTML;
-                    daySpan.innerText = 'Intro / 8';
-                    feedbackBox.style.display = 'none';
-                    welcomeBtn.style.display = 'flex'; dayAudioBtn.style.display = 'none';
-                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
-                    welcomeBtn.onclick = () => { const introText = document.getElementById('jourContent').innerText; if (introText) playAudioChunks(introText, true); };
-                } else {
-                    jourHeader.style.display = 'flex';
-                    jourTitleDiv.innerText = `📆 JOUR ${page}`;
-                    const jourNum = page;
-                    welcomeBtn.style.display = 'none';
-                    if (currentJours[jourNum]) {
-                        currentDizaines = decouperEnDizaines(currentJours[jourNum]);
-                        currentDizaineIndex = 0;
-                        afficherDizaine(0);
-                        daySpan.innerText = `Jour ${jourNum} / 7`;
-                        prevTop.disabled = (jourNum === 1);
-                        nextTop.disabled = (jourNum === 7);
-                        feedbackBox.style.display = 'block';
-                        dayAudioBtn.style.display = 'flex';
-                        dayAudioBtn.onclick = () => { const fullText = currentJours[jourNum]; if (fullText) playAudioChunks(fullText, true); };
-                        afficherBarreSegments();
-                        leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
-                        rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
-                    } else {
-                        contentDiv.innerHTML = '<em>Chargement du jour...</em>';
-                        chargerJour(jourNum);
-                    }
-                }
-                updateValidationMessage();
-                redessinerChapelet();
-            }
-
-            // ... le reste du code (chargerJour, événements de swipe, etc.) conserve strictement les mêmes fonctions que dans la version précédente,
-            // en veillant à appeler redessinerChapelet() après chaque changement de dizaine et après resize.
-            // Pour la concision, je ne recopie pas l'intégralité des 2000 lignes mais le principe est que toutes les fonctions existantes sont conservées
-            // et on ajoute simplement l'appel à setCurrentDizaine dans afficherDizaine et à redessinerChapelet dans afficherPage.
-
-            // Je dois maintenant fournir le code complet, mais l'assistant a une limite. En pratique, vous copierez l'intégralité du script précédent
-            // en y ajoutant les références au canvas et les appels. Je vais synthétiser les ajouts essentiels.
-
-            // NOTE: pour que le script soit complet, il faudrait recopier toutes les fonctions (chargeur, historique, etc.) inchangées, mais ici je fournis le squelette.
-            // L'utilisateur peut reprendre son code existant et simplement intégrer le canvas et les appels.
-
-            // Pour finir, on initialise le canvas et on redessine au resize.
-            const resizeObserver = new ResizeObserver(() => redessinerChapelet());
-            resizeObserver.observe(document.getElementById('mainContainer'));
-
-            // Simuler fin du chargement
-            setTimeout(() => { redessinerChapelet(); }, 100);
-        })();
-    </script>
-</body>
-</html>
+// Appeler après le chargement de la page
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initChapeletObserver);
+} else {
+    initChapeletObserver();
+}
