@@ -99,7 +99,7 @@ def generer_jour_expertise(domaine, jour_num):
         print(f"Erreur jour {jour_num}: {e}")
         return f"JOUR {jour_num} – {titre_objectif.upper()} (version de secours)\n\n(erreur technique, veuillez réessayer)"
 
-# ================= COURS (6 CHAPITRES) =================
+# ================= COURS (6 CHAPITRES, 6 JOURS) =================
 PROMPT_CHAPITRE_JOUR = """
 Tu es un expert pédagogique. Tu reçois le texte d'un chapitre (environ 3 pages A4).
 Transforme ce chapitre en un contenu structuré pour une journée d'étude (5 dizaines).
@@ -123,21 +123,6 @@ D) **Gloire au Père** : "Le concept [nom] est consolidé." (RÉPÈTE 3 fois)
 Soigne la qualité, reste fidèle au texte source. Ne dépasse pas 2500 tokens.
 """
 
-PROMPT_JOUR_7 = """
-Tu es un expert pédagogique. L'utilisateur a étudié 6 chapitres. Génère un **jour de révision et d'évaluation** (5 dizaines) sous forme de questions et exercices.
-
-Les chapitres sont :
-{chapitres_titres}
-
-Crée le contenu du **Jour 7 – RÉVISION ET CONTRÔLE DES CONNAISSANCES** avec 5 dizaines :
-- Dizaine 1 : QCM sur le chapitre 1
-- Dizaine 2 : QCM sur le chapitre 2
-- …
-- Dizaine 5 : questions ouvertes transversales
-
-Format identique à l'expertise (Méditation, Notre Père, Ave Maria, Gloire). Soigne la pédagogie.
-"""
-
 @app.route('/generer_chapitre', methods=['POST'])
 def generer_chapitre_route():
     """Génère le contenu d'un chapitre (jour) à partir de son texte brut."""
@@ -147,17 +132,6 @@ def generer_chapitre_route():
     if not texte or not num:
         return jsonify({'error': 'Texte et numéro requis'}), 400
     prompt = PROMPT_CHAPITRE_JOUR.format(texte_chapitre=texte, jour_num=num)
-    contenu = call_deepseek(prompt, max_tokens=2500)
-    contenu = clean_markdown(contenu)
-    contenu = remove_markdown_chars(contenu)
-    return jsonify({'contenu': contenu})
-
-@app.route('/generer_jour7', methods=['POST'])
-def generer_jour7_route():
-    """Génère le jour 7 à partir des titres des 6 chapitres."""
-    data = request.get_json()
-    titres = data.get('titres', [f"Chapitre {i}" for i in range(1,7)])
-    prompt = PROMPT_JOUR_7.format(chapitres_titres="\n".join(titres))
     contenu = call_deepseek(prompt, max_tokens=2500)
     contenu = clean_markdown(contenu)
     contenu = remove_markdown_chars(contenu)
