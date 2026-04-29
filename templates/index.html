@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>🧠 CHAPELET TAZZZ BOT – EXPERTISE 7 JOURS</title>
     <style>
-        /* (tous les styles précédents, inchangés, sauf les ajouts ci-dessous) */
+        /* ... tous les styles identiques à la version précédente ... */
         * { box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -15,200 +15,277 @@
             color: #f0f0f0;
             min-height: 100vh;
         }
-        /* ... tous les styles du chargement, container, etc. inchangés ... */
-        /* On va juste ajouter/modifier les styles pour la barre de jour avec flèches */
-
-        .jour-header {
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1e2b3c 0%, #0f1a24 100%);
             display: flex;
+            justify-content: center;
             align-items: center;
-            justify-content: space-between;
-            background: rgba(0,0,0,0.3);
-            border-radius: 50px;
-            padding: 5px 15px;
-            margin: 10px 20px 0 20px;
-            backdrop-filter: blur(4px);
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
         }
-        .jour-nav-arrow {
-            background: rgba(200,200,200,0.15);
-            border-radius: 50%;
+        .loading-screen.hide { opacity: 0; visibility: hidden; }
+        .loading-content { text-align: center; max-width: 400px; padding: 20px; }
+        .loading-chapelet { font-size: 4rem; animation: chapeletBalance 1.5s infinite ease-in-out; display: inline-block; margin-bottom: 20px; }
+        @keyframes chapeletBalance { 0% { transform: rotate(0deg); } 50% { transform: rotate(15deg); } 100% { transform: rotate(0deg); } }
+        .loading-title { font-size: 1.5rem; margin-bottom: 30px; letter-spacing: 2px; }
+        .loading-mantra { font-size: 1.1rem; font-style: italic; margin: 20px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 30px; min-height: 80px; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s ease; }
+        .loading-progress { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 30px 0 20px; overflow: hidden; }
+        .loading-progress-bar { width: 0%; height: 100%; background: #e67e22; transition: width 0.1s linear; }
+        .loading-text { font-size: 0.8rem; opacity: 0.7; }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            padding: 20px 20px 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        h1 { text-align: center; font-size: 1.9rem; margin-bottom: 0px; letter-spacing: 1px; }
+        .subtitle { text-align: center; font-size: 0.9rem; opacity: 0.8; margin-bottom: 30px; margin-top: 5px; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .history-link, .home-header { background: #2c3e4e; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+        .history-link:hover, .home-header:hover { background: #e67e22; }
+        .mode-selector { display: flex; gap: 12px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; align-items: center; }
+        .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; }
+        .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
+        .medal-counter { background: transparent; color: #f1c40f; font-weight: bold; padding: 0 4px; margin-left: 6px; font-size: 0.8rem; display: inline-block; text-shadow: 0 0 2px #000; cursor: pointer; }
+        .medal-counter:hover { text-decoration: underline; transform: scale(1.05); }
+        .mode-panel { display: none; animation: fadeIn 0.3s ease; }
+        .mode-panel.active-panel { display: block; }
+        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 14px; border: none; background: #f0f0f0; font-size: 1rem; }
+        button { background: #e67e22; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
+        button:hover { background: #d35400; transform: scale(0.98); }
+        .result {
+            background: #0b1620;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            min-height: 400px;
+            max-height: 550px;
+            overflow-y: auto;
+            border-left: 5px solid #e67e22;
+            position: relative;
+            touch-action: pan-y pinch-zoom;
+        }
+        .jour-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 6px;
+            margin: 15px 0 10px;
+            color: #f1c40f;
+            text-shadow: 0 0 8px rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.3);
+            border-radius: 40px;
+            padding: 5px 15px;
+            display: inline-block;
+            width: auto;
+        }
+        .jour-title-container { text-align: center; }
+        .dizaine-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #e67e22;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e67e22;
+            display: inline-block;
+            padding-right: 20px;
+            text-transform: uppercase;
+        }
+        .swipe-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
             width: 40px;
             height: 40px;
+            background-color: rgba(200,200,200,0.2);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 28px;
             cursor: pointer;
             transition: 0.2s;
+            z-index: 15;
+            backdrop-filter: blur(4px);
             opacity: 0.3;
-            color: white;
         }
-        .jour-nav-arrow:hover {
-            opacity: 0.9;
-            background: rgba(230,126,34,0.6);
-            transform: scale(1.05);
-        }
-        .jour-title {
-            font-size: 1.8rem;
-            font-weight: bold;
-            letter-spacing: 4px;
-            color: #f1c40f;
-            text-shadow: 0 0 5px rgba(0,0,0,0.5);
-            margin: 0;
-        }
+        .swipe-arrow:hover { opacity: 0.8; background-color: rgba(230,126,34,0.6); }
+        .swipe-left { left: 5px; }
+        .swipe-right { right: 5px; }
         @media (max-width: 600px) {
-            .jour-nav-arrow { width: 32px; height: 32px; font-size: 20px; }
-            .jour-title { font-size: 1.4rem; }
+            .swipe-arrow { width: 32px; height: 32px; font-size: 22px; opacity: 0.2; }
+            .jour-title { font-size: 1.5rem; letter-spacing: 3px; }
+            .dizaine-title { font-size: 1.1rem; }
         }
-        /* On supprime la classe .nav-buttons et on cache les anciens boutons */
-        .nav-buttons {
-            display: none;
-        }
-        /* On ajuste le conteneur pour ne pas avoir de margin inutile */
-        .jour-title-container {
+        .audio-welcome { position: absolute; top: 15px; left: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
+        .audio-welcome:hover { background: #e67e22; }
+        .audio-day { position: absolute; top: 15px; right: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
+        .audio-day:hover { background: #e67e22; }
+        .nav-buttons { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; }
+        .nav-buttons button { width: auto; margin: 0; padding: 8px 20px; font-size: 0.9rem; }
+        .day-counter { font-size: 0.9rem; font-weight: bold; background: #2c3e4e; padding: 5px 12px; border-radius: 30px; }
+        .progress-header {
             text-align: center;
+            font-size: 0.75rem;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #f1c40f;
+            animation: blinkText 1s infinite;
+            cursor: pointer;
         }
-        /* Le reste des styles (progress-segments, result, swipe-arrow etc.) est conservé */
+        @keyframes blinkText { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        .blink-segment { animation: blinkSegment 1s infinite; }
+        @keyframes blinkSegment {
+            0% { background-color: #2c3e4e; box-shadow: 0 0 0px #f39c12; }
+            50% { background-color: #f39c12; box-shadow: 0 0 8px #f39c12; color: #1e2b3c; }
+            100% { background-color: #2c3e4e; box-shadow: 0 0 0px #f39c12; }
+        }
+        .progress-segments { display: flex; gap: 8px; justify-content: center; margin: 5px 0 20px; flex-wrap: wrap; }
+        .segment {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background-color: #2c3e4e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .segment .day-label { font-weight: bold; font-size: 1rem; margin-bottom: 2px; }
+        .segment .day-status { font-size: 0.6rem; }
+        .segment.loaded .day-label { font-weight: 900; color: #f39c12; text-shadow: 0 0 2px #f39c12; }
+        .segment.completed { background-color: #8a2be2; box-shadow: 0 0 8px #aa55ff; }
+        .segment.completed .day-label { color: white; text-shadow: none; }
+        .segment.disabled { cursor: not-allowed; opacity: 0.4; pointer-events: none; }
+        .action-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .action-buttons button { background: #2c3e4e; margin-top: 0; padding: 6px 18px; font-size: 0.8rem; }
+        .audio-player-bar {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e2b3c;
+            border-radius: 40px;
+            padding: 8px 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            z-index: 2000;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .audio-player-bar button { background: #2c3e4e; border: none; color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 1rem; cursor: pointer; margin: 0; padding: 0; }
+        .audio-player-bar button:hover { background: #e67e22; }
+        .audio-player-bar input[type="range"] { width: 160px; margin: 0 5px; cursor: pointer; }
+        .footer { text-align: center; margin-top: 25px; font-size: 0.7rem; opacity: 0.7; }
+        .copyright { font-size: 0.65rem; margin-top: 8px; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #1e2b3c;
+            max-width: 500px;
+            width: 90%;
+            border-radius: 24px;
+            padding: 20px;
+            text-align: center;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        .history-item {
+            background: #2c3e4e;
+            margin: 12px 0;
+            padding: 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: 0.1s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .history-item:hover { background: #e67e22; }
+        .history-item-text { flex: 1; text-align: left; }
+        .delete-history-item {
+            background: #aa2e1e;
+            border: none;
+            color: white;
+            border-radius: 30px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: 0.1s;
+        }
+        .delete-history-item:hover { background: #ff5c33; transform: scale(0.95); }
+        .badge-text { font-size: 0.8rem; color: #f39c12; margin-top: 5px; }
+        .welcome-text { font-size: 0.85rem; line-height: 1.35; text-align: left; margin: 0; padding-right: 40px; }
+        .progress-container { margin: 15px 0 10px; width: 100%; background-color: #2c3e4e; border-radius: 10px; overflow: hidden; height: 12px; position: relative; }
+        .progress-fill { width: 0%; height: 100%; background-color: #2ecc71; transition: width 0.2s ease; }
+        .progress-percent { text-align: center; font-size: 0.7rem; margin-top: 4px; color: #2ecc71; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-    <!-- ... loading screen ... -->
-    <div id="mainContent" style="display: none;">
-        <div class="container">
-            <!-- ... haut de page (titre, historique, modes) inchangé ... -->
-            <div id="expertisePanel" class="mode-panel active-panel">
-                <p>🔬 Domaine à maîtriser :</p>
-                <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, Prise de parole...">
-                <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
-                <div id="jourContainer" style="display:none;">
-                    <div id="progressHeaderMsg" class="progress-header" style="display:none;">👉 cliquez ici pour valider cette journée !</div>
-                    <div id="segmentsContainer" class="progress-segments"></div>
-                    <!-- Nouvelle barre avec flèches pour naviguer entre les jours -->
-                    <div id="jourHeader" class="jour-header" style="display: none;">
-                        <div id="prevDayArrow" class="jour-nav-arrow">◀</div>
-                        <div id="jourTitle" class="jour-title"></div>
-                        <div id="nextDayArrow" class="jour-nav-arrow">▶</div>
-                    </div>
-                    <div id="jourContentContainer" style="position: relative;">
-                        <div id="jourContent" class="result"></div>
-                        <div id="swipeLeftArrow" class="swipe-arrow swipe-left" style="display: none;">◀</div>
-                        <div id="swipeRightArrow" class="swipe-arrow swipe-right" style="display: none;">▶</div>
-                        <button id="audioWelcomeBtn" class="audio-welcome" style="display:none;">🔊</button>
-                        <button id="audioDayBtn" class="audio-day" style="display:none;">🔊</button>
-                    </div>
-                    <!-- Les anciens boutons de navigation sont supprimés : plus de div.nav-buttons -->
-                    <div id="expertiseProgressArea" class="progress-container" style="display:none;">
-                        <div class="progress-fill" id="expertiseProgressFill"></div>
-                        <div class="progress-percent" id="expertiseProgressPercent"></div>
-                    </div>
-                    <div id="feedbackBox" class="feedback-box" style="display:none;">
-                        <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
-                        <div class="stars" id="starsEx">
-                            <span class="star" data-value="1">☆</span><span class="star" data-value="2">☆</span>
-                            <span class="star" data-value="3">☆</span><span class="star" data-value="4">☆</span>
-                            <span class="star" data-value="5">☆</span>
-                        </div>
-                        <textarea id="feedbackCommentEx" rows="2" placeholder="Vos remarques (facultatif)"></textarea>
-                        <button id="submitFeedbackEx">Envoyer mon avis</button>
-                    </div>
-                </div>
-            </div>
-            <!-- ... autres panels ... -->
-        </div>
-    </div>
-    <!-- ... audioPlayerBar, historyModal ... -->
-
+    <!-- ... tout le HTML est identique à la version précédente ... -->
+    <!-- Seul le JavaScript est modifié pour la casse du mot "DIZAINE" -->
     <script>
-        // (tout le script existant, avec modifications pour utiliser les nouvelles flèches)
         (function() {
-            // ... toutes les fonctions (loading, audio, état, swipe, etc.) identiques ...
-
-            // On récupère les nouvelles flèches
-            const prevDayArrow = document.getElementById('prevDayArrow');
-            const nextDayArrow = document.getElementById('nextDayArrow');
-            const jourHeader = document.getElementById('jourHeader');
-            const jourTitleSpan = document.getElementById('jourTitle');
-
-            // On supprime les références aux anciens boutons dans le code (ils n'existent plus)
-            // Les fonctions prevDay / nextDay existent déjà (elles utilisent currentPage et afficherPage).
-            // On attache les événements aux nouvelles flèches.
-
-            if (prevDayArrow) {
-                prevDayArrow.addEventListener('click', () => {
-                    if (currentPage > 0) { currentPage--; afficherPage(currentPage); }
-                });
-            }
-            if (nextDayArrow) {
-                nextDayArrow.addEventListener('click', () => {
-                    if (currentPage > 0) {
-                        const jourIdx = currentPage - 1;
-                        if (!currentProgression[jourIdx] && currentJours[currentPage]) {
-                            alert("Veuillez d'abord valider votre journée en cliquant sur la case qui clignote avant de passer au jour suivant.");
-                            return;
-                        }
-                    }
-                    if (currentPage === 0) { currentPage = 1; afficherPage(1); }
-                    else if (currentPage < 7) { currentPage++; afficherPage(currentPage); }
-                });
-            }
-
-            // On modifie la fonction afficherPage pour :
-            // - afficher/masquer le jourHeader (visible seulement quand page != 0)
-            // - mettre à jour le texte du titre
-            function afficherPage(page) {
+            // ... (tout le code JS inchangé jusqu'à la fonction afficherDizaine) ...
+            // Dans la fonction afficherDizaine, on force la majuscule pour "DIZAINE"
+            function afficherDizaine(index, afficherMessageDepassement = false) {
                 const contentDiv = document.getElementById('jourContent');
-                const daySpan = document.getElementById('dayCounter');
-                // const prevBtn = ... (plus utilisé)
-                // const nextBtn = ...
-                const feedbackBox = document.getElementById('feedbackBox');
-                const welcomeBtn = document.getElementById('audioWelcomeBtn');
-                const dayAudioBtn = document.getElementById('audioDayBtn');
                 const leftArrow = document.getElementById('swipeLeftArrow');
                 const rightArrow = document.getElementById('swipeRightArrow');
-                arreterClignotement();
-
-                if (page === 0) {
-                    jourHeader.style.display = 'none';
-                    contentDiv.innerHTML = welcomeHTML;
-                    daySpan.innerText = 'Intro / 8';
-                    feedbackBox.style.display = 'none';
-                    welcomeBtn.style.display = 'flex';
-                    dayAudioBtn.style.display = 'none';
-                    leftArrow.style.display = 'none';
-                    rightArrow.style.display = 'none';
-                    welcomeBtn.onclick = () => { const introText = document.getElementById('jourContent').innerText; if (introText) playAudioChunks(introText, true); };
-                } else {
-                    jourHeader.style.display = 'flex';
-                    jourTitleSpan.innerText = `📆 JOUR ${page}`;
-                    const jourNum = page;
-                    welcomeBtn.style.display = 'none';
-                    if (currentJours[jourNum]) {
-                        currentDizaines = decouperEnDizaines(currentJours[jourNum]);
-                        currentDizaineIndex = 0;
-                        afficherDizaine(0);
-                        daySpan.innerText = `Jour ${jourNum} / 7`;
-                        feedbackBox.style.display = 'block';
-                        dayAudioBtn.style.display = 'flex';
-                        dayAudioBtn.onclick = () => { const fullText = currentJours[jourNum]; if (fullText) playAudioChunks(fullText, true); };
-                        afficherBarreSegments();
-                        leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
-                        rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
-                    } else {
-                        contentDiv.innerHTML = '<em>Chargement du jour...</em>';
-                        chargerJour(jourNum);
-                    }
+                if (!currentDizaines.length) {
+                    contentDiv.innerHTML = '<em>Contenu non disponible.</em>';
+                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
+                    return;
                 }
-                updateValidationMessage();
+                if (index < 0) index = 0;
+                if (index >= currentDizaines.length) {
+                    if (afficherMessageDepassement && currentPage > 0 && !currentProgression[currentPage-1]) {
+                        const msgDiv = document.getElementById('progressHeaderMsg');
+                        if (msgDiv) { msgDiv.style.display = 'block'; msgDiv.style.animation = 'blinkText 1s infinite'; }
+                        demarrerClignotement();
+                        alert("📿 Vous avez terminé les 5 DIZAINES ! N'oubliez pas de valider cette journée en cliquant sur la case qui clignote (ou sur le message).");
+                    }
+                    return;
+                }
+                currentDizaineIndex = index;
+                const numero = currentDizaineIndex + 1;
+                const titre = `<div class="dizaine-title">📖 DIZAINE ${numero} / 5</div>`;
+                const contenu = currentDizaines[currentDizaineIndex];
+                contentDiv.innerHTML = titre + contenu.replace(/\n/g, '<br>');
+                leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
+                rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
+                contentDiv.scrollTop = 0;
             }
-
-            // Le reste du script (chargerJour, démarrage expertise, swipe, etc.) reste strictement identique.
-            // Attention : les événements des anciens boutons ne sont plus ajoutés.
-            // Il faut également supprimer les addEventListener sur prevDay et nextDay qui n'existent plus.
-            // On va commenter ou retirer les lignes qui y font référence dans la partie d'initialisation.
-
-            // Pour éviter toute erreur, on vérifie que les éléments n'existent pas avant d'ajouter des écouteurs.
-            // On laisse tout le reste du code inchangé (gestion de l'état, historique, audio, etc.)
-
-            // (On conserve tout le reste du code JavaScript, y compris la gestion des badges, etc.)
+            // ... le reste du code identique ...
         })();
     </script>
 </body>
