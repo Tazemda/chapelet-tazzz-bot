@@ -11,7 +11,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-def call_deepseek(prompt, max_tokens=2000):
+def call_deepseek(prompt, max_tokens=2500):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API manquante")
     headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
@@ -52,7 +52,7 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= EXPERTISE (7 jours) =================
+# ================= EXPERTISE CLASSIQUE (7 jours) =================
 PROMPT_JOUR = """
 Tu es un expert pédagogique. Domaine : "{domaine}".
 
@@ -138,33 +138,32 @@ Crée le contenu du **Jour 7 – RÉVISION ET CONTRÔLE DES CONNAISSANCES** avec
 Format identique à l'expertise (Méditation, Notre Père, Ave Maria, Gloire). Soigne la pédagogie.
 """
 
-@app.route('/generer_cours', methods=['POST'])
-def generer_cours_route():
-    try:
-        data = request.get_json()
-        if not data or 'chapitres' not in data:
-            return jsonify({'error': 'chapitres manquant'}), 400
-        chapitres = data.get('chapitres')
-        if not isinstance(chapitres, list) or len(chapitres) != 6:
-            return jsonify({'error': '6 chapitres requis'}), 400
-        
-        jours = {}
-        for i, texte in enumerate(chapitres, start=1):
-            prompt = PROMPT_CHAPITRE_JOUR.format(texte_chapitre=texte, jour_num=i)
-            contenu = call_deepseek(prompt, max_tokens=2500)
-            jours[i] = clean_markdown(contenu)
-        
-        titres = "\n".join([f"Chapitre {i}" for i in range(1,7)])
-        prompt7 = PROMPT_JOUR_7.format(chapitres_titres=titres)
-        contenu7 = call_deepseek(prompt7, max_tokens=2500)
-        jours[7] = clean_markdown(contenu7)
-        
-        return jsonify({'jours': jours})
-    except Exception as e:
-        print(f"Erreur dans generer_cours: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+@app.route('/generer_chapitre', methods=['POST'])
+def generer_chapitre_route():
+    """Génère le contenu d'un chapitre (jour) à partir de son texte brut."""
+    data = request.get_json()
+    texte = data.get('texte')
+    num = data.get('num')
+    if not texte or not num:
+        return jsonify({'error': 'Texte et numéro requis'}), 400
+    prompt = PROMPT_CHAPITRE_JOUR.format(texte_chapitre=texte, jour_num=num)
+    contenu = call_deepseek(prompt, max_tokens=2500)
+    contenu = clean_markdown(contenu)
+    contenu = remove_markdown_chars(contenu)
+    return jsonify({'contenu': contenu})
 
-# ================= ROUTES =================
+@app.route('/generer_jour7', methods=['POST'])
+def generer_jour7_route():
+    """Génère le jour 7 à partir des titres des 6 chapitres."""
+    data = request.get_json()
+    titres = data.get('titres', [f"Chapitre {i}" for i in range(1,7)])
+    prompt = PROMPT_JOUR_7.format(chapitres_titres="\n".join(titres))
+    contenu = call_deepseek(prompt, max_tokens=2500)
+    contenu = clean_markdown(contenu)
+    contenu = remove_markdown_chars(contenu)
+    return jsonify({'contenu': contenu})
+
+# ================= ROUTES COMMUNES =================
 @app.route('/')
 def index():
     return render_template('index.html')
