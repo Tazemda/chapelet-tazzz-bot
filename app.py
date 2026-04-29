@@ -99,6 +99,74 @@ def generer_jour_expertise(domaine, jour_num):
         print(f"Erreur jour {jour_num}: {e}")
         return f"JOUR {jour_num} – {titre_objectif.upper()} (version de secours)\n\n(erreur technique, veuillez réessayer)"
 
+# ================= COURS (6 CHAPITRES) =================
+PROMPT_CHAPITRE_JOUR = """
+Tu es un expert pédagogique. Tu reçois le texte d'un chapitre (environ 3 pages A4).
+Transforme ce chapitre en un contenu structuré pour une journée d'étude (5 dizaines).
+
+Voici le texte du chapitre :
+
+{texte_chapitre}
+
+Génère le contenu du **Jour {jour_num}** selon le format exact suivant :
+
+## **JOUR {jour_num} : [TITRE ADAPTÉ AU CHAPITRE]**
+
+**DIZAINE 1 : CONCEPT : [nom]**
+A) **Méditation** : 8 phrases (définition, rôle, exemple court).
+B) **Notre Père** : une question centrale (RÉPÈTE 3 fois).
+C) **Je vous salue Marie** : 6 phrases numérotées (RÉPÈTE 10 fois).
+D) **Gloire au Père** : "Le concept [nom] est consolidé." (RÉPÈTE 3 fois)
+
+(même structure pour DIZAINE 2 à 5)
+
+Soigne la qualité, reste fidèle au texte source. Ne dépasse pas 2500 tokens.
+"""
+
+PROMPT_JOUR_7 = """
+Tu es un expert pédagogique. L'utilisateur a étudié 6 chapitres. Génère un **jour de révision et d'évaluation** (5 dizaines) sous forme de questions et exercices.
+
+Les chapitres sont :
+{chapitres_titres}
+
+Crée le contenu du **Jour 7 – RÉVISION ET CONTRÔLE DES CONNAISSANCES** avec 5 dizaines :
+- Dizaine 1 : QCM sur le chapitre 1
+- Dizaine 2 : QCM sur le chapitre 2
+- …
+- Dizaine 5 : questions ouvertes transversales
+
+Format identique à l'expertise (Méditation, Notre Père, Ave Maria, Gloire). Soigne la pédagogie.
+"""
+
+@app.route('/generer_cours', methods=['POST'])
+def generer_cours_route():
+    data = request.get_json()
+    chapitres = data.get('chapitres')  # liste de 6 textes
+    if not chapitres or len(chapitres) != 6:
+        return jsonify({'error': '6 chapitres requis'}), 400
+    
+    jours = {}
+    for i, texte in enumerate(chapitres, start=1):
+        prompt = PROMPT_CHAPITRE_JOUR.format(texte_chapitre=texte, jour_num=i)
+        try:
+            contenu = call_deepseek(prompt, max_tokens=2500)
+            jours[i] = clean_markdown(contenu)
+            jours[i] = remove_markdown_chars(jours[i])
+        except Exception as e:
+            jours[i] = f"Erreur génération chapitre {i}: {str(e)}"
+    
+    # Jour 7 : questions
+    titres = [f"Chapitre {i}" for i in range(1,7)]
+    prompt7 = PROMPT_JOUR_7.format(chapitres_titres="\n".join(titres))
+    try:
+        contenu7 = call_deepseek(prompt7, max_tokens=2500)
+        jours[7] = clean_markdown(contenu7)
+        jours[7] = remove_markdown_chars(jours[7])
+    except Exception as e:
+        jours[7] = f"Erreur génération jour 7: {str(e)}"
+    
+    return jsonify({'jours': jours})
+
 # ================= ROUTES =================
 @app.route('/')
 def index():
