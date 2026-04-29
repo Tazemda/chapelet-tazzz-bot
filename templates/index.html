@@ -46,7 +46,7 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
             position: relative;
         }
-        h1 { text-align: center; font-size: 1.9rem; margin-bottom: 0px; letter-spacing: 1px; }
+        h1 { text-align: center; font-size: 1.5rem; margin-bottom: 0px; letter-spacing: 1px; }
         .subtitle { text-align: center; font-size: 0.9rem; opacity: 0.8; margin-bottom: 30px; margin-top: 5px; }
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .history-link, .home-header { background: #2c3e4e; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
@@ -138,6 +138,7 @@
             .jour-title { font-size: 1.5rem; letter-spacing: 3px; }
             .nav-triangle { width: 40px; height: 40px; font-size: 1.5rem; }
             .dizaine-title { font-size: 1.1rem; }
+            h1 { font-size: 1.2rem; }
         }
         .audio-welcome { position: absolute; top: 15px; left: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
         .audio-welcome:hover { background: #e67e22; }
@@ -265,9 +266,9 @@
         <div class="loading-content">
             <div class="loading-chapelet">📿</div>
             <div class="loading-title">C'est maintenant Chapelet Tazzz Bot Expertise</div>
-            <div class="loading-mantra" id="loadingMantra">Je réorganise ma structure mentale…</div>
+            <div class="loading-mantra" id="loadingMantra">Je prépare mon cerveau à l’ancrage des connaissances.</div>
             <div class="loading-progress"><div class="loading-progress-bar" id="loadingProgressBar"></div></div>
-            <div class="loading-text">Plasticité cérébrale & répétition rythmée</div>
+            <div class="loading-text">Protocole d’expertise accélérée – 7 jours</div>
         </div>
     </div>
 
@@ -352,7 +353,13 @@
             const mainContent = document.getElementById('mainContent');
             const progressBar = document.getElementById('loadingProgressBar');
             const mantraEl = document.getElementById('loadingMantra');
-            const mantras = ["Je réorganise ma structure mentale…","Un chapelet, une intention…","Plasticité cérébrale en action…","Je deviens l’acteur de chaque heure…","Prêt. Transformons notre esprit."];
+            const mantras = [
+                "Je prépare mon cerveau à l’ancrage des connaissances.",
+                "Chaque grain est une étape vers la maîtrise.",
+                "La répétition espacée construit l’expert.",
+                "Je structure mon savoir par cycles rythmés.",
+                "Mon attention se fixe sur l’essentiel."
+            ];
             const totalDuration = 10000;
             const stepDuration = totalDuration / mantras.length;
             let startTime = null, animFrame = null, mantraIdx = 0;
