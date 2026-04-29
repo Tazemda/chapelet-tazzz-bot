@@ -70,6 +70,38 @@
             position: relative;
             touch-action: pan-y pinch-zoom;
         }
+        .refresh-dizaine {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(46, 204, 113, 0.2);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: blur(4px);
+            z-index: 25;
+            color: #2ecc71;
+            font-size: 1.5rem;
+            border: 1px solid rgba(46, 204, 113, 0.5);
+        }
+        .refresh-dizaine:hover {
+            background: rgba(46, 204, 113, 0.6);
+            transform: scale(1.05);
+            color: white;
+        }
+        .refresh-dizaine.loading {
+            animation: spin 1s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
         .jour-header {
             display: flex;
             align-items: center;
@@ -139,6 +171,7 @@
             .nav-triangle { width: 40px; height: 40px; font-size: 1.5rem; }
             .dizaine-title { font-size: 1.1rem; }
             h1 { font-size: 1.2rem; }
+            .refresh-dizaine { width: 32px; height: 32px; font-size: 1.2rem; bottom: 10px; right: 10px; }
         }
         .audio-welcome { position: absolute; top: 15px; left: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
         .audio-welcome:hover { background: #e67e22; }
@@ -299,6 +332,7 @@
                         <div id="swipeRightArrow" class="swipe-arrow swipe-right" style="display: none;">▶</div>
                         <button id="audioWelcomeBtn" class="audio-welcome" style="display:none;">🔊</button>
                         <button id="audioDayBtn" class="audio-day" style="display:none;">🔊</button>
+                        <div id="refreshDizaineBtn" class="refresh-dizaine" style="display: none;">⟳</div>
                     </div>
                     <div class="nav-buttons">
                         <button id="prevDay" disabled>◀ Précédent</button>
@@ -589,6 +623,7 @@
                 const jourTitleSpan = document.getElementById('jourTitle');
                 const leftArrow = document.getElementById('swipeLeftArrow');
                 const rightArrow = document.getElementById('swipeRightArrow');
+                const refreshBtn = document.getElementById('refreshDizaineBtn');
                 arreterClignotement();
 
                 if (currentPage === 0) {
@@ -603,6 +638,7 @@
                     dayAudioBtn.style.display = 'none';
                     leftArrow.style.display = 'none';
                     rightArrow.style.display = 'none';
+                    refreshBtn.style.display = 'none';
                     welcomeBtn.onclick = () => {
                         const introText = document.getElementById('jourContent').innerText;
                         if (introText) playAudioChunks(introText, true);
@@ -628,8 +664,10 @@
                         afficherBarreSegments();
                         leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
                         rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
+                        refreshBtn.style.display = 'flex';
                     } else {
                         contentDiv.innerHTML = '<em>Chargement du jour...</em>';
+                        refreshBtn.style.display = 'none';
                         chargerJour(currentPage);
                     }
                 }
@@ -661,6 +699,43 @@
                     afficherPage();
                     afficherBarreSegments();
                 });
+            }
+
+            // Régénération de la dizaine actuelle (en réalité on regénère tout le jour)
+            async function regenererDizaine() {
+                if (!currentPage || currentPage === 0) return;
+                const refreshBtn = document.getElementById('refreshDizaineBtn');
+                refreshBtn.classList.add('loading');
+                const originalText = refreshBtn.innerHTML;
+                refreshBtn.innerHTML = '⏳';
+                try {
+                    const response = await fetch('/generer_jour_expertise', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ domaine: currentDomaine, jour: currentPage })
+                    });
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                    // Mettre à jour le contenu du jour
+                    currentJours[currentPage] = data.contenu;
+                    sauvegarderFormationCourante();
+                    // Re-découper et réafficher la même dizaine
+                    const nouvellesDizaines = decouperEnDizaines(data.contenu);
+                    if (nouvellesDizaines.length >= 5) {
+                        currentDizaines = nouvellesDizaines;
+                        if (currentDizaineIndex >= currentDizaines.length) currentDizaineIndex = currentDizaines.length - 1;
+                        afficherDizaine(currentDizaineIndex);
+                    } else {
+                        // En cas d'échec, on recharge tout l'affichage
+                        afficherPage();
+                    }
+                    alert("✓ Dizaine régénérée avec succès.");
+                } catch (err) {
+                    alert("Erreur lors de la régénération : " + err.message);
+                } finally {
+                    refreshBtn.classList.remove('loading');
+                    refreshBtn.innerHTML = originalText;
+                }
             }
 
             document.getElementById('startExpertise').addEventListener('click', () => {
@@ -734,6 +809,9 @@
                 }
             });
 
+            // Bouton refresh
+            document.getElementById('refreshDizaineBtn').addEventListener('click', regenererDizaine);
+
             // Swipe horizontal
             const contentZone = document.getElementById('jourContent');
             if (contentZone) {
@@ -777,6 +855,7 @@
                 document.getElementById('swipeLeftArrow').style.display = 'none';
                 document.getElementById('swipeRightArrow').style.display = 'none';
                 document.getElementById('jourHeader').style.display = 'none';
+                document.getElementById('refreshDizaineBtn').style.display = 'none';
                 stopAudio();
                 arreterClignotement();
             });
