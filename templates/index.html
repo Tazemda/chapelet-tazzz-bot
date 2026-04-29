@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>🧠 CHAPELET TAZZZ BOT – EXPERTISE 7 JOURS</title>
+    <title>Chapelet Tazzz Bot Expertise</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -264,7 +264,7 @@
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-content">
             <div class="loading-chapelet">📿</div>
-            <div class="loading-title">Chapelet Tazzz Bot</div>
+            <div class="loading-title">C'est maintenant Chapelet Tazzz Bot Expertise</div>
             <div class="loading-mantra" id="loadingMantra">Je réorganise ma structure mentale…</div>
             <div class="loading-progress"><div class="loading-progress-bar" id="loadingProgressBar"></div></div>
             <div class="loading-text">Plasticité cérébrale & répétition rythmée</div>
@@ -273,7 +273,7 @@
 
     <div id="mainContent" style="display: none;">
         <div class="container">
-            <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
+            <h1>🧠 CHAPELET TAZZZ BOT EXPERTISE 📿</h1>
             <div class="subtitle">Expertise en 7 jours</div>
             <div class="top-bar">
                 <span class="history-link" id="historyLink">📜 Historique</span>
@@ -675,10 +675,7 @@
 
             // Navigation par boutons (bas)
             document.getElementById('prevDay').addEventListener('click', () => {
-                if (currentPage === 0) {
-                    // on ne peut pas reculer depuis l'accueil
-                    return;
-                }
+                if (currentPage === 0) return;
                 if (currentPage > 1) {
                     currentPage--;
                     afficherPage();
@@ -686,7 +683,6 @@
             });
             document.getElementById('nextDay').addEventListener('click', () => {
                 if (currentPage === 0) {
-                    // passage de l'accueil au jour 1
                     currentPage = 1;
                     afficherPage();
                     return;
@@ -731,12 +727,12 @@
                 }
             });
 
-            // Swipe horizontal sur la zone de contenu (pour les dizaines)
+            // Swipe horizontal
             const contentZone = document.getElementById('jourContent');
             if (contentZone) {
                 contentZone.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
                 contentZone.addEventListener('touchend', (e) => {
-                    if (currentPage === 0) return; // pas de swipe sur l'accueil
+                    if (currentPage === 0) return;
                     touchEndX = e.changedTouches[0].clientX;
                     const deltaX = touchEndX - touchStartX;
                     if (Math.abs(deltaX) < 50) return;
