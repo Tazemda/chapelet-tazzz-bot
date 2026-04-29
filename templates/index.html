@@ -78,7 +78,6 @@
             position: relative;
             touch-action: pan-y pinch-zoom;
         }
-        /* ... autres styles ... (conservés) */
         .refresh-dizaine {
             position: absolute;
             bottom: 15px;
@@ -277,6 +276,21 @@
         .history-category h4 {
             color: #f1c40f;
             margin: 10px 0;
+            cursor: pointer;
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            background: rgba(0,0,0,0.3);
+        }
+        .history-category h4:hover {
+            background: #e67e22;
+        }
+        .history-list {
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+        .history-list.collapsed {
+            display: none;
         }
         .history-item {
             background: #2c3e4e;
@@ -363,6 +377,8 @@
         }
         .refresh-chapitre-btn {
             background: #8e44ad;
+            font-size: 1.2rem;
+            padding: 5px 10px;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -388,10 +404,10 @@
             </div>
             <div class="mode-selector">
                 <button id="btnExpertise" class="mode-btn active">📚 Expertise (domaine libre)</button>
-                <button id="btnCours" class="mode-btn">📘 Tous mes cours en 7 jours</button>
+                <button id="btnCours" class="mode-btn">📘 Mes cours en 6 jours</button>
             </div>
 
-            <!-- Panneau Expertise classique -->
+            <!-- Panneau Expertise classique (7 jours) -->
             <div id="expertisePanel" class="mode-panel active-panel">
                 <p>🔬 Domaine à maîtriser :</p>
                 <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, Prise de parole...">
@@ -434,12 +450,12 @@
                 </div>
             </div>
 
-            <!-- Panneau Cours (6 chapitres) avec repli/déploiement -->
+            <!-- Panneau Cours (6 chapitres, 6 jours) -->
             <div id="coursPanel" class="mode-panel">
                 <h3>📚 Saisissez vos 6 chapitres (copier-coller puis enregistrer chaque chapitre)</h3>
                 <div id="chapitresList"></div>
                 <div style="display: flex; justify-content: center; margin-top: 10px;">
-                    <button id="submitCoursBtn" style="background: #8a2be2;">✨ GÉNÉRER LE PROGRAMME (7 JOURS) ✨</button>
+                    <button id="submitCoursBtn" style="background: #8a2be2;">✨ GÉNÉRER LE PROGRAMME (6 JOURS) ✨</button>
                 </div>
                 <div id="coursResult" class="result" style="display:none;"></div>
             </div>
@@ -531,15 +547,16 @@
                 osc.stop(now + 0.2);
             }
 
-            // ---------- ÉTAT GLOBAL EXPERTISE ----------
+            // ---------- ÉTAT GLOBAL EXPERTISE (variable nbJours) ----------
             let currentDomaine = '';
-            let currentProgression = [false, false, false, false, false, false, false];
+            let currentProgression = [];
             let currentJours = {};
             let currentDizaines = [];
             let currentDizaineIndex = 0;
             let currentPage = 0;
             let blinkInterval = null;
             let touchStartX = 0, touchEndX = 0;
+            let currentNbJours = 7; // par défaut pour expertise classique
 
             function arreterClignotement() {
                 if (blinkInterval) { clearInterval(blinkInterval); blinkInterval = null; }
@@ -548,7 +565,7 @@
             function demarrerClignotement() {
                 arreterClignotement();
                 const dayIndex = currentPage - 1;
-                if (dayIndex < 0 || dayIndex >= 7) return;
+                if (dayIndex < 0 || dayIndex >= currentNbJours) return;
                 const segments = document.querySelectorAll('.segment');
                 if (segments[dayIndex]) {
                     segments[dayIndex].classList.add('blink-segment');
@@ -599,7 +616,7 @@
                 const container = document.getElementById('segmentsContainer');
                 if (!container) return;
                 container.innerHTML = '';
-                for (let i = 0; i < 7; i++) {
+                for (let i = 0; i < currentNbJours; i++) {
                     const seg = document.createElement('div');
                     seg.className = 'segment';
                     if (currentProgression[i]) {
@@ -633,12 +650,12 @@
             }
 
             function naviguerVersJour(jourNum) {
-                if (jourNum >= 1 && jourNum <= 7 && currentJours[jourNum]) {
+                if (jourNum >= 1 && jourNum <= currentNbJours && currentJours[jourNum]) {
                     currentPage = jourNum;
                     currentDizaines = decouperEnDizaines(currentJours[jourNum]);
                     currentDizaineIndex = 0;
                     afficherPage();
-                } else if (jourNum >= 1 && jourNum <= 7 && !currentJours[jourNum]) {
+                } else if (jourNum >= 1 && jourNum <= currentNbJours && !currentJours[jourNum]) {
                     alert(`Le contenu du jour ${jourNum} n'a pas été trouvé. Utilisez la navigation “Suivant” pour le régénérer.`);
                 }
             }
@@ -649,7 +666,7 @@
                     currentProgression[idx] = true;
                     sauvegarderFormationCourante();
                     afficherBarreSegments();
-                    if (idx+1 === 7) {
+                    if (idx+1 === currentNbJours) {
                         alert(`🎉 Félicitations ! Vous avez achevé votre formation. Badge débloqué.`);
                         let badges = JSON.parse(localStorage.getItem('badges')) || [];
                         const expertBadge = `🏅 Expert en ${currentDomaine}`;
@@ -658,7 +675,7 @@
                         let entry = historique.find(h => h.domaine === currentDomaine);
                         if (entry) entry.dateFin = new Date().toISOString();
                         localStorage.setItem('historique', JSON.stringify(historique));
-                    } else alert(`🎊 Bravo ! Jour ${idx+1}/7 validé.`);
+                    } else alert(`🎊 Bravo ! Jour ${idx+1}/${currentNbJours} validé.`);
                 }
             }
 
@@ -668,13 +685,14 @@
                 localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 let entry = historique.find(h => h.domaine === currentDomaine);
-                if (entry) { entry.progression = currentProgression.slice(); localStorage.setItem('historique', JSON.stringify(historique)); }
+                if (entry) { entry.progression = currentProgression.slice(); entry.nbJours = currentNbJours; localStorage.setItem('historique', JSON.stringify(historique)); }
             }
 
-            function chargerFormation(domaine, progression, jours) {
+            function chargerFormation(domaine, progression, jours, nbJours = 7) {
                 arreterClignotement();
                 currentDomaine = domaine;
-                currentProgression = progression.slice();
+                currentNbJours = nbJours;
+                currentProgression = progression.length === nbJours ? progression.slice() : Array(nbJours).fill(false);
                 currentJours = JSON.parse(JSON.stringify(jours));
                 currentPage = 0;
                 afficherPage();
@@ -738,9 +756,9 @@
                         currentDizaines = decouperEnDizaines(currentJours[currentPage]);
                         currentDizaineIndex = 0;
                         afficherDizaine(0);
-                        daySpan.innerText = `Jour ${currentPage} / 7`;
+                        daySpan.innerText = `Jour ${currentPage} / ${currentNbJours}`;
                         prevBtn.disabled = (currentPage === 1);
-                        nextBtn.disabled = (currentPage === 7);
+                        nextBtn.disabled = (currentPage === currentNbJours);
                         feedbackBox.style.display = 'block';
                         dayAudioBtn.style.display = 'flex';
                         dayAudioBtn.onclick = () => {
@@ -820,14 +838,14 @@
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 let entry = historique.find(h => h.domaine === domaine);
                 if (!entry) {
-                    entry = { domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: false, type: 'expertise' };
+                    entry = { domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: Array(7).fill(false), shared: false, type: 'expertise', nbJours: 7 };
                     historique.push(entry);
                     localStorage.setItem('historique', JSON.stringify(historique));
                 }
                 let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
                 joursParDomaine[domaine] = {};
                 localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
-                chargerFormation(domaine, entry.progression.slice(), {});
+                chargerFormation(domaine, entry.progression.slice(), {}, 7);
             });
 
             document.getElementById('prevDay').addEventListener('click', () => {
@@ -836,7 +854,7 @@
             });
             document.getElementById('nextDay').addEventListener('click', () => {
                 if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
-                if (currentPage < 7) {
+                if (currentPage < currentNbJours) {
                     const jourIdx = currentPage - 1;
                     if (!currentProgression[jourIdx] && currentJours[currentPage]) {
                         alert("Veuillez d'abord valider votre journée.");
@@ -852,7 +870,7 @@
             });
             document.getElementById('nextDayTriangle').addEventListener('click', () => {
                 if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
-                if (currentPage < 7) {
+                if (currentPage < currentNbJours) {
                     const jourIdx = currentPage - 1;
                     if (!currentProgression[jourIdx] && currentJours[currentPage]) {
                         alert("Veuillez d'abord valider votre journée.");
@@ -898,6 +916,7 @@
             });
 
             document.getElementById('homeHeader').addEventListener('click', () => {
+                // Retour à l'accueil simple sans vider le contenu (on remet l'état initial)
                 currentDomaine = '';
                 document.getElementById('jourContainer').style.display = 'none';
                 document.getElementById('startExpertise').style.display = 'block';
@@ -909,6 +928,8 @@
                 document.getElementById('refreshDizaineBtn').style.display = 'none';
                 stopAudio();
                 arreterClignotement();
+                // On s'assure que l'onglet expertise est actif
+                document.getElementById('btnExpertise').click();
             });
 
             function genererLienPartage() {
@@ -936,7 +957,7 @@
                             let historique = JSON.parse(localStorage.getItem('historique')) || [];
                             let entry = historique.find(h => h.domaine === domaine);
                             if (!entry) {
-                                entry = { domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: true, type: 'expertise' };
+                                entry = { domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: Array(7).fill(false), shared: true, type: 'expertise', nbJours: 7 };
                                 historique.push(entry);
                                 localStorage.setItem('historique', JSON.stringify(historique));
                             } else if (!entry.shared) { entry.shared = true; localStorage.setItem('historique', JSON.stringify(historique)); }
@@ -946,7 +967,7 @@
             }
             initFromUrl();
 
-            // ================= MODE COURS =================
+            // ================= MODE COURS (6 CHAPITRES) =================
             let chapitresSauvegardes = {1: null, 2: null, 3: null, 4: null, 5: null, 6: null};
             let coursTemp = JSON.parse(localStorage.getItem('cours_temp')) || {};
             for (let i=1; i<=6; i++) if (coursTemp[i]) chapitresSauvegardes[i] = coursTemp[i];
@@ -967,12 +988,11 @@
                         <div class="chapitre-body ${isCollapsed ? 'collapsed' : ''}">
                             <textarea rows="6" class="chapitre-text" data-chapitre="${i}" placeholder="Collez ici le texte du chapitre..."></textarea>
                             <button class="save-chapitre-btn" data-chapitre="${i}">📎 Enregistrer le chapitre</button>
-                            <button class="refresh-chapitre-btn" data-chapitre="${i}">⟳ Réessayer / Refresh</button>
+                            <button class="refresh-chapitre-btn" data-chapitre="${i}">⟳</button>
                             <div class="chapitre-status" id="status-chapitre-${i}"></div>
                         </div>
                     `;
                     container.appendChild(card);
-                    // Restaurer le texte sauvegardé si existant
                     if (chapitresSauvegardes[i]) {
                         const textarea = card.querySelector(`.chapitre-text[data-chapitre="${i}"]`);
                         textarea.value = '[Chapitre déjà enregistré]';
@@ -1061,7 +1081,7 @@
             }
             createChapitresUI();
 
-            // Bouton de soumission du cours
+            // Bouton de soumission du cours (6 jours)
             document.getElementById('submitCoursBtn').addEventListener('click', async () => {
                 for (let i = 1; i <= 6; i++) {
                     if (!chapitresSauvegardes[i]) {
@@ -1070,30 +1090,15 @@
                     }
                 }
                 const statusDiv = document.getElementById('coursResult');
-                statusDiv.innerHTML = '<div class="progress-container"><div class="progress-fill" style="width:0%"></div><div class="progress-percent">Génération du jour 7...</div></div>';
+                statusDiv.innerHTML = '<div class="progress-container"><div class="progress-fill" style="width:0%"></div><div class="progress-percent">Génération du programme (6 jours)...</div></div>';
                 statusDiv.style.display = 'block';
-                let jour7 = null;
-                try {
-                    const resp = await fetch('/generer_jour7', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ titres: [`Chapitre 1`, `Chapitre 2`, `Chapitre 3`, `Chapitre 4`, `Chapitre 5`, `Chapitre 6`] })
-                    });
-                    const data = await resp.json();
-                    if (data.error) throw new Error(data.error);
-                    jour7 = data.contenu;
-                } catch (err) {
-                    statusDiv.innerHTML = `<div class="error">Erreur jour 7: ${err.message}</div>`;
-                    return;
-                }
                 const joursComplets = {};
                 for (let i = 1; i <= 6; i++) joursComplets[i] = chapitresSauvegardes[i];
-                joursComplets[7] = jour7;
-                const titreCours = "Cours complet (6 chapitres)";
+                const titreCours = "Mes cours (6 chapitres)";
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 let entry = historique.find(h => h.domaine === titreCours);
                 if (!entry) {
-                    entry = { domaine: titreCours, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: false, type: 'cours' };
+                    entry = { domaine: titreCours, dateDebut: new Date().toISOString(), dateFin: null, progression: Array(6).fill(false), shared: false, type: 'cours', nbJours: 6 };
                     historique.push(entry);
                     localStorage.setItem('historique', JSON.stringify(historique));
                 }
@@ -1101,7 +1106,7 @@
                 joursParDomaine[titreCours] = joursComplets;
                 localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
                 localStorage.removeItem('cours_temp');
-                chargerFormation(titreCours, entry.progression.slice(), joursComplets);
+                chargerFormation(titreCours, entry.progression.slice(), joursComplets, 6);
                 document.querySelector('#btnExpertise').click();
                 statusDiv.style.display = 'none';
                 statusDiv.innerHTML = '';
@@ -1121,7 +1126,7 @@
                 document.getElementById('expertisePanel').classList.remove('active-panel');
             });
 
-            // ---------- HISTORIQUE ----------
+            // ---------- HISTORIQUE ACCORDÉON ----------
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
             function formaterDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
@@ -1129,7 +1134,7 @@
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 if (confirm('Supprimer définitivement cette formation ?')) {
                     const item = historique[index];
-                    if (item.progression && item.progression.filter(v=>v).length === 7) {
+                    if (item.progression && item.progression.filter(v=>v).length === item.nbJours) {
                         let badges = JSON.parse(localStorage.getItem('badges')) || [];
                         const badge = `🏅 Expert en ${item.domaine}`;
                         const newBadges = badges.filter(b => b !== badge);
@@ -1144,6 +1149,10 @@
                     afficherHistorique();
                 }
             }
+            function toggleCategory(catId) {
+                const list = document.getElementById(catId);
+                if (list) list.classList.toggle('collapsed');
+            }
             function afficherHistorique() {
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 const expertises = historique.filter(h => h.type !== 'cours');
@@ -1152,22 +1161,26 @@
                 if (expertises.length) {
                     const divCat = document.createElement('div');
                     divCat.className = 'history-category';
-                    divCat.innerHTML = '<h4>📚 Expertises classiques</h4>';
+                    const catId = 'hist-expertises-list';
+                    divCat.innerHTML = `<h4 onclick="toggleCategory('${catId}')">📚 Expertises classiques (${expertises.length})</h4>
+                                        <div id="${catId}" class="history-list">`;
+                    const listDiv = divCat.querySelector(`#${catId}`);
                     expertises.forEach((item, idxGlobal) => {
                         const completed = item.progression.filter(v=>v).length;
+                        const total = item.nbJours || 7;
                         const itemDiv = document.createElement('div');
                         itemDiv.className = 'history-item';
                         itemDiv.innerHTML = `
                             <div class="history-item-text">
-                                <strong>${item.domaine}</strong> (${completed}/7) – Début: ${formaterDate(item.dateDebut)}
-                                ${completed===7 ? `<div class="badge-text">🏅 Expert en ${item.domaine}</div>` : ''}
+                                <strong>${item.domaine}</strong> (${completed}/${total}) – Début: ${formaterDate(item.dateDebut)}
+                                ${completed===total ? `<div class="badge-text">🏅 Expert en ${item.domaine}</div>` : ''}
                             </div>
                             <button class="delete-history-item" data-idx="${idxGlobal}" data-type="expertise">🗑️</button>
                         `;
                         itemDiv.querySelector('.history-item-text').onclick = () => {
                             let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
                             let savedJours = joursParDomaine[item.domaine] || {};
-                            chargerFormation(item.domaine, item.progression.slice(), savedJours);
+                            chargerFormation(item.domaine, item.progression.slice(), savedJours, total);
                             historyModal.style.display = 'none';
                             document.querySelector('#btnExpertise').click();
                         };
@@ -1175,29 +1188,33 @@
                             e.stopPropagation();
                             supprimerEntree(idxGlobal, 'expertise');
                         };
-                        divCat.appendChild(itemDiv);
+                        listDiv.appendChild(itemDiv);
                     });
                     historyList.appendChild(divCat);
                 }
                 if (cours.length) {
                     const divCat = document.createElement('div');
                     divCat.className = 'history-category';
-                    divCat.innerHTML = '<h4>📘 Mes cours en 7 jours</h4>';
+                    const catId = 'hist-cours-list';
+                    divCat.innerHTML = `<h4 onclick="toggleCategory('${catId}')">📘 Mes cours en 6 jours (${cours.length})</h4>
+                                        <div id="${catId}" class="history-list">`;
+                    const listDiv = divCat.querySelector(`#${catId}`);
                     cours.forEach((item, idxGlobal) => {
                         const completed = item.progression.filter(v=>v).length;
+                        const total = item.nbJours || 6;
                         const itemDiv = document.createElement('div');
                         itemDiv.className = 'history-item';
                         itemDiv.innerHTML = `
                             <div class="history-item-text">
-                                <strong>${item.domaine}</strong> (${completed}/7) – Début: ${formaterDate(item.dateDebut)}
-                                ${completed===7 ? `<div class="badge-text">🏅 Expert en ${item.domaine}</div>` : ''}
+                                <strong>${item.domaine}</strong> (${completed}/${total}) – Début: ${formaterDate(item.dateDebut)}
+                                ${completed===total ? `<div class="badge-text">🏅 Expert en ${item.domaine}</div>` : ''}
                             </div>
                             <button class="delete-history-item" data-idx="${idxGlobal}" data-type="cours">🗑️</button>
                         `;
                         itemDiv.querySelector('.history-item-text').onclick = () => {
                             let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
                             let savedJours = joursParDomaine[item.domaine] || {};
-                            chargerFormation(item.domaine, item.progression.slice(), savedJours);
+                            chargerFormation(item.domaine, item.progression.slice(), savedJours, total);
                             historyModal.style.display = 'none';
                             document.querySelector('#btnExpertise').click();
                         };
@@ -1205,11 +1222,13 @@
                             e.stopPropagation();
                             supprimerEntree(idxGlobal, 'cours');
                         };
-                        divCat.appendChild(itemDiv);
+                        listDiv.appendChild(itemDiv);
                     });
                     historyList.appendChild(divCat);
                 }
                 if (historique.length === 0) historyList.innerHTML = '<p>Aucune formation enregistrée.</p>';
+                // Définir toggleCategory globalement
+                window.toggleCategory = toggleCategory;
             }
             document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display = 'flex'; });
             document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
