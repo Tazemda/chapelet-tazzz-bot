@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Chapelet Tazzz Bot</title>
     <style>
-        /* ========== STYLES (identiques à l'expertise, avec ajustements pour les chapitres) ========== */
+        /* ========== STYLES (conservés, avec ajouts) ========== */
         * { box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -78,6 +78,7 @@
             position: relative;
             touch-action: pan-y pinch-zoom;
         }
+        /* ... autres styles ... (conservés) */
         .refresh-dizaine {
             position: absolute;
             bottom: 15px;
@@ -314,20 +315,54 @@
             margin-bottom: 20px;
             border-left: 4px solid #e67e22;
         }
-        .chapitre-card strong {
+        .chapitre-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .chapitre-header strong {
             font-size: 1.2rem;
             color: #f1c40f;
+            flex: 1;
+        }
+        .toggle-chapitre {
+            font-size: 1.2rem;
+            transition: transform 0.2s;
+            background: none;
+            border: none;
+            color: #e67e22;
+            width: 30px;
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+        }
+        .toggle-chapitre:hover {
+            background: none;
+            transform: scale(1.1);
+        }
+        .chapitre-body {
+            margin-top: 10px;
+        }
+        .chapitre-body.collapsed {
+            display: none;
         }
         .chapitre-status {
             font-size: 0.8rem;
             margin-top: 8px;
             color: #2ecc71;
         }
-        .save-chapitre-btn {
+        .save-chapitre-btn, .refresh-chapitre-btn {
             background: #2c3e4e;
             padding: 5px 15px;
             margin-top: 5px;
+            margin-right: 8px;
             font-size: 0.8rem;
+            display: inline-block;
+        }
+        .refresh-chapitre-btn {
+            background: #8e44ad;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -399,7 +434,7 @@
                 </div>
             </div>
 
-            <!-- Panneau Cours (6 chapitres) -->
+            <!-- Panneau Cours (6 chapitres) avec repli/déploiement -->
             <div id="coursPanel" class="mode-panel">
                 <h3>📚 Saisissez vos 6 chapitres (copier-coller puis enregistrer chaque chapitre)</h3>
                 <div id="chapitresList"></div>
@@ -778,7 +813,6 @@
                 finally { refreshBtn.classList.remove('loading'); refreshBtn.innerHTML = '⟳'; }
             }
 
-            // Boutons Expertise classique
             document.getElementById('startExpertise').addEventListener('click', () => {
                 initAudio();
                 const domaine = document.getElementById('domaine').value.trim();
@@ -914,7 +948,8 @@
 
             // ================= MODE COURS =================
             let chapitresSauvegardes = {1: null, 2: null, 3: null, 4: null, 5: null, 6: null};
-            let chapitresEnCours = {};
+            let coursTemp = JSON.parse(localStorage.getItem('cours_temp')) || {};
+            for (let i=1; i<=6; i++) if (coursTemp[i]) chapitresSauvegardes[i] = coursTemp[i];
 
             function createChapitresUI() {
                 const container = document.getElementById('chapitresList');
@@ -923,19 +958,34 @@
                     const card = document.createElement('div');
                     card.className = 'chapitre-card';
                     card.id = `chapitre-card-${i}`;
+                    const isCollapsed = localStorage.getItem(`chapitre-${i}-collapsed`) === 'true';
                     card.innerHTML = `
-                        <strong>Chapitre ${i}</strong>
-                        <textarea rows="6" class="chapitre-text" data-chapitre="${i}" placeholder="Collez ici le texte du chapitre..."></textarea>
-                        <button class="save-chapitre-btn" data-chapitre="${i}">📎 Enregistrer le chapitre</button>
-                        <div class="chapitre-status" id="status-chapitre-${i}"></div>
+                        <div class="chapitre-header">
+                            <button class="toggle-chapitre" data-chapitre="${i}">${isCollapsed ? '▶' : '▼'}</button>
+                            <strong>Chapitre ${i}</strong>
+                        </div>
+                        <div class="chapitre-body ${isCollapsed ? 'collapsed' : ''}">
+                            <textarea rows="6" class="chapitre-text" data-chapitre="${i}" placeholder="Collez ici le texte du chapitre..."></textarea>
+                            <button class="save-chapitre-btn" data-chapitre="${i}">📎 Enregistrer le chapitre</button>
+                            <button class="refresh-chapitre-btn" data-chapitre="${i}">⟳ Réessayer / Refresh</button>
+                            <div class="chapitre-status" id="status-chapitre-${i}"></div>
+                        </div>
                     `;
                     container.appendChild(card);
+                    // Restaurer le texte sauvegardé si existant
+                    if (chapitresSauvegardes[i]) {
+                        const textarea = card.querySelector(`.chapitre-text[data-chapitre="${i}"]`);
+                        textarea.value = '[Chapitre déjà enregistré]';
+                        const statusDiv = document.getElementById(`status-chapitre-${i}`);
+                        statusDiv.innerHTML = '✅ Chapitre enregistré avec succès.';
+                    }
                 }
                 // Attacher les événements
                 document.querySelectorAll('.save-chapitre-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
                         const num = parseInt(btn.getAttribute('data-chapitre'));
-                        const textarea = document.querySelector(`.chapitre-text[data-chapitre="${num}"]`);
+                        const cardDiv = document.getElementById(`chapitre-card-${num}`);
+                        const textarea = cardDiv.querySelector(`.chapitre-text[data-chapitre="${num}"]`);
                         const texte = textarea.value.trim();
                         if (!texte) {
                             alert(`Veuillez coller le texte du chapitre ${num}.`);
@@ -952,41 +1002,73 @@
                             const data = await response.json();
                             if (data.error) throw new Error(data.error);
                             chapitresSauvegardes[num] = data.contenu;
-                            // Sauvegarder dans localStorage pour ce "cours" temporaire
-                            let coursTemp = JSON.parse(localStorage.getItem('cours_temp')) || {};
-                            coursTemp[num] = data.contenu;
-                            localStorage.setItem('cours_temp', JSON.stringify(coursTemp));
+                            let temp = JSON.parse(localStorage.getItem('cours_temp')) || {};
+                            temp[num] = data.contenu;
+                            localStorage.setItem('cours_temp', JSON.stringify(temp));
                             statusDiv.innerHTML = '✅ Chapitre enregistré avec succès.';
                         } catch (err) {
                             statusDiv.innerHTML = `❌ Erreur: ${err.message}`;
                         }
                     });
                 });
-                // Restaurer d'éventuels chapitres déjà sauvegardés dans la session
-                const saved = localStorage.getItem('cours_temp');
-                if (saved) {
-                    const obj = JSON.parse(saved);
-                    for (let i = 1; i <= 6; i++) {
-                        if (obj[i]) {
-                            chapitresSauvegardes[i] = obj[i];
-                            const statusDiv = document.getElementById(`status-chapitre-${i}`);
-                            if (statusDiv) statusDiv.innerHTML = '✅ Chapitre enregistré avec succès.';
+                document.querySelectorAll('.refresh-chapitre-btn').forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const num = parseInt(btn.getAttribute('data-chapitre'));
+                        const cardDiv = document.getElementById(`chapitre-card-${num}`);
+                        const textarea = cardDiv.querySelector(`.chapitre-text[data-chapitre="${num}"]`);
+                        const texte = textarea.value.trim();
+                        if (!texte) {
+                            alert(`Veuillez coller le texte du chapitre ${num}.`);
+                            return;
                         }
-                    }
-                }
+                        const statusDiv = document.getElementById(`status-chapitre-${num}`);
+                        statusDiv.innerHTML = '<span style="color:#f39c12;">⏳ Regénération en cours...</span>';
+                        try {
+                            const response = await fetch('/generer_chapitre', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ texte: texte, num: num })
+                            });
+                            const data = await response.json();
+                            if (data.error) throw new Error(data.error);
+                            chapitresSauvegardes[num] = data.contenu;
+                            let temp = JSON.parse(localStorage.getItem('cours_temp')) || {};
+                            temp[num] = data.contenu;
+                            localStorage.setItem('cours_temp', JSON.stringify(temp));
+                            statusDiv.innerHTML = '✅ Chapitre regénéré avec succès.';
+                        } catch (err) {
+                            statusDiv.innerHTML = `❌ Erreur: ${err.message}`;
+                        }
+                    });
+                });
+                document.querySelectorAll('.toggle-chapitre').forEach(toggle => {
+                    toggle.addEventListener('click', (e) => {
+                        const num = parseInt(toggle.getAttribute('data-chapitre'));
+                        const cardDiv = document.getElementById(`chapitre-card-${num}`);
+                        const bodyDiv = cardDiv.querySelector('.chapitre-body');
+                        const isCollapsed = bodyDiv.classList.contains('collapsed');
+                        if (isCollapsed) {
+                            bodyDiv.classList.remove('collapsed');
+                            toggle.textContent = '▼';
+                            localStorage.setItem(`chapitre-${num}-collapsed`, 'false');
+                        } else {
+                            bodyDiv.classList.add('collapsed');
+                            toggle.textContent = '▶';
+                            localStorage.setItem(`chapitre-${num}-collapsed`, 'true');
+                        }
+                    });
+                });
             }
             createChapitresUI();
 
             // Bouton de soumission du cours
             document.getElementById('submitCoursBtn').addEventListener('click', async () => {
-                // Vérifier que tous les chapitres sont enregistrés
                 for (let i = 1; i <= 6; i++) {
                     if (!chapitresSauvegardes[i]) {
                         alert(`Veuillez d'abord enregistrer le chapitre ${i} (coller le texte et cliquer sur "Enregistrer").`);
                         return;
                     }
                 }
-                // Générer le jour 7
                 const statusDiv = document.getElementById('coursResult');
                 statusDiv.innerHTML = '<div class="progress-container"><div class="progress-fill" style="width:0%"></div><div class="progress-percent">Génération du jour 7...</div></div>';
                 statusDiv.style.display = 'block';
@@ -1004,12 +1086,10 @@
                     statusDiv.innerHTML = `<div class="error">Erreur jour 7: ${err.message}</div>`;
                     return;
                 }
-                // Construire les 7 jours
                 const joursComplets = {};
                 for (let i = 1; i <= 6; i++) joursComplets[i] = chapitresSauvegardes[i];
                 joursComplets[7] = jour7;
                 const titreCours = "Cours complet (6 chapitres)";
-                // Sauvegarder dans l'historique
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 let entry = historique.find(h => h.domaine === titreCours);
                 if (!entry) {
@@ -1020,9 +1100,7 @@
                 let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
                 joursParDomaine[titreCours] = joursComplets;
                 localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
-                // Nettoyer le stockage temporaire
                 localStorage.removeItem('cours_temp');
-                // Basculer vers l'onglet expertise et charger la formation
                 chargerFormation(titreCours, entry.progression.slice(), joursComplets);
                 document.querySelector('#btnExpertise').click();
                 statusDiv.style.display = 'none';
@@ -1043,7 +1121,7 @@
                 document.getElementById('expertisePanel').classList.remove('active-panel');
             });
 
-            // ---------- HISTORIQUE (avec distinction expertise / cours) ----------
+            // ---------- HISTORIQUE ----------
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
             function formaterDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
@@ -1138,7 +1216,6 @@
             window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
             document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 L'abonnement n'est pas encore actif.\nAccès gratuit pour l'instant."));
 
-            // Progression bar expertise
             let currentExpertiseInterval = null;
             function startExpertiseProgressBar() {
                 const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
