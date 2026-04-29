@@ -70,15 +70,39 @@
             position: relative;
             touch-action: pan-y pinch-zoom;
         }
+        .jour-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 15px 0 10px;
+            gap: 15px;
+        }
         .jour-title {
-            text-align: center;
             font-size: 2rem;
             font-weight: bold;
             letter-spacing: 6px;
-            margin: 15px 0 10px;
             color: #f1c40f;
             text-shadow: 0 0 8px rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.3);
+            border-radius: 40px;
+            padding: 5px 20px;
+            text-align: center;
+            flex: 1;
         }
+        .nav-triangle {
+            font-size: 2rem;
+            background: rgba(230,126,34,0.3);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            user-select: none;
+        }
+        .nav-triangle:hover { background: #e67e22; transform: scale(1.05); }
         .dizaine-title {
             font-size: 1.3rem;
             font-weight: bold;
@@ -112,6 +136,7 @@
         @media (max-width: 600px) {
             .swipe-arrow { width: 32px; height: 32px; font-size: 22px; opacity: 0.2; }
             .jour-title { font-size: 1.5rem; letter-spacing: 3px; }
+            .nav-triangle { width: 40px; height: 40px; font-size: 1.5rem; }
             .dizaine-title { font-size: 1.1rem; }
         }
         .audio-day { position: absolute; top: 15px; right: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
@@ -260,7 +285,11 @@
                 <div id="jourContainer" style="display:none;">
                     <div id="progressHeaderMsg" class="progress-header" style="display:none;">👉 cliquez ici pour valider cette journée !</div>
                     <div id="segmentsContainer" class="progress-segments"></div>
-                    <div id="jourTitle" class="jour-title"></div>
+                    <div id="jourHeader" class="jour-header" style="display: none;">
+                        <div id="prevDayTriangle" class="nav-triangle">◀</div>
+                        <div id="jourTitle" class="jour-title"></div>
+                        <div id="nextDayTriangle" class="nav-triangle">▶</div>
+                    </div>
                     <div id="jourContentContainer" style="position: relative;">
                         <div id="jourContent" class="result"></div>
                         <div id="swipeLeftArrow" class="swipe-arrow swipe-left" style="display: none;">◀</div>
@@ -269,7 +298,7 @@
                     </div>
                     <div class="nav-buttons">
                         <button id="prevDay" disabled>◀ Précédent</button>
-                        <span id="dayCounter">Jour 1 / 7</span>
+                        <span id="dayCounter">Intro / 8</span>
                         <button id="nextDay">Suivant ▶</button>
                     </div>
                     <div id="expertiseProgressArea" class="progress-container" style="display:none;">
@@ -315,7 +344,7 @@
 
     <script>
         (function() {
-            // --- chargement initial (écran) ---
+            // --- écran de chargement ---
             const loadingScreen = document.getElementById('loadingScreen');
             const mainContent = document.getElementById('mainContent');
             const progressBar = document.getElementById('loadingProgressBar');
@@ -376,7 +405,7 @@
             let currentJours = {};
             let currentDizaines = [];
             let currentDizaineIndex = 0;
-            let currentPage = 1;   // 1..7 (on commence directement au jour 1 après démarrage)
+            let currentPage = 0;   // 0 = accueil, 1..7 = jours
             let blinkInterval = null;
             let touchStartX = 0, touchEndX = 0;
 
@@ -443,11 +472,11 @@
                     seg.className = 'segment';
                     if (currentProgression[i]) {
                         seg.classList.add('completed');
-                        seg.onclick = (function(idx){ return () => naviguerVersJour(idx+1); })(i);
+                        seg.onclick = (function(idx) { return () => naviguerVersJour(idx+1); })(i);
                     } else {
                         if (!currentProgression[i] && !currentJours[i+1]) seg.classList.add('disabled');
                         if (currentJours[i+1] && !currentProgression[i]) seg.classList.add('loaded');
-                        seg.onclick = (function(idx){ return () => {
+                        seg.onclick = (function(idx) { return () => {
                             if (!currentProgression[idx] && !currentJours[idx+1]) alert(`Générez d'abord le jour ${idx+1}.`);
                             else cocherSegment(idx);
                         }; })(i);
@@ -461,7 +490,7 @@
             function updateValidationMessage() {
                 const msgDiv = document.getElementById('progressHeaderMsg');
                 if (!msgDiv) return;
-                if (!currentJours[currentPage] || currentProgression[currentPage-1]) {
+                if (currentPage === 0 || !currentJours[currentPage] || currentProgression[currentPage-1]) {
                     msgDiv.style.display = 'none';
                     arreterClignotement();
                 } else {
@@ -515,12 +544,24 @@
                 currentDomaine = domaine;
                 currentProgression = progression.slice();
                 currentJours = JSON.parse(JSON.stringify(jours));
-                currentPage = 1;  // on commence au jour 1
+                currentPage = 0;   // on commence par l'accueil
                 afficherPage();
                 document.getElementById('jourContainer').style.display = 'block';
                 document.getElementById('startExpertise').style.display = 'none';
                 afficherBarreSegments();
             }
+
+            const welcomeHTML = `<div class="welcome-text">
+                <strong>Bonjour ! Bienvenue dans le Chapelet Tazzz Bot Expertise.</strong><br><br>
+                <strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>
+                - Procurez-vous un vrai chapelet pour égrener durant vos lectures.<br>
+                - Chaque jour, lisez ou récitez à voix haute le contenu du jour (une dizaine à la fois).<br>
+                - Glissez (swipe) à gauche/droite pour feuilleter les 5 dizaines d’un jour.<br>
+                - Une fois la 5e dizaine lue, un message vous invitera à valider la journée.<br>
+                - N'oubliez pas de valider votre journée dans la barre de progression (case clignotante).<br>
+                - Utilisez les boutons <strong>“Précédent/Suivant”</strong> (en bas) ou les triangles autour du titre pour changer de jour.<br>
+                - Cliquez sur <strong>“Suivant”</strong> pour commencer le <strong>Jour 1</strong>.
+            </div>`;
 
             function afficherPage() {
                 const contentDiv = document.getElementById('jourContent');
@@ -529,17 +570,42 @@
                 const nextBtn = document.getElementById('nextDay');
                 const feedbackBox = document.getElementById('feedbackBox');
                 const dayAudioBtn = document.getElementById('audioDayBtn');
+                const jourHeader = document.getElementById('jourHeader');
                 const jourTitleSpan = document.getElementById('jourTitle');
                 const leftArrow = document.getElementById('swipeLeftArrow');
                 const rightArrow = document.getElementById('swipeRightArrow');
+                const progressMsg = document.getElementById('progressHeaderMsg');
                 arreterClignotement();
 
+                if (currentPage === 0) {
+                    jourHeader.style.display = 'none';
+                    contentDiv.innerHTML = welcomeHTML;
+                    daySpan.innerText = 'Intro / 8';
+                    prevBtn.disabled = true;
+                    nextBtn.disabled = false;
+                    feedbackBox.style.display = 'none';
+                    dayAudioBtn.style.display = 'none';
+                    leftArrow.style.display = 'none';
+                    rightArrow.style.display = 'none';
+                    if (progressMsg) progressMsg.style.display = 'none';
+                    // Le bouton Suivant (bas) mène au jour 1
+                    nextBtn.onclick = () => {
+                        if (currentPage === 0) {
+                            currentPage = 1;
+                            afficherPage();
+                        }
+                    };
+                    return;
+                }
+
+                // Pages jours 1..7
+                jourHeader.style.display = 'flex';
+                jourTitleSpan.innerText = `📆 JOUR ${currentPage}`;
                 if (!currentJours[currentPage]) {
                     contentDiv.innerHTML = '<em>Chargement du jour...</em>';
                     chargerJour(currentPage);
                     return;
                 }
-                jourTitleSpan.innerText = `📆 JOUR ${currentPage}`;
                 currentDizaines = decouperEnDizaines(currentJours[currentPage]);
                 currentDizaineIndex = 0;
                 afficherDizaine(0);
@@ -599,13 +665,19 @@
                 chargerFormation(domaine, entry.progression.slice(), {});
             });
 
-            document.getElementById('prevDay').addEventListener('click', () => {
+            // Navigation par boutons classiques (bas) et triangles (haut)
+            function goPrevDay() {
                 if (currentPage > 1) {
                     currentPage--;
                     afficherPage();
                 }
-            });
-            document.getElementById('nextDay').addEventListener('click', () => {
+            }
+            function goNextDay() {
+                if (currentPage === 0) {
+                    currentPage = 1;
+                    afficherPage();
+                    return;
+                }
                 if (currentPage < 7) {
                     const jourIdx = currentPage - 1;
                     if (!currentProgression[jourIdx] && currentJours[currentPage]) {
@@ -617,13 +689,19 @@
                     currentPage++;
                     afficherPage();
                 }
-            });
+            }
 
-            // Swipe horizontal
+            document.getElementById('prevDay').addEventListener('click', goPrevDay);
+            document.getElementById('nextDay').addEventListener('click', goNextDay);
+            document.getElementById('prevDayTriangle').addEventListener('click', goPrevDay);
+            document.getElementById('nextDayTriangle').addEventListener('click', goNextDay);
+
+            // Swipe horizontal sur la zone de contenu
             const contentZone = document.getElementById('jourContent');
             if (contentZone) {
                 contentZone.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
                 contentZone.addEventListener('touchend', (e) => {
+                    if (currentPage === 0) return; // pas de swipe sur l'accueil
                     touchEndX = e.changedTouches[0].clientX;
                     const deltaX = touchEndX - touchStartX;
                     if (Math.abs(deltaX) < 50) return;
@@ -695,7 +773,7 @@
             }
             initFromUrl();
 
-            // Audio vocal
+            // --- Audio vocal ---
             let frenchVoice = null;
             function initFrenchVoice() { if (!window.speechSynthesis) return; const voices = window.speechSynthesis.getVoices(); frenchVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Thomas') || v.name.includes('Amélie'))); if (!frenchVoice) frenchVoice = voices.find(v => v.lang === 'fr-FR'); }
             if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = initFrenchVoice; initFrenchVoice(); }
