@@ -82,20 +82,26 @@
         .nav-buttons { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; }
         .nav-buttons button { width: auto; margin: 0; padding: 8px 20px; font-size: 0.9rem; }
         .day-counter { font-size: 0.9rem; font-weight: bold; background: #2c3e4e; padding: 5px 12px; border-radius: 30px; }
-        .dizaine-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .swipe-area {
+            width: 100%;
+            height: 40px;
             margin-top: 15px;
-            gap: 10px;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            user-select: none;
+            touch-action: pan-y pinch-zoom;
         }
-        .dizaine-nav button {
-            margin: 0;
-            padding: 6px 16px;
-            background: #2c3e4e;
+        .swipe-indicator {
+            font-size: 0.7rem;
+            color: rgba(255,255,255,0.3);
+            text-align: center;
+            letter-spacing: 2px;
         }
-        .dizaine-nav button:hover {
-            background: #e67e22;
+        .swipe-area:active {
+            cursor: grabbing;
         }
         .progress-header {
             text-align: center;
@@ -218,7 +224,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 600px) {
             .segment { width: 40px; height: 40px; }
-            .dizaine-nav button { padding: 4px 12px; font-size: 0.8rem; }
+            .swipe-indicator { font-size: 0.6rem; }
         }
     </style>
 </head>
@@ -262,10 +268,8 @@
                         <div id="jourContent" class="result"></div>
                         <button id="audioWelcomeBtn" class="audio-welcome" style="display:none;">🔊</button>
                         <button id="audioDayBtn" class="audio-day" style="display:none;">🔊</button>
-                        <div class="dizaine-nav" id="dizaineNav" style="display: none;">
-                            <button id="prevDizaine">◀ Dizaine précédente</button>
-                            <span id="dizaineCounter">Dizaine 1 / 5</span>
-                            <button id="nextDizaine">Dizaine suivante ▶</button>
+                        <div id="swipeArea" class="swipe-area">
+                            <div class="swipe-indicator">⤚ ⤖  glisser horizontalement  ⤚ ⤖</div>
                         </div>
                     </div>
                     <div class="nav-buttons">
@@ -290,7 +294,7 @@
                 </div>
             </div>
 
-            <!-- Mode Personnel -->
+            <!-- Mode Personnel (inchangé) -->
             <div id="personnelPanel" class="mode-panel">
                 <p>📝 5 défauts (un par ligne) :</p>
                 <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis désorganisé&#10;J'abandonne&#10;Je reste enfermé&#10;Je n'ai pas de travail"></textarea>
@@ -302,7 +306,7 @@
                 </div>
             </div>
 
-            <!-- Mode Consultation -->
+            <!-- Mode Consultation (inchangé) -->
             <div id="consultationPanel" class="mode-panel">
                 <p>💬 Décrivez votre besoin :</p>
                 <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prise de parole en public..."></textarea>
@@ -398,10 +402,10 @@
             // ---------- GESTION DE L'ÉTAT COURANT ----------
             let currentDomaine = '';
             let currentProgression = [false, false, false, false, false, false, false];
-            let currentJours = {}; // contient le texte complet du jour (non découpé)
-            let currentDizaines = []; // array des 5 dizaines pour le jour courant
+            let currentJours = {};
+            let currentDizaines = [];
             let currentDizaineIndex = 0;
-            let currentPage = 0; // 0 = intro, 1..7 = jours
+            let currentPage = 0;
             let blinkInterval = null;
 
             function arreterClignotement() {
@@ -423,16 +427,13 @@
                 }
             }
 
-            // Découper un contenu complet en 5 dizaines
             function decouperEnDizaines(contenu) {
                 if (!contenu) return [];
-                // Cherche des séparateurs "DIZAINE X –" ou "**DIZAINE X**"
                 const regex = /(?:DIZAINE\s+\d+\s*[–-]?\s*\**\s*)([^]*?)(?=(?:DIZAINE\s+\d+|$))/gi;
                 let matches = [...contenu.matchAll(regex)];
                 if (matches.length >= 5) {
                     return matches.slice(0,5).map(m => m[1].trim());
                 }
-                // Fallback : découpage par double saut de ligne
                 let parts = contenu.split(/\n\s*\n/);
                 if (parts.length >= 5) return parts.slice(0,5);
                 return [contenu];
@@ -440,20 +441,17 @@
 
             function afficherDizaine(index) {
                 const contentDiv = document.getElementById('jourContent');
-                const navDiv = document.getElementById('dizaineNav');
                 if (!currentDizaines.length) {
-                    contentDiv.innerHTML = '<em>Découpage des dizaines non disponible.</em>';
-                    navDiv.style.display = 'none';
+                    contentDiv.innerHTML = '<em>Découpage non disponible.</em>';
                     return;
                 }
                 if (index < 0) index = 0;
                 if (index >= currentDizaines.length) index = currentDizaines.length - 1;
                 currentDizaineIndex = index;
                 contentDiv.innerHTML = currentDizaines[currentDizaineIndex].replace(/\n/g, '<br>');
-                navDiv.style.display = 'flex';
-                document.getElementById('prevDizaine').disabled = (currentDizaineIndex === 0);
-                document.getElementById('nextDizaine').disabled = (currentDizaineIndex === currentDizaines.length - 1);
-                document.getElementById('dizaineCounter').innerText = `Dizaine ${currentDizaineIndex+1} / ${currentDizaines.length}`;
+                // Mettre à jour le compteur off-screen (optionnel)
+                const counterSpan = document.getElementById('dizaineCounter');
+                if (counterSpan) counterSpan.innerText = `${currentDizaineIndex+1} / ${currentDizaines.length}`;
             }
 
             function afficherBarreSegments() {
@@ -500,7 +498,7 @@
                     currentDizaineIndex = 0;
                     afficherPage(currentPage);
                 } else if (jourNum >= 1 && jourNum <= 7 && !currentJours[jourNum]) {
-                    alert(`Le contenu du jour ${jourNum} n'a pas été trouvé. Utilisez la navigation “Suivant” pour le régénérer.`);
+                    alert(`Le contenu du jour ${jourNum} n'a pas été trouvé. Utilisez “Suivant” pour le régénérer.`);
                 }
             }
 
@@ -511,7 +509,7 @@
                     sauvegarderFormationCourante();
                     afficherBarreSegments();
                     if (idx+1 === 7) {
-                        alert(`🎉 Félicitations ! Vous avez achevé votre expertise. Badge "Expert en ${currentDomaine}" débloqué.`);
+                        alert(`🎉 Félicitations ! Badge "Expert en ${currentDomaine}" débloqué.`);
                         let badges = JSON.parse(localStorage.getItem('badges')) || [];
                         const expertBadge = `🏅 Expert en ${currentDomaine}`;
                         if (!badges.includes(expertBadge)) { badges.push(expertBadge); localStorage.setItem('badges', JSON.stringify(badges)); updateBadgeCounters(); }
@@ -559,7 +557,6 @@
                 const feedbackBox = document.getElementById('feedbackBox');
                 const welcomeBtn = document.getElementById('audioWelcomeBtn');
                 const dayAudioBtn = document.getElementById('audioDayBtn');
-                const dizaineNav = document.getElementById('dizaineNav');
                 arreterClignotement();
 
                 if (page === 0) {
@@ -570,7 +567,6 @@
                     feedbackBox.style.display = 'none';
                     welcomeBtn.style.display = 'flex';
                     dayAudioBtn.style.display = 'none';
-                    dizaineNav.style.display = 'none';
                     welcomeBtn.onclick = () => {
                         const introText = document.getElementById('jourContent').innerText;
                         if (introText) playAudioChunks(introText, true);
@@ -627,6 +623,69 @@
                 });
             }
 
+            // ---------- SWIPE POUR DIZAINES ----------
+            let touchStartX = 0;
+            let touchEndX = 0;
+            const swipeThreshold = 50;
+
+            function handleTouchStart(e) {
+                touchStartX = e.changedTouches[0].screenX;
+            }
+            function handleTouchEnd(e) {
+                touchEndX = e.changedTouches[0].screenX;
+                const deltaX = touchEndX - touchStartX;
+                if (Math.abs(deltaX) < swipeThreshold) return;
+                if (deltaX > 0) { // droite → précédente
+                    if (currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1);
+                } else { // gauche → suivante
+                    if (currentDizaineIndex < currentDizaines.length - 1) {
+                        afficherDizaine(currentDizaineIndex + 1);
+                    } else {
+                        // Dernière dizaine : on invite à valider la journée
+                        const msgDiv = document.getElementById('progressHeaderMsg');
+                        if (msgDiv && msgDiv.style.display !== 'none') {
+                            msgDiv.style.animation = 'none';
+                            msgDiv.offsetHeight;
+                            msgDiv.style.animation = 'blinkText 1s infinite';
+                            playBeep();
+                        } else {
+                            alert("Vous avez terminé les 5 dizaines. Validez votre journée en cliquant sur la case clignotante JX !");
+                        }
+                    }
+                }
+            }
+
+            const swipeArea = document.getElementById('swipeArea');
+            if (swipeArea) {
+                swipeArea.addEventListener('touchstart', handleTouchStart, false);
+                swipeArea.addEventListener('touchend', handleTouchEnd, false);
+                // support souris (dev)
+                let mouseStartX = 0;
+                swipeArea.addEventListener('mousedown', (e) => {
+                    mouseStartX = e.screenX;
+                    const onMouseUp = (e2) => {
+                        const deltaX = e2.screenX - mouseStartX;
+                        if (Math.abs(deltaX) >= swipeThreshold) {
+                            if (deltaX > 0 && currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1);
+                            else if (deltaX < 0 && currentDizaineIndex < currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1);
+                            else if (deltaX < 0 && currentDizaineIndex === currentDizaines.length - 1) {
+                                const msgDiv = document.getElementById('progressHeaderMsg');
+                                if (msgDiv && msgDiv.style.display !== 'none') {
+                                    msgDiv.style.animation = 'none';
+                                    msgDiv.offsetHeight;
+                                    msgDiv.style.animation = 'blinkText 1s infinite';
+                                    playBeep();
+                                } else {
+                                    alert("Dernière dizaine. Validez votre journée !");
+                                }
+                            }
+                        }
+                        document.removeEventListener('mouseup', onMouseUp);
+                    };
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+            }
+
             // Événement Démarrer expertise
             document.getElementById('startExpertise').addEventListener('click', () => {
                 initAudio();
@@ -645,7 +704,6 @@
                 chargerFormation(domaine, entry.progression.slice(), {});
             });
 
-            // Navigation entre jours
             document.getElementById('prevDay').addEventListener('click', () => {
                 if (currentPage > 0) { currentPage--; afficherPage(currentPage); }
             });
@@ -653,20 +711,12 @@
                 if (currentPage > 0) {
                     const jourIdx = currentPage - 1;
                     if (!currentProgression[jourIdx] && currentJours[currentPage]) {
-                        alert("Veuillez d'abord valider votre journée en cliquant sur la case qui clignote avant de passer au jour suivant.");
+                        alert("Veuillez valider cette journée avant de passer à la suivante.");
                         return;
                     }
                 }
                 if (currentPage === 0) { currentPage = 1; afficherPage(1); }
                 else if (currentPage < 7) { currentPage++; afficherPage(currentPage); }
-            });
-
-            // Navigation entre dizaines
-            document.getElementById('prevDizaine').addEventListener('click', () => {
-                if (currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1);
-            });
-            document.getElementById('nextDizaine').addEventListener('click', () => {
-                if (currentDizaineIndex < currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1);
             });
 
             // Feedback étoiles
@@ -700,7 +750,6 @@
                 document.getElementById('domaine').value = '';
                 document.querySelector('.mode-btn[data-mode="expertise"]').click();
                 document.getElementById('jourContent').innerHTML = '';
-                document.getElementById('dizaineNav').style.display = 'none';
                 stopAudio();
                 arreterClignotement();
             });
@@ -879,7 +928,7 @@
             window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
             document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 L'abonnement n'est pas encore actif.\nAccès gratuit pour l'instant."));
 
-            // Audio vocal
+            // Audio vocal (lecture des textes)
             let frenchVoice = null;
             function initFrenchVoice() {
                 if (!window.speechSynthesis) return;
@@ -984,10 +1033,9 @@
                     <strong>Bonjour ! Bienvenue dans le Chapelet Tazzz Bot Expertise.</strong><br><br>
                     <strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>
                     - Procurez vous un vrai chapelet pour égrener durant vos lectures.<br>
-                    - Chaque jour, lisez ou récitez à voix haute le contenu du jour (une dizaine à la fois).<br>
-                    - Feuilletez les 5 dizaines avec les boutons “Dizaine précédente/suivante”.<br>
-                    - Les 5 dizaines d’un jour correspondent aux 5 concepts clés (ou 5 mystères).<br>
-                    - N'oubliez pas de valider votre journée dans la barre de progression (case clignotante).<br>
+                    - Chaque jour contient 5 dizaines. Glissez horizontalement sur la zone ⤚ ⤖ pour les feuilleter.<br>
+                    - Une fois les 5 dizaines lues, validez la journée en cliquant sur la case clignotante JX.<br>
+                    - N'oubliez pas la case à cocher avant de passer au jour suivant.<br>
                     - Cliquez sur <strong>“Suivant”</strong> pour commencer le <strong>Jour 1</strong>.
                 </div>
             `;
