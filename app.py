@@ -140,32 +140,29 @@ Format identique à l'expertise (Méditation, Notre Père, Ave Maria, Gloire). S
 
 @app.route('/generer_cours', methods=['POST'])
 def generer_cours_route():
-    data = request.get_json()
-    chapitres = data.get('chapitres')  # liste de 6 textes
-    if not chapitres or len(chapitres) != 6:
-        return jsonify({'error': '6 chapitres requis'}), 400
-    
-    jours = {}
-    for i, texte in enumerate(chapitres, start=1):
-        prompt = PROMPT_CHAPITRE_JOUR.format(texte_chapitre=texte, jour_num=i)
-        try:
+    try:
+        data = request.get_json()
+        if not data or 'chapitres' not in data:
+            return jsonify({'error': 'chapitres manquant'}), 400
+        chapitres = data.get('chapitres')
+        if not isinstance(chapitres, list) or len(chapitres) != 6:
+            return jsonify({'error': '6 chapitres requis'}), 400
+        
+        jours = {}
+        for i, texte in enumerate(chapitres, start=1):
+            prompt = PROMPT_CHAPITRE_JOUR.format(texte_chapitre=texte, jour_num=i)
             contenu = call_deepseek(prompt, max_tokens=2500)
             jours[i] = clean_markdown(contenu)
-            jours[i] = remove_markdown_chars(jours[i])
-        except Exception as e:
-            jours[i] = f"Erreur génération chapitre {i}: {str(e)}"
-    
-    # Jour 7 : questions
-    titres = [f"Chapitre {i}" for i in range(1,7)]
-    prompt7 = PROMPT_JOUR_7.format(chapitres_titres="\n".join(titres))
-    try:
+        
+        titres = "\n".join([f"Chapitre {i}" for i in range(1,7)])
+        prompt7 = PROMPT_JOUR_7.format(chapitres_titres=titres)
         contenu7 = call_deepseek(prompt7, max_tokens=2500)
         jours[7] = clean_markdown(contenu7)
-        jours[7] = remove_markdown_chars(jours[7])
+        
+        return jsonify({'jours': jours})
     except Exception as e:
-        jours[7] = f"Erreur génération jour 7: {str(e)}"
-    
-    return jsonify({'jours': jours})
+        print(f"Erreur dans generer_cours: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 # ================= ROUTES =================
 @app.route('/')
