@@ -77,23 +77,47 @@
             position: relative;
             touch-action: pan-y pinch-zoom;
         }
-        .jour-title {
-            text-align: center;
-            font-size: 1.8rem;
-            font-weight: bold;
-            letter-spacing: 4px;
-            margin: 10px 0 5px;
-            color: #f1c40f;
-            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+        .jour-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 15px 0 10px;
+            gap: 15px;
         }
+        .jour-title {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 6px;
+            color: #f1c40f;
+            text-shadow: 0 0 8px rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.3);
+            border-radius: 40px;
+            padding: 5px 20px;
+            text-align: center;
+            flex: 1;
+        }
+        .nav-triangle {
+            font-size: 2rem;
+            background: rgba(230,126,34,0.3);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            user-select: none;
+        }
+        .nav-triangle:hover { background: #e67e22; transform: scale(1.05); }
         .dizaine-title {
             font-size: 1.3rem;
             font-weight: bold;
             color: #e67e22;
             margin-bottom: 15px;
-            border-bottom: 1px solid #e67e22;
+            border-bottom: 2px solid #e67e22;
             display: inline-block;
-            padding-right: 15px;
+            padding-right: 20px;
         }
         .swipe-arrow {
             position: absolute;
@@ -113,15 +137,13 @@
             backdrop-filter: blur(4px);
             opacity: 0.3;
         }
-        .swipe-arrow:hover {
-            opacity: 0.8;
-            background-color: rgba(230,126,34,0.6);
-        }
+        .swipe-arrow:hover { opacity: 0.8; background-color: rgba(230,126,34,0.6); }
         .swipe-left { left: 5px; }
         .swipe-right { right: 5px; }
         @media (max-width: 600px) {
             .swipe-arrow { width: 32px; height: 32px; font-size: 22px; opacity: 0.2; }
-            .jour-title { font-size: 1.4rem; }
+            .jour-title { font-size: 1.5rem; letter-spacing: 3px; }
+            .nav-triangle { width: 40px; height: 40px; font-size: 1.5rem; }
             .dizaine-title { font-size: 1.1rem; }
         }
         .audio-welcome { position: absolute; top: 15px; left: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
@@ -141,9 +163,7 @@
             cursor: pointer;
         }
         @keyframes blinkText { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
-        .blink-segment {
-            animation: blinkSegment 1s infinite;
-        }
+        .blink-segment { animation: blinkSegment 1s infinite; }
         @keyframes blinkSegment {
             0% { background-color: #2c3e4e; box-shadow: 0 0 0px #f39c12; }
             50% { background-color: #f39c12; box-shadow: 0 0 8px #f39c12; color: #1e2b3c; }
@@ -275,7 +295,6 @@
                 <span id="badgeCountConsultation" class="medal-counter" style="display:none;">0🏅</span>
             </div>
 
-            <!-- Mode Expertise -->
             <div id="expertisePanel" class="mode-panel active-panel">
                 <p>🔬 Domaine à maîtriser :</p>
                 <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, Prise de parole...">
@@ -283,7 +302,11 @@
                 <div id="jourContainer" style="display:none;">
                     <div id="progressHeaderMsg" class="progress-header" style="display:none;">👉 cliquez ici pour valider cette journée !</div>
                     <div id="segmentsContainer" class="progress-segments"></div>
-                    <div id="jourTitle" class="jour-title" style="display: none;"></div>
+                    <div id="jourHeader" class="jour-header" style="display: none;">
+                        <div id="prevDayTriangle" class="nav-triangle">◀</div>
+                        <div id="jourTitle" class="jour-title"></div>
+                        <div id="nextDayTriangle" class="nav-triangle">▶</div>
+                    </div>
                     <div id="jourContentContainer" style="position: relative;">
                         <div id="jourContent" class="result"></div>
                         <div id="swipeLeftArrow" class="swipe-arrow swipe-left" style="display: none;">◀</div>
@@ -313,28 +336,20 @@
                 </div>
             </div>
 
-            <!-- Mode Personnel (inchangé) -->
             <div id="personnelPanel" class="mode-panel">
                 <p>📝 5 défauts (un par ligne) :</p>
                 <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis désorganisé&#10;J'abandonne&#10;Je reste enfermé&#10;Je n'ai pas de travail"></textarea>
                 <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
                 <div id="personnelResult" class="result"></div>
-                <div id="personnelLoader" class="progress-container" style="display:none;">
-                    <div class="progress-fill" id="personnelProgressFill"></div>
-                    <div class="progress-percent" id="personnelProgressPercent"></div>
-                </div>
+                <div id="personnelLoader" class="progress-container" style="display:none;"><div class="progress-fill" id="personnelProgressFill"></div><div class="progress-percent" id="personnelProgressPercent"></div></div>
             </div>
 
-            <!-- Mode Consultation (inchangé) -->
             <div id="consultationPanel" class="mode-panel">
                 <p>💬 Décrivez votre besoin :</p>
                 <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prise de parole en public..."></textarea>
                 <button id="generateConsult">✨ GÉNÉRER ✨</button>
                 <div id="consultResult" class="result"></div>
-                <div id="consultLoader" class="progress-container" style="display:none;">
-                    <div class="progress-fill" id="consultProgressFill"></div>
-                    <div class="progress-percent" id="consultProgressPercent"></div>
-                </div>
+                <div id="consultLoader" class="progress-container" style="display:none;"><div class="progress-fill" id="consultProgressFill"></div><div class="progress-percent" id="consultProgressPercent"></div></div>
             </div>
 
             <div class="action-buttons">
@@ -363,7 +378,7 @@
 
     <script>
         (function() {
-            // ---------- ÉCRAN DE CHARGEMENT ----------
+            // --- chargement initial (écran) ---
             const loadingScreen = document.getElementById('loadingScreen');
             const mainContent = document.getElementById('mainContent');
             const progressBar = document.getElementById('loadingProgressBar');
@@ -393,7 +408,7 @@
             }
             requestAnimationFrame(updateProgress);
 
-            // ---------- GESTION SONORE ----------
+            // --- audio (bip de validation) ---
             let audioCtx = null;
             function initAudio() {
                 if (audioCtx) return;
@@ -418,25 +433,20 @@
                 osc.stop(now + 0.2);
             }
 
-            // ---------- GESTION DE L'ÉTAT COURANT (expertise) ----------
+            // --- état principal ---
             let currentDomaine = '';
             let currentProgression = [false, false, false, false, false, false, false];
             let currentJours = {};
             let currentDizaines = [];
             let currentDizaineIndex = 0;
-            let currentPage = 0;
+            let currentPage = 0;   // 0=intro, 1..7=jour
             let blinkInterval = null;
-            let touchStartX = 0;
-            let touchEndX = 0;
+            let touchStartX = 0, touchEndX = 0;
 
             function arreterClignotement() {
-                if (blinkInterval) {
-                    clearInterval(blinkInterval);
-                    blinkInterval = null;
-                }
+                if (blinkInterval) { clearInterval(blinkInterval); blinkInterval = null; }
                 document.querySelectorAll('.segment').forEach(seg => seg.classList.remove('blink-segment'));
             }
-
             function demarrerClignotement() {
                 arreterClignotement();
                 const dayIndex = currentPage - 1;
@@ -452,9 +462,7 @@
                 if (!contenuBrut) return [];
                 const regex = /(?:DIZAINE\s+\d+\s*[–-]?\s*\**\s*)([^]*?)(?=(?:DIZAINE\s+\d+|$))/gi;
                 let matches = [...contenuBrut.matchAll(regex)];
-                if (matches.length >= 5) {
-                    return matches.slice(0,5).map(m => m[1].trim());
-                }
+                if (matches.length >= 5) return matches.slice(0,5).map(m => m[1].trim());
                 let paragraphs = contenuBrut.split(/\n\s*\n/);
                 if (paragraphs.length >= 5) return paragraphs.slice(0,5);
                 return [contenuBrut];
@@ -466,28 +474,24 @@
                 const rightArrow = document.getElementById('swipeRightArrow');
                 if (!currentDizaines.length) {
                     contentDiv.innerHTML = '<em>Contenu non disponible.</em>';
-                    leftArrow.style.display = 'none';
-                    rightArrow.style.display = 'none';
+                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
                     return;
                 }
                 if (index < 0) index = 0;
                 if (index >= currentDizaines.length) {
-                    if (afficherMessageDepassement) {
+                    if (afficherMessageDepassement && currentPage > 0 && !currentProgression[currentPage-1]) {
                         const msgDiv = document.getElementById('progressHeaderMsg');
-                        if (msgDiv && currentPage > 0 && !currentProgression[currentPage-1]) {
-                            msgDiv.style.display = 'block';
-                            msgDiv.style.animation = 'blinkText 1s infinite';
-                            demarrerClignotement();
-                            alert("📿 Vous avez terminé les 5 dizaines ! N'oubliez pas de valider cette journée en cliquant sur la case qui clignote (ou sur le message).");
-                        }
+                        if (msgDiv) { msgDiv.style.display = 'block'; msgDiv.style.animation = 'blinkText 1s infinite'; }
+                        demarrerClignotement();
+                        alert("📿 Vous avez terminé les 5 dizaines ! N'oubliez pas de valider cette journée en cliquant sur la case qui clignote (ou sur le message).");
                     }
                     return;
                 }
                 currentDizaineIndex = index;
-                let numeroDizaine = currentDizaineIndex + 1;
-                let titreDizaine = `<div class="dizaine-title">📖 DIZAINE ${numeroDizaine} / 5</div>`;
-                let contenuBrut = currentDizaines[currentDizaineIndex];
-                contentDiv.innerHTML = titreDizaine + contenuBrut.replace(/\n/g, '<br>');
+                const numero = currentDizaineIndex + 1;
+                const titre = `<div class="dizaine-title">📖 DIZAINE ${numero} / 5</div>`;
+                const contenu = currentDizaines[currentDizaineIndex];
+                contentDiv.innerHTML = titre + contenu.replace(/\n/g, '<br>');
                 leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
                 rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
                 contentDiv.scrollTop = 0;
@@ -566,10 +570,7 @@
                 localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 let entry = historique.find(h => h.domaine === currentDomaine);
-                if (entry) {
-                    entry.progression = currentProgression.slice();
-                    localStorage.setItem('historique', JSON.stringify(historique));
-                }
+                if (entry) { entry.progression = currentProgression.slice(); localStorage.setItem('historique', JSON.stringify(historique)); }
             }
 
             function chargerFormation(domaine, progression, jours) {
@@ -596,29 +597,24 @@
                 const feedbackBox = document.getElementById('feedbackBox');
                 const welcomeBtn = document.getElementById('audioWelcomeBtn');
                 const dayAudioBtn = document.getElementById('audioDayBtn');
-                const jourTitleDiv = document.getElementById('jourTitle');
+                const jourHeader = document.getElementById('jourHeader');
+                const jourTitleSpan = document.getElementById('jourTitle');
                 const leftArrow = document.getElementById('swipeLeftArrow');
                 const rightArrow = document.getElementById('swipeRightArrow');
                 arreterClignotement();
 
                 if (page === 0) {
-                    jourTitleDiv.style.display = 'none';
+                    jourHeader.style.display = 'none';
                     contentDiv.innerHTML = welcomeHTML;
                     daySpan.innerText = 'Intro / 8';
-                    prevBtn.disabled = true;
-                    nextBtn.disabled = false;
+                    prevBtn.disabled = true; nextBtn.disabled = false;
                     feedbackBox.style.display = 'none';
-                    welcomeBtn.style.display = 'flex';
-                    dayAudioBtn.style.display = 'none';
-                    leftArrow.style.display = 'none';
-                    rightArrow.style.display = 'none';
-                    welcomeBtn.onclick = () => {
-                        const introText = document.getElementById('jourContent').innerText;
-                        if (introText) playAudioChunks(introText, true);
-                    };
+                    welcomeBtn.style.display = 'flex'; dayAudioBtn.style.display = 'none';
+                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
+                    welcomeBtn.onclick = () => { const introText = document.getElementById('jourContent').innerText; if (introText) playAudioChunks(introText, true); };
                 } else {
-                    jourTitleDiv.style.display = 'block';
-                    jourTitleDiv.innerText = `📆 JOUR ${page}`;
+                    jourHeader.style.display = 'flex';
+                    jourTitleSpan.innerText = `📆 JOUR ${page}`;
                     const jourNum = page;
                     welcomeBtn.style.display = 'none';
                     if (currentJours[jourNum]) {
@@ -626,14 +622,10 @@
                         currentDizaineIndex = 0;
                         afficherDizaine(0);
                         daySpan.innerText = `Jour ${jourNum} / 7`;
-                        prevBtn.disabled = (jourNum === 1);
-                        nextBtn.disabled = (jourNum === 7);
+                        prevBtn.disabled = (jourNum === 1); nextBtn.disabled = (jourNum === 7);
                         feedbackBox.style.display = 'block';
                         dayAudioBtn.style.display = 'flex';
-                        dayAudioBtn.onclick = () => {
-                            const fullText = currentJours[jourNum];
-                            if (fullText) playAudioChunks(fullText, true);
-                        };
+                        dayAudioBtn.onclick = () => { const fullText = currentJours[jourNum]; if (fullText) playAudioChunks(fullText, true); };
                         afficherBarreSegments();
                         leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
                         rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
@@ -679,7 +671,7 @@
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 let entry = historique.find(h => h.domaine === domaine);
                 if (!entry) {
-                    entry = { domaine: domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: false };
+                    entry = { domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: false };
                     historique.push(entry);
                     localStorage.setItem('historique', JSON.stringify(historique));
                 }
@@ -689,6 +681,7 @@
                 chargerFormation(domaine, entry.progression.slice(), {});
             });
 
+            // Navigation par boutons classiques (bas)
             document.getElementById('prevDay').addEventListener('click', () => {
                 if (currentPage > 0) { currentPage--; afficherPage(currentPage); }
             });
@@ -704,7 +697,23 @@
                 else if (currentPage < 7) { currentPage++; afficherPage(currentPage); }
             });
 
-            // Swipe
+            // Navigation par triangles (haut)
+            document.getElementById('prevDayTriangle').addEventListener('click', () => {
+                if (currentPage > 0) { currentPage--; afficherPage(currentPage); }
+            });
+            document.getElementById('nextDayTriangle').addEventListener('click', () => {
+                if (currentPage > 0) {
+                    const jourIdx = currentPage - 1;
+                    if (!currentProgression[jourIdx] && currentJours[currentPage]) {
+                        alert("Veuillez d'abord valider votre journée en cliquant sur la case qui clignote avant de passer au jour suivant.");
+                        return;
+                    }
+                }
+                if (currentPage === 0) { currentPage = 1; afficherPage(1); }
+                else if (currentPage < 7) { currentPage++; afficherPage(currentPage); }
+            });
+
+            // Swipe horizontal sur la zone de contenu
             const contentZone = document.getElementById('jourContent');
             if (contentZone) {
                 contentZone.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
@@ -723,22 +732,14 @@
                 else if (currentDizaineIndex === currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, true);
             });
 
-            // Feedback
+            // Feedback étoiles
             let currentNoteEx = 0;
-            function refreshStars() {
-                document.querySelectorAll('#starsEx .star').forEach((s, idx) => { if (idx < currentNoteEx) { s.textContent='★'; s.classList.add('selected'); } else { s.textContent='☆'; s.classList.remove('selected'); } });
-            }
-            document.querySelectorAll('#starsEx .star').forEach(star => {
-                star.addEventListener('click', () => { currentNoteEx = parseInt(star.getAttribute('data-value')); refreshStars(); });
-            });
+            function refreshStars() { document.querySelectorAll('#starsEx .star').forEach((s,idx) => { if (idx < currentNoteEx) { s.textContent='★'; s.classList.add('selected'); } else { s.textContent='☆'; s.classList.remove('selected'); } }); }
+            document.querySelectorAll('#starsEx .star').forEach(star => { star.addEventListener('click', () => { currentNoteEx = parseInt(star.getAttribute('data-value')); refreshStars(); }); });
             document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
                 if (currentNoteEx === 0) { alert('Sélectionnez une note'); return; }
                 const comment = document.getElementById('feedbackCommentEx').value.trim();
-                try {
-                    await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) });
-                    alert('Merci !');
-                    document.getElementById('feedbackBox').style.display = 'none';
-                } catch(e) { alert('Erreur réseau'); }
+                try { await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) }); alert('Merci !'); document.getElementById('feedbackBox').style.display = 'none'; } catch(e) { alert('Erreur réseau'); }
             });
 
             document.getElementById('homeHeader').addEventListener('click', () => {
@@ -750,7 +751,7 @@
                 document.getElementById('jourContent').innerHTML = '';
                 document.getElementById('swipeLeftArrow').style.display = 'none';
                 document.getElementById('swipeRightArrow').style.display = 'none';
-                document.getElementById('jourTitle').style.display = 'none';
+                document.getElementById('jourHeader').style.display = 'none';
                 stopAudio();
                 arreterClignotement();
             });
@@ -759,7 +760,7 @@
                 const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
                 const baseUrl = window.location.href.split('?')[0];
                 if (activeMode === 'expertise' && currentDomaine) return `${baseUrl}?expertise=${encodeURIComponent(currentDomaine)}`;
-                else if (activeMode === 'personnel') {
+                if (activeMode === 'personnel') {
                     let defauts = document.getElementById('defauts').value.split('\n').filter(l=>l.trim()).slice(0,5);
                     if (defauts.length===5) return `${baseUrl}?personnel=${encodeURIComponent(JSON.stringify(defauts))}`;
                 }
@@ -809,7 +810,7 @@
             }
             initFromUrl();
 
-            // MODE PERSONNEL (inchangé)
+            // MODE PERSONNEL
             let currentPersonnelInterval = null;
             function startGenericProgress(areaId, fillId, percentId) {
                 const area = document.getElementById(areaId); if (!area) return null;
@@ -819,7 +820,7 @@
                 return interval;
             }
             function stopGenericProgress(areaId, fillId, percentId, interval, complete) {
-                const area = document.getElementById(areaId); const fill = document.getElementById(fillId); const pSpan = document.getElementById(percentId);
+                const area = document.getElementById(areaId), fill = document.getElementById(fillId), pSpan = document.getElementById(percentId);
                 if (interval) clearInterval(interval);
                 if (complete && fill) {
                     fill.style.width='100%'; if(pSpan) pSpan.innerText='100%';
@@ -859,7 +860,7 @@
                 document.getElementById('jourContent').scrollIntoView();
             });
 
-            // HISTORIQUE (identique)
+            // Historique avec suppression
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
             function formaterDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
@@ -925,21 +926,13 @@
 
             // Audio vocal
             let frenchVoice = null;
-            function initFrenchVoice() {
-                if (!window.speechSynthesis) return;
-                const voices = window.speechSynthesis.getVoices();
-                frenchVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Thomas') || v.name.includes('Amélie')));
-                if (!frenchVoice) frenchVoice = voices.find(v => v.lang === 'fr-FR');
-            }
+            function initFrenchVoice() { if (!window.speechSynthesis) return; const voices = window.speechSynthesis.getVoices(); frenchVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Thomas') || v.name.includes('Amélie'))); if (!frenchVoice) frenchVoice = voices.find(v => v.lang === 'fr-FR'); }
             if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = initFrenchVoice; initFrenchVoice(); }
             function cleanText(t) { return t ? t.replace(/\*\*/g,'').replace(/\*/g,'').replace(/#/g,'').replace(/`/g,'').replace(/_/g,'').replace(/\[([^\]]+)\]\([^\)]+\)/g,'$1').trim() : ''; }
             function splitTextIntoChunks(text, maxLen=1800) {
                 let sentences = text.split(/(?<=[.!?])\s+/);
                 let chunks = [], current = '';
-                for (let s of sentences) {
-                    if ((current + s).length > maxLen && current.length) { chunks.push(current); current = s; }
-                    else current += (current ? ' ' : '') + s;
-                }
+                for (let s of sentences) { if ((current + s).length > maxLen && current.length) { chunks.push(current); current = s; } else current += (current ? ' ' : '') + s; }
                 if (current) chunks.push(current);
                 return chunks;
             }
@@ -981,9 +974,7 @@
 
             let currentExpertiseInterval = null;
             function startExpertiseProgressBar() {
-                const area = document.getElementById('expertiseProgressArea');
-                const fill = document.getElementById('expertiseProgressFill');
-                const percentSpan = document.getElementById('expertiseProgressPercent');
+                const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
                 if (!area) return null;
                 area.style.display = 'block';
                 let p=0;
@@ -991,9 +982,7 @@
                 return interval;
             }
             function stopExpertiseProgressBar(interval, complete) {
-                const area = document.getElementById('expertiseProgressArea');
-                const fill = document.getElementById('expertiseProgressFill');
-                const percentSpan = document.getElementById('expertiseProgressPercent');
+                const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
                 if (interval) clearInterval(interval);
                 if (complete && fill) {
                     fill.style.width = '100%'; if(percentSpan) percentSpan.innerText='100%';
