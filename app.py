@@ -63,7 +63,7 @@ Commence par le titre : `## **JOUR {jour_num} : [TITRE PERTINENT EN MAJUSCULES, 
 
 Puis, EXACTEMENT 5 DIZAINES. Chaque dizaine doit suivre ce format (concis) :
 
-**DIZAINE X : Concept : [nom du concept]**
+**DIZAINE X : CONCEPT : [nom du concept]**
 
 A) **Méditation synthèse générale (en tenant un gros grain du chapelet)** : exactement 10 phrases moyennement denses non numérotés (toutes les méditations, tous les jours) : définition + rôle + exemple court.
 
