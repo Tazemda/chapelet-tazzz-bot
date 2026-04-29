@@ -51,13 +51,6 @@
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .history-link, .home-header { background: #2c3e4e; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
         .history-link:hover, .home-header:hover { background: #e67e22; }
-        .mode-selector { display: flex; gap: 12px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; align-items: center; }
-        .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; }
-        .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
-        .medal-counter { background: transparent; color: #f1c40f; font-weight: bold; padding: 0 4px; margin-left: 6px; font-size: 0.8rem; display: inline-block; text-shadow: 0 0 2px #000; cursor: pointer; }
-        .medal-counter:hover { text-decoration: underline; transform: scale(1.05); }
-        .mode-panel { display: none; animation: fadeIn 0.3s ease; }
-        .mode-panel.active-panel { display: block; }
         input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 14px; border: none; background: #f0f0f0; font-size: 1rem; }
         button { background: #e67e22; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
         button:hover { background: #d35400; transform: scale(0.98); }
@@ -77,39 +70,15 @@
             position: relative;
             touch-action: pan-y pinch-zoom;
         }
-        .jour-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin: 15px 0 10px;
-            gap: 15px;
-        }
         .jour-title {
+            text-align: center;
             font-size: 2rem;
             font-weight: bold;
             letter-spacing: 6px;
+            margin: 15px 0 10px;
             color: #f1c40f;
             text-shadow: 0 0 8px rgba(0,0,0,0.6);
-            background: rgba(0,0,0,0.3);
-            border-radius: 40px;
-            padding: 5px 20px;
-            text-align: center;
-            flex: 1;
         }
-        .nav-triangle {
-            font-size: 2rem;
-            background: rgba(230,126,34,0.3);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: 0.2s;
-            user-select: none;
-        }
-        .nav-triangle:hover { background: #e67e22; transform: scale(1.05); }
         .dizaine-title {
             font-size: 1.3rem;
             font-weight: bold;
@@ -143,11 +112,8 @@
         @media (max-width: 600px) {
             .swipe-arrow { width: 32px; height: 32px; font-size: 22px; opacity: 0.2; }
             .jour-title { font-size: 1.5rem; letter-spacing: 3px; }
-            .nav-triangle { width: 40px; height: 40px; font-size: 1.5rem; }
             .dizaine-title { font-size: 1.1rem; }
         }
-        .audio-welcome { position: absolute; top: 15px; left: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
-        .audio-welcome:hover { background: #e67e22; }
         .audio-day { position: absolute; top: 15px; right: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
         .audio-day:hover { background: #e67e22; }
         .nav-buttons { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; }
@@ -281,42 +247,29 @@
     <div id="mainContent" style="display: none;">
         <div class="container">
             <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
-            <div class="subtitle">Transforme ta structure mentale</div>
+            <div class="subtitle">Expertise en 7 jours</div>
             <div class="top-bar">
                 <span class="history-link" id="historyLink">📜 Historique</span>
                 <span class="home-header" id="homeHeader">🏠 Accueil</span>
             </div>
-            <div class="mode-selector">
-                <button class="mode-btn active" data-mode="expertise">📚 Expertise (7 jours)</button>
-                <span id="badgeCountExpertise" class="medal-counter" style="display:none;">0🏅</span>
-                <button class="mode-btn" data-mode="personnel">🔥 Développement personnel (21/66j)</button>
-                <span id="badgeCountPersonnel" class="medal-counter" style="display:none;">0🏅</span>
-                <button class="mode-btn" data-mode="consultation">💬 Consultation</button>
-                <span id="badgeCountConsultation" class="medal-counter" style="display:none;">0🏅</span>
-            </div>
 
-            <div id="expertisePanel" class="mode-panel active-panel">
+            <div id="expertisePanel">
                 <p>🔬 Domaine à maîtriser :</p>
                 <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, Prise de parole...">
                 <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
                 <div id="jourContainer" style="display:none;">
                     <div id="progressHeaderMsg" class="progress-header" style="display:none;">👉 cliquez ici pour valider cette journée !</div>
                     <div id="segmentsContainer" class="progress-segments"></div>
-                    <div id="jourHeader" class="jour-header" style="display: none;">
-                        <div id="prevDayTriangle" class="nav-triangle">◀</div>
-                        <div id="jourTitle" class="jour-title"></div>
-                        <div id="nextDayTriangle" class="nav-triangle">▶</div>
-                    </div>
+                    <div id="jourTitle" class="jour-title"></div>
                     <div id="jourContentContainer" style="position: relative;">
                         <div id="jourContent" class="result"></div>
                         <div id="swipeLeftArrow" class="swipe-arrow swipe-left" style="display: none;">◀</div>
                         <div id="swipeRightArrow" class="swipe-arrow swipe-right" style="display: none;">▶</div>
-                        <button id="audioWelcomeBtn" class="audio-welcome" style="display:none;">🔊</button>
                         <button id="audioDayBtn" class="audio-day" style="display:none;">🔊</button>
                     </div>
                     <div class="nav-buttons">
                         <button id="prevDay" disabled>◀ Précédent</button>
-                        <span id="dayCounter">Intro / 8</span>
+                        <span id="dayCounter">Jour 1 / 7</span>
                         <button id="nextDay">Suivant ▶</button>
                     </div>
                     <div id="expertiseProgressArea" class="progress-container" style="display:none;">
@@ -334,22 +287,6 @@
                         <button id="submitFeedbackEx">Envoyer mon avis</button>
                     </div>
                 </div>
-            </div>
-
-            <div id="personnelPanel" class="mode-panel">
-                <p>📝 5 défauts (un par ligne) :</p>
-                <textarea id="defauts" rows="5" placeholder="Je me lève tard&#10;Je suis désorganisé&#10;J'abandonne&#10;Je reste enfermé&#10;Je n'ai pas de travail"></textarea>
-                <button id="generatePersonnel">✨ GÉNÉRER MON CHAPELET ✨</button>
-                <div id="personnelResult" class="result"></div>
-                <div id="personnelLoader" class="progress-container" style="display:none;"><div class="progress-fill" id="personnelProgressFill"></div><div class="progress-percent" id="personnelProgressPercent"></div></div>
-            </div>
-
-            <div id="consultationPanel" class="mode-panel">
-                <p>💬 Décrivez votre besoin :</p>
-                <textarea id="consultMessage" rows="4" placeholder="Ex: Je veux maîtriser la prise de parole en public..."></textarea>
-                <button id="generateConsult">✨ GÉNÉRER ✨</button>
-                <div id="consultResult" class="result"></div>
-                <div id="consultLoader" class="progress-container" style="display:none;"><div class="progress-fill" id="consultProgressFill"></div><div class="progress-percent" id="consultProgressPercent"></div></div>
             </div>
 
             <div class="action-buttons">
@@ -439,7 +376,7 @@
             let currentJours = {};
             let currentDizaines = [];
             let currentDizaineIndex = 0;
-            let currentPage = 0;   // 0=intro, 1..7=jour
+            let currentPage = 1;   // 1..7 (on commence directement au jour 1 après démarrage)
             let blinkInterval = null;
             let touchStartX = 0, touchEndX = 0;
 
@@ -479,7 +416,7 @@
                 }
                 if (index < 0) index = 0;
                 if (index >= currentDizaines.length) {
-                    if (afficherMessageDepassement && currentPage > 0 && !currentProgression[currentPage-1]) {
+                    if (afficherMessageDepassement && currentPage >= 1 && !currentProgression[currentPage-1]) {
                         const msgDiv = document.getElementById('progressHeaderMsg');
                         if (msgDiv) { msgDiv.style.display = 'block'; msgDiv.style.animation = 'blinkText 1s infinite'; }
                         demarrerClignotement();
@@ -506,11 +443,11 @@
                     seg.className = 'segment';
                     if (currentProgression[i]) {
                         seg.classList.add('completed');
-                        seg.onclick = (function(idx) { return () => naviguerVersJour(idx+1); })(i);
+                        seg.onclick = (function(idx){ return () => naviguerVersJour(idx+1); })(i);
                     } else {
                         if (!currentProgression[i] && !currentJours[i+1]) seg.classList.add('disabled');
                         if (currentJours[i+1] && !currentProgression[i]) seg.classList.add('loaded');
-                        seg.onclick = (function(idx) { return () => {
+                        seg.onclick = (function(idx){ return () => {
                             if (!currentProgression[idx] && !currentJours[idx+1]) alert(`Générez d'abord le jour ${idx+1}.`);
                             else cocherSegment(idx);
                         }; })(i);
@@ -524,7 +461,7 @@
             function updateValidationMessage() {
                 const msgDiv = document.getElementById('progressHeaderMsg');
                 if (!msgDiv) return;
-                if (currentPage === 0 || !currentJours[currentPage] || currentProgression[currentPage-1]) {
+                if (!currentJours[currentPage] || currentProgression[currentPage-1]) {
                     msgDiv.style.display = 'none';
                     arreterClignotement();
                 } else {
@@ -539,7 +476,7 @@
                     currentPage = jourNum;
                     currentDizaines = decouperEnDizaines(currentJours[jourNum]);
                     currentDizaineIndex = 0;
-                    afficherPage(currentPage);
+                    afficherPage();
                 } else if (jourNum >= 1 && jourNum <= 7 && !currentJours[jourNum]) {
                     alert(`Le contenu du jour ${jourNum} n'a pas été trouvé. Utilisez la navigation “Suivant” pour le régénérer.`);
                 }
@@ -578,62 +515,43 @@
                 currentDomaine = domaine;
                 currentProgression = progression.slice();
                 currentJours = JSON.parse(JSON.stringify(jours));
-                currentPage = 0;
-                afficherPage(0);
+                currentPage = 1;  // on commence au jour 1
+                afficherPage();
                 document.getElementById('jourContainer').style.display = 'block';
                 document.getElementById('startExpertise').style.display = 'none';
                 afficherBarreSegments();
-                setTimeout(() => {
-                    const introText = document.getElementById('jourContent').innerText;
-                    if (introText) playAudioChunks(introText, true);
-                }, 300);
             }
 
-            function afficherPage(page) {
+            function afficherPage() {
                 const contentDiv = document.getElementById('jourContent');
                 const daySpan = document.getElementById('dayCounter');
                 const prevBtn = document.getElementById('prevDay');
                 const nextBtn = document.getElementById('nextDay');
                 const feedbackBox = document.getElementById('feedbackBox');
-                const welcomeBtn = document.getElementById('audioWelcomeBtn');
                 const dayAudioBtn = document.getElementById('audioDayBtn');
-                const jourHeader = document.getElementById('jourHeader');
                 const jourTitleSpan = document.getElementById('jourTitle');
                 const leftArrow = document.getElementById('swipeLeftArrow');
                 const rightArrow = document.getElementById('swipeRightArrow');
                 arreterClignotement();
 
-                if (page === 0) {
-                    jourHeader.style.display = 'none';
-                    contentDiv.innerHTML = welcomeHTML;
-                    daySpan.innerText = 'Intro / 8';
-                    prevBtn.disabled = true; nextBtn.disabled = false;
-                    feedbackBox.style.display = 'none';
-                    welcomeBtn.style.display = 'flex'; dayAudioBtn.style.display = 'none';
-                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
-                    welcomeBtn.onclick = () => { const introText = document.getElementById('jourContent').innerText; if (introText) playAudioChunks(introText, true); };
-                } else {
-                    jourHeader.style.display = 'flex';
-                    jourTitleSpan.innerText = `📆 JOUR ${page}`;
-                    const jourNum = page;
-                    welcomeBtn.style.display = 'none';
-                    if (currentJours[jourNum]) {
-                        currentDizaines = decouperEnDizaines(currentJours[jourNum]);
-                        currentDizaineIndex = 0;
-                        afficherDizaine(0);
-                        daySpan.innerText = `Jour ${jourNum} / 7`;
-                        prevBtn.disabled = (jourNum === 1); nextBtn.disabled = (jourNum === 7);
-                        feedbackBox.style.display = 'block';
-                        dayAudioBtn.style.display = 'flex';
-                        dayAudioBtn.onclick = () => { const fullText = currentJours[jourNum]; if (fullText) playAudioChunks(fullText, true); };
-                        afficherBarreSegments();
-                        leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
-                        rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
-                    } else {
-                        contentDiv.innerHTML = '<em>Chargement du jour...</em>';
-                        chargerJour(jourNum);
-                    }
+                if (!currentJours[currentPage]) {
+                    contentDiv.innerHTML = '<em>Chargement du jour...</em>';
+                    chargerJour(currentPage);
+                    return;
                 }
+                jourTitleSpan.innerText = `📆 JOUR ${currentPage}`;
+                currentDizaines = decouperEnDizaines(currentJours[currentPage]);
+                currentDizaineIndex = 0;
+                afficherDizaine(0);
+                daySpan.innerText = `Jour ${currentPage} / 7`;
+                prevBtn.disabled = (currentPage === 1);
+                nextBtn.disabled = (currentPage === 7);
+                feedbackBox.style.display = 'block';
+                dayAudioBtn.style.display = 'flex';
+                dayAudioBtn.onclick = () => { const fullText = currentJours[currentPage]; if (fullText) playAudioChunks(fullText, true); };
+                afficherBarreSegments();
+                leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
+                rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
                 updateValidationMessage();
             }
 
@@ -651,7 +569,7 @@
                     currentJours[jourNum] = data.contenu;
                     sauvegarderFormationCourante();
                     stopExpertiseProgressBar(currentExpertiseInterval, true);
-                    afficherPage(jourNum);
+                    afficherPage();
                     afficherBarreSegments();
                 })
                 .catch(err => {
@@ -659,7 +577,7 @@
                     stopExpertiseProgressBar(currentExpertiseInterval, false);
                     currentJours[jourNum] = `<strong>⚠️ Erreur de génération</strong><br>Contenu non disponible. Vérifiez votre connexion ou réessayez.`;
                     sauvegarderFormationCourante();
-                    afficherPage(jourNum);
+                    afficherPage();
                     afficherBarreSegments();
                 });
             }
@@ -681,45 +599,27 @@
                 chargerFormation(domaine, entry.progression.slice(), {});
             });
 
-            // Navigation par boutons classiques (bas) avec scroll automatique après alerte
             document.getElementById('prevDay').addEventListener('click', () => {
-                if (currentPage > 0) { currentPage--; afficherPage(currentPage); }
+                if (currentPage > 1) {
+                    currentPage--;
+                    afficherPage();
+                }
             });
             document.getElementById('nextDay').addEventListener('click', () => {
-                if (currentPage > 0) {
+                if (currentPage < 7) {
                     const jourIdx = currentPage - 1;
                     if (!currentProgression[jourIdx] && currentJours[currentPage]) {
                         alert("Veuillez d'abord valider votre journée en cliquant sur la case qui clignote avant de passer au jour suivant.");
-                        // Scroll automatique vers le message de validation
                         const msgDiv = document.getElementById('progressHeaderMsg');
                         if (msgDiv) msgDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         return;
                     }
+                    currentPage++;
+                    afficherPage();
                 }
-                if (currentPage === 0) { currentPage = 1; afficherPage(1); }
-                else if (currentPage < 7) { currentPage++; afficherPage(currentPage); }
             });
 
-            // Navigation par triangles (haut) avec scroll automatique après alerte
-            document.getElementById('prevDayTriangle').addEventListener('click', () => {
-                if (currentPage > 0) { currentPage--; afficherPage(currentPage); }
-            });
-            document.getElementById('nextDayTriangle').addEventListener('click', () => {
-                if (currentPage > 0) {
-                    const jourIdx = currentPage - 1;
-                    if (!currentProgression[jourIdx] && currentJours[currentPage]) {
-                        alert("Veuillez d'abord valider votre journée en cliquant sur la case qui clignote avant de passer au jour suivant.");
-                        // Scroll automatique vers le message de validation
-                        const msgDiv = document.getElementById('progressHeaderMsg');
-                        if (msgDiv) msgDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        return;
-                    }
-                }
-                if (currentPage === 0) { currentPage = 1; afficherPage(1); }
-                else if (currentPage < 7) { currentPage++; afficherPage(currentPage); }
-            });
-
-            // Swipe horizontal sur la zone de contenu
+            // Swipe horizontal
             const contentZone = document.getElementById('jourContent');
             if (contentZone) {
                 contentZone.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
@@ -753,32 +653,21 @@
                 document.getElementById('jourContainer').style.display = 'none';
                 document.getElementById('startExpertise').style.display = 'block';
                 document.getElementById('domaine').value = '';
-                document.querySelector('.mode-btn[data-mode="expertise"]').click();
                 document.getElementById('jourContent').innerHTML = '';
                 document.getElementById('swipeLeftArrow').style.display = 'none';
                 document.getElementById('swipeRightArrow').style.display = 'none';
-                document.getElementById('jourHeader').style.display = 'none';
                 stopAudio();
                 arreterClignotement();
             });
 
             function genererLienPartage() {
-                const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
                 const baseUrl = window.location.href.split('?')[0];
-                if (activeMode === 'expertise' && currentDomaine) return `${baseUrl}?expertise=${encodeURIComponent(currentDomaine)}`;
-                if (activeMode === 'personnel') {
-                    let defauts = document.getElementById('defauts').value.split('\n').filter(l=>l.trim()).slice(0,5);
-                    if (defauts.length===5) return `${baseUrl}?personnel=${encodeURIComponent(JSON.stringify(defauts))}`;
-                }
+                if (currentDomaine) return `${baseUrl}?expertise=${encodeURIComponent(currentDomaine)}`;
                 return baseUrl;
             }
             document.getElementById('shareButton').addEventListener('click', async () => {
                 const shareUrl = genererLienPartage();
-                let shareText = '';
-                const activeMode = document.querySelector('.mode-btn.active').getAttribute('data-mode');
-                if (activeMode === 'expertise' && currentDomaine) shareText = `🧠 Découvrez cette expertise "${currentDomaine}" sur Chapelet Tazzz Bot ! Aucune donnée personnelle n'est partagée.`;
-                else if (activeMode === 'personnel') shareText = `🔥 Développement personnel – Transformez votre vie avec Chapelet Tazzz Bot !`;
-                else shareText = `🧠 Transformez votre structure mentale avec Chapelet Tazzz Bot !`;
+                let shareText = `🧠 Découvrez cette expertise "${currentDomaine}" sur Chapelet Tazzz Bot ! Aucune donnée personnelle n'est partagée.`;
                 if (navigator.share) { try { await navigator.share({ title: 'Chapelet Tazzz Bot', text: shareText, url: shareUrl }); } catch(e) {} }
                 else { try { await navigator.clipboard.writeText(shareText + ' ' + shareUrl); alert('Lien copié'); } catch(e) { alert('Impossible de partager'); } }
             });
@@ -803,132 +692,8 @@
                         }, 500);
                     }, 500);
                 }
-                const personnelParam = urlParams.get('personnel');
-                if (personnelParam) {
-                    try {
-                        const defauts = JSON.parse(decodeURIComponent(personnelParam));
-                        if (Array.isArray(defauts) && defauts.length === 5) {
-                            const textarea = document.getElementById('defauts');
-                            if (textarea) { textarea.value = defauts.join('\n'); setTimeout(() => { const btn = document.getElementById('generatePersonnel'); if (btn) btn.click(); }, 500); }
-                        }
-                    } catch(e) {}
-                }
             }
             initFromUrl();
-
-            // MODE PERSONNEL
-            let currentPersonnelInterval = null;
-            function startGenericProgress(areaId, fillId, percentId) {
-                const area = document.getElementById(areaId); if (!area) return null;
-                area.style.display = 'block';
-                let p=0;
-                const interval = setInterval(() => { p+=2; if(p>90)p=90; document.getElementById(fillId).style.width=p+'%'; document.getElementById(percentId).innerText=p+'%'; }, 150);
-                return interval;
-            }
-            function stopGenericProgress(areaId, fillId, percentId, interval, complete) {
-                const area = document.getElementById(areaId), fill = document.getElementById(fillId), pSpan = document.getElementById(percentId);
-                if (interval) clearInterval(interval);
-                if (complete && fill) {
-                    fill.style.width='100%'; if(pSpan) pSpan.innerText='100%';
-                    setTimeout(()=>{ if(area) area.style.display='none'; fill.style.width='0%'; if(pSpan) pSpan.innerText=''; },300);
-                } else { if(area) area.style.display='none'; if(fill) fill.style.width='0%'; if(pSpan) pSpan.innerText=''; }
-            }
-            document.getElementById('generatePersonnel').addEventListener('click', async () => {
-                let defauts = document.getElementById('defauts').value.split('\n').filter(l=>l.trim()).slice(0,5);
-                if (defauts.length !== 5) { alert('5 défauts requis'); return; }
-                document.getElementById('personnelResult').innerHTML = '';
-                if (currentPersonnelInterval) clearInterval(currentPersonnelInterval);
-                currentPersonnelInterval = startGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressPercent');
-                try {
-                    const res = await fetch('/generer_personnel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ defauts: defauts }) });
-                    const data = await res.json();
-                    if (data.error) throw new Error(data.error);
-                    stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressPercent', currentPersonnelInterval, true);
-                    document.getElementById('personnelResult').innerHTML = data.contenu.replace(/\n/g, '<br>');
-                } catch(err) { stopGenericProgress('personnelLoader', 'personnelProgressFill', 'personnelProgressPercent', currentPersonnelInterval, false); alert('Erreur: ' + err.message); }
-            });
-
-            document.getElementById('generateConsult').addEventListener('click', () => {
-                let msg = document.getElementById('consultMessage').value.trim();
-                if (!msg) { alert('Message requis'); return; }
-                let domaine = msg;
-                let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                let entry = historique.find(h => h.domaine === domaine);
-                if (!entry) {
-                    entry = { domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: false };
-                    historique.push(entry);
-                    localStorage.setItem('historique', JSON.stringify(historique));
-                }
-                let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
-                joursParDomaine[domaine] = {};
-                localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
-                chargerFormation(domaine, entry.progression.slice(), {});
-                document.getElementById('jourContent').scrollIntoView();
-            });
-
-            // Historique avec suppression
-            const historyModal = document.getElementById('historyModal');
-            const historyList = document.getElementById('historyList');
-            function formaterDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
-            function supprimerEntree(index) {
-                let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                if (confirm('Supprimer définitivement cette formation ?')) {
-                    const item = historique[index];
-                    if (item.progression && item.progression.filter(v=>v).length === 7) {
-                        let badges = JSON.parse(localStorage.getItem('badges')) || [];
-                        const expertBadge = `🏅 Expert en ${item.domaine}`;
-                        const newBadges = badges.filter(b => b !== expertBadge);
-                        localStorage.setItem('badges', JSON.stringify(newBadges));
-                        updateBadgeCounters();
-                    }
-                    let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
-                    delete joursParDomaine[item.domaine];
-                    localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
-                    historique.splice(index, 1);
-                    localStorage.setItem('historique', JSON.stringify(historique));
-                    afficherHistorique();
-                }
-            }
-            function afficherHistorique() {
-                let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                historyList.innerHTML = '';
-                historique.forEach((item, idx) => {
-                    const completed = item.progression.filter(v=>v).length;
-                    const containerDiv = document.createElement('div');
-                    containerDiv.className = 'history-item';
-                    const textDiv = document.createElement('div');
-                    textDiv.className = 'history-item-text';
-                    let text = (completed === 7) ? `Expertise en ${item.domaine} du ${formaterDate(item.dateDebut)} au ${formaterDate(item.dateFin)}` : `Expertise inachevée (${completed}/7) – ${item.domaine}`;
-                    if (item.shared) text += ' (partagée)';
-                    textDiv.innerHTML = `<strong>${text}</strong><br><small>Début: ${formaterDate(item.dateDebut)}</small>`;
-                    if (completed === 7 && item.domaine) {
-                        const badgeSpan = document.createElement('div');
-                        badgeSpan.className = 'badge-text';
-                        badgeSpan.innerHTML = `🏅 Expert en ${item.domaine}`;
-                        textDiv.appendChild(badgeSpan);
-                    }
-                    const delBtn = document.createElement('button');
-                    delBtn.textContent = '🗑️ Supprimer';
-                    delBtn.className = 'delete-history-item';
-                    delBtn.onclick = (e) => { e.stopPropagation(); supprimerEntree(idx); };
-                    containerDiv.appendChild(textDiv);
-                    containerDiv.appendChild(delBtn);
-                    textDiv.style.cursor = 'pointer';
-                    textDiv.onclick = () => {
-                        let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
-                        let savedJours = joursParDomaine[item.domaine] || {};
-                        chargerFormation(item.domaine, item.progression.slice(), savedJours);
-                        historyModal.style.display = 'none';
-                        document.querySelector('.mode-btn[data-mode="expertise"]').click();
-                    };
-                    historyList.appendChild(containerDiv);
-                });
-                if (historique.length === 0) historyList.innerHTML = '<p>Aucune formation enregistrée.</p>';
-            }
-            document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display = 'flex'; });
-            document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
-            window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
-            document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 L'abonnement n'est pas encore actif.\nAccès gratuit pour l'instant."));
 
             // Audio vocal
             let frenchVoice = null;
@@ -996,15 +761,74 @@
                 } else { if(area) area.style.display='none'; if(fill) fill.style.width='0%'; if(percentSpan) percentSpan.innerText=''; }
             }
 
-            const welcomeHTML = `<div class="welcome-text"><strong>Bonjour ! Bienvenue dans le Chapelet Tazzz Bot Expertise.</strong><br><br><strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>- Glissez (swipe) à gauche/droite pour feuilleter les 5 dizaines d’un jour.<br>- Une fois la 5e dizaine lue, un message vous invitera à valider la journée.<br>- N'oubliez pas de valider votre journée dans la barre de progression (case clignotante).<br>- Cliquez sur <strong>“Suivant”</strong> pour commencer le <strong>Jour 1</strong>.</div>`;
+            // Historique
+            const historyModal = document.getElementById('historyModal');
+            const historyList = document.getElementById('historyList');
+            function formaterDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
+            function supprimerEntree(index) {
+                let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                if (confirm('Supprimer définitivement cette formation ?')) {
+                    const item = historique[index];
+                    if (item.progression && item.progression.filter(v=>v).length === 7) {
+                        let badges = JSON.parse(localStorage.getItem('badges')) || [];
+                        const expertBadge = `🏅 Expert en ${item.domaine}`;
+                        const newBadges = badges.filter(b => b !== expertBadge);
+                        localStorage.setItem('badges', JSON.stringify(newBadges));
+                        updateBadgeCounters();
+                    }
+                    let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                    delete joursParDomaine[item.domaine];
+                    localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
+                    historique.splice(index, 1);
+                    localStorage.setItem('historique', JSON.stringify(historique));
+                    afficherHistorique();
+                }
+            }
+            function afficherHistorique() {
+                let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                historyList.innerHTML = '';
+                historique.forEach((item, idx) => {
+                    const completed = item.progression.filter(v=>v).length;
+                    const containerDiv = document.createElement('div');
+                    containerDiv.className = 'history-item';
+                    const textDiv = document.createElement('div');
+                    textDiv.className = 'history-item-text';
+                    let text = (completed === 7) ? `Expertise en ${item.domaine} du ${formaterDate(item.dateDebut)} au ${formaterDate(item.dateFin)}` : `Expertise inachevée (${completed}/7) – ${item.domaine}`;
+                    if (item.shared) text += ' (partagée)';
+                    textDiv.innerHTML = `<strong>${text}</strong><br><small>Début: ${formaterDate(item.dateDebut)}</small>`;
+                    if (completed === 7 && item.domaine) {
+                        const badgeSpan = document.createElement('div');
+                        badgeSpan.className = 'badge-text';
+                        badgeSpan.innerHTML = `🏅 Expert en ${item.domaine}`;
+                        textDiv.appendChild(badgeSpan);
+                    }
+                    const delBtn = document.createElement('button');
+                    delBtn.textContent = '🗑️ Supprimer';
+                    delBtn.className = 'delete-history-item';
+                    delBtn.onclick = (e) => { e.stopPropagation(); supprimerEntree(idx); };
+                    containerDiv.appendChild(textDiv);
+                    containerDiv.appendChild(delBtn);
+                    textDiv.style.cursor = 'pointer';
+                    textDiv.onclick = () => {
+                        let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                        let savedJours = joursParDomaine[item.domaine] || {};
+                        chargerFormation(item.domaine, item.progression.slice(), savedJours);
+                        historyModal.style.display = 'none';
+                    };
+                    historyList.appendChild(containerDiv);
+                });
+                if (historique.length === 0) historyList.innerHTML = '<p>Aucune formation enregistrée.</p>';
+            }
+            document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display = 'flex'; });
+            document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
+            window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
+            document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 L'abonnement n'est pas encore actif.\nAccès gratuit pour l'instant."));
 
             function updateBadgeCounters() {
                 let badges = JSON.parse(localStorage.getItem('badges')) || [];
                 let count = badges.length;
-                ['expertise', 'personnel', 'consultation'].forEach(mode => {
-                    const el = document.getElementById(`badgeCount${mode.charAt(0).toUpperCase()+mode.slice(1)}`);
-                    if (el) { if (count > 0) { el.style.display = 'inline-block'; el.innerText = count + '🏅'; } else el.style.display = 'none'; }
-                });
+                const el = document.getElementById('badgeCountExpertise');
+                if (el) { if (count > 0) { el.style.display = 'inline-block'; el.innerText = count + '🏅'; } else el.style.display = 'none'; }
             }
             updateBadgeCounters();
         })();
