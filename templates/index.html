@@ -5,12 +5,309 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Chapelet Tazzz Bot Expertise</title>
     <style>
-        /* ... (mêmes styles que précédemment, inchangés) ... */
-        /* Pour économiser de la place, je ne recopie pas l'intégralité du CSS, 
-           mais on garde exactement le même que dans la version précédente */
         * { box-sizing: border-box; }
-        body { /* ... */ }
-        /* ... */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a2a36 0%, #0f171f 100%);
+            margin: 0;
+            padding: 20px;
+            color: #f0f0f0;
+            min-height: 100vh;
+        }
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1e2b3c 0%, #0f1a24 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .loading-screen.hide { opacity: 0; visibility: hidden; }
+        .loading-content { text-align: center; max-width: 400px; padding: 20px; }
+        .loading-chapelet { font-size: 4rem; animation: chapeletBalance 1.5s infinite ease-in-out; display: inline-block; margin-bottom: 20px; }
+        @keyframes chapeletBalance { 0% { transform: rotate(0deg); } 50% { transform: rotate(15deg); } 100% { transform: rotate(0deg); } }
+        .loading-title { font-size: 1.5rem; margin-bottom: 30px; letter-spacing: 2px; }
+        .loading-mantra { font-size: 1.1rem; font-style: italic; margin: 20px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 30px; min-height: 80px; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s ease; }
+        .loading-progress { width: 100%; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 30px 0 20px; overflow: hidden; }
+        .loading-progress-bar { width: 0%; height: 100%; background: #e67e22; transition: width 0.1s linear; }
+        .loading-text { font-size: 0.8rem; opacity: 0.7; }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            padding: 20px 20px 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        h1 { text-align: center; font-size: 1.5rem; margin-bottom: 0px; letter-spacing: 1px; }
+        .subtitle { text-align: center; font-size: 0.9rem; opacity: 0.8; margin-bottom: 30px; margin-top: 5px; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .history-link, .home-header { background: #2c3e4e; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+        .history-link:hover, .home-header:hover { background: #e67e22; }
+        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 14px; border: none; background: #f0f0f0; font-size: 1rem; }
+        button { background: #e67e22; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
+        button:hover { background: #d35400; transform: scale(0.98); }
+        .result {
+            background: #0b1620;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            min-height: 400px;
+            max-height: 550px;
+            overflow-y: auto;
+            border-left: 5px solid #e67e22;
+            position: relative;
+            touch-action: pan-y pinch-zoom;
+        }
+        .refresh-dizaine {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(46, 204, 113, 0.2);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: blur(4px);
+            z-index: 25;
+            color: #2ecc71;
+            font-size: 1.5rem;
+            border: 1px solid rgba(46, 204, 113, 0.5);
+        }
+        .refresh-dizaine:hover {
+            background: rgba(46, 204, 113, 0.6);
+            transform: scale(1.05);
+            color: white;
+        }
+        .refresh-dizaine.loading {
+            animation: spin 1s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .jour-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 15px 0 10px;
+            gap: 15px;
+        }
+        .jour-title {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 6px;
+            color: #f1c40f;
+            text-shadow: 0 0 8px rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.3);
+            border-radius: 40px;
+            padding: 5px 20px;
+            text-align: center;
+            flex: 1;
+        }
+        .nav-triangle {
+            font-size: 2rem;
+            background: rgba(230,126,34,0.3);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            user-select: none;
+        }
+        .nav-triangle:hover { background: #e67e22; transform: scale(1.05); }
+        .dizaine-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #e67e22;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e67e22;
+            display: inline-block;
+            padding-right: 20px;
+        }
+        .swipe-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background-color: rgba(200,200,200,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            cursor: pointer;
+            transition: 0.2s;
+            z-index: 15;
+            backdrop-filter: blur(4px);
+            opacity: 0.3;
+        }
+        .swipe-arrow:hover { opacity: 0.8; background-color: rgba(230,126,34,0.6); }
+        .swipe-left { left: 5px; }
+        .swipe-right { right: 5px; }
+        @media (max-width: 600px) {
+            .swipe-arrow { width: 32px; height: 32px; font-size: 22px; opacity: 0.2; }
+            .jour-title { font-size: 1.5rem; letter-spacing: 3px; }
+            .nav-triangle { width: 40px; height: 40px; font-size: 1.5rem; }
+            .dizaine-title { font-size: 1.1rem; }
+            h1 { font-size: 1.2rem; }
+            .refresh-dizaine { width: 32px; height: 32px; font-size: 1.2rem; bottom: 10px; right: 10px; }
+        }
+        .audio-welcome { position: absolute; top: 15px; left: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
+        .audio-welcome:hover { background: #e67e22; }
+        .audio-day { position: absolute; top: 15px; right: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
+        .audio-day:hover { background: #e67e22; }
+        .nav-buttons { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; }
+        .nav-buttons button { width: auto; margin: 0; padding: 8px 20px; font-size: 0.9rem; }
+        .day-counter { font-size: 0.9rem; font-weight: bold; background: #2c3e4e; padding: 5px 12px; border-radius: 30px; }
+        .progress-header {
+            text-align: center;
+            font-size: 0.75rem;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #f1c40f;
+            animation: blinkText 1s infinite;
+            cursor: pointer;
+        }
+        @keyframes blinkText { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        .blink-segment { animation: blinkSegment 1s infinite; }
+        @keyframes blinkSegment {
+            0% { background-color: #2c3e4e; box-shadow: 0 0 0px #f39c12; }
+            50% { background-color: #f39c12; box-shadow: 0 0 8px #f39c12; color: #1e2b3c; }
+            100% { background-color: #2c3e4e; box-shadow: 0 0 0px #f39c12; }
+        }
+        .progress-segments { display: flex; gap: 8px; justify-content: center; margin: 5px 0 20px; flex-wrap: wrap; }
+        .segment {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background-color: #2c3e4e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .segment .day-label { font-weight: bold; font-size: 1rem; margin-bottom: 2px; }
+        .segment .day-status { font-size: 0.6rem; }
+        .segment.loaded .day-label { font-weight: 900; color: #f39c12; text-shadow: 0 0 2px #f39c12; }
+        .segment.completed { background-color: #8a2be2; box-shadow: 0 0 8px #aa55ff; }
+        .segment.completed .day-label { color: white; text-shadow: none; }
+        .segment.disabled { cursor: not-allowed; opacity: 0.4; pointer-events: none; }
+        .action-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .action-buttons button { background: #2c3e4e; margin-top: 0; padding: 6px 18px; font-size: 0.8rem; }
+        .audio-player-bar {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e2b3c;
+            border-radius: 40px;
+            padding: 8px 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            z-index: 2000;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .audio-player-bar button { background: #2c3e4e; border: none; color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 1rem; cursor: pointer; margin: 0; padding: 0; }
+        .audio-player-bar button:hover { background: #e67e22; }
+        .audio-player-bar input[type="range"] { width: 160px; margin: 0 5px; cursor: pointer; }
+        .footer { text-align: center; margin-top: 25px; font-size: 0.7rem; opacity: 0.7; }
+        .copyright { font-size: 0.65rem; margin-top: 8px; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: #1e2b3c;
+            max-width: 500px;
+            width: 90%;
+            border-radius: 24px;
+            padding: 20px;
+            text-align: center;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+        .history-item {
+            background: #2c3e4e;
+            margin: 12px 0;
+            padding: 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: 0.1s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .history-item:hover { background: #e67e22; }
+        .history-item-text { flex: 1; text-align: left; }
+        .delete-history-item {
+            background: #aa2e1e;
+            border: none;
+            color: white;
+            border-radius: 30px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: 0.1s;
+        }
+        .delete-history-item:hover { background: #ff5c33; transform: scale(0.95); }
+        .badge-text { font-size: 0.8rem; color: #f39c12; margin-top: 5px; }
+        .welcome-text { font-size: 0.85rem; line-height: 1.35; text-align: left; margin: 0; padding-right: 40px; }
+        .progress-container { margin: 15px 0 10px; width: 100%; background-color: #2c3e4e; border-radius: 10px; overflow: hidden; height: 12px; position: relative; }
+        .progress-fill { width: 0%; height: 100%; background-color: #2ecc71; transition: width 0.2s ease; }
+        .progress-percent { text-align: center; font-size: 0.7rem; margin-top: 4px; color: #2ecc71; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .chapitre-card {
+            background: rgba(0,0,0,0.3);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #e67e22;
+        }
+        .chapitre-card strong {
+            font-size: 1.2rem;
+            color: #f1c40f;
+        }
+        .chapitre-status {
+            font-size: 0.8rem;
+            margin-top: 8px;
+            color: #2ecc71;
+        }
     </style>
 </head>
 <body>
@@ -33,19 +330,17 @@
                 <span class="home-header" id="homeHeader">🏠 Accueil</span>
             </div>
 
-            <!-- Mode selector réduit : on garde juste un indicateur, mais on va ajouter un bouton séparé -->
-            <div class="mode-selector" style="justify-content: center; gap: 20px;">
-                <button id="btnExpertise" class="mode-btn active">📚 Expertise (domaine libre)</button>
-                <button id="btnCoursComplet" class="mode-btn">📘 Tous mes cours en 7 jours</button>
+            <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 30px;">
+                <button id="btnExpertise" style="background: #e67e22;">📚 Expertise (domaine libre)</button>
+                <button id="btnCoursComplet" style="background: #2c3e4e;">📘 Tous mes cours en 7 jours</button>
             </div>
 
-            <!-- Panneau Expertise (par défaut visible) -->
-            <div id="expertisePanel" class="mode-panel active-panel">
+            <!-- Panneau Expertise -->
+            <div id="expertisePanel">
                 <p>🔬 Domaine à maîtriser :</p>
                 <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, Prise de parole...">
                 <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
                 <div id="jourContainer" style="display:none;">
-                    <!-- contenu identique à avant -->
                     <div id="progressHeaderMsg" class="progress-header" style="display:none;">👉 cliquez ici pour valider cette journée !</div>
                     <div id="segmentsContainer" class="progress-segments"></div>
                     <div id="jourHeader" class="jour-header" style="display: none;">
@@ -83,8 +378,8 @@
                 </div>
             </div>
 
-            <!-- Panneau Cours (6 chapitres) – masqué par défaut -->
-            <div id="coursPanel" class="mode-panel">
+            <!-- Panneau Cours (masqué par défaut) -->
+            <div id="coursPanel" style="display: none;">
                 <h3>📚 Saisissez vos 6 chapitres (copier-coller le contenu de chaque chapitre)</h3>
                 <div id="chapitresList"></div>
                 <div id="coursProgressArea" class="progress-container" style="display:none;">
@@ -121,10 +416,748 @@
 
     <script>
         (function() {
-            // ... tout le code JavaScript inchangé (identique à la version précédente) ...
-            // Mais je vais le recopier intégralement pour éviter les erreurs.
-            // Pour ne pas allonger démesurément, je vais le reprendre tel qu'il était dans la réponse précédente avec les deux modes.
-            // Le voici (je le mets en entier pour être sûr).
+            // --- écran de chargement ---
+            const loadingScreen = document.getElementById('loadingScreen');
+            const mainContent = document.getElementById('mainContent');
+            const progressBar = document.getElementById('loadingProgressBar');
+            const mantraEl = document.getElementById('loadingMantra');
+            const mantras = [
+                "Je prépare mon cerveau à l’ancrage des connaissances.",
+                "Chaque grain est une étape vers la maîtrise.",
+                "La répétition espacée construit l’expert.",
+                "Je structure mon savoir par cycles rythmés.",
+                "Mon attention se fixe sur l’essentiel."
+            ];
+            const totalDuration = 10000;
+            const stepDuration = totalDuration / mantras.length;
+            let startTime = null, animFrame = null, mantraIdx = 0;
+            function updateProgress(now) {
+                if (!startTime) startTime = now;
+                const elapsed = now - startTime;
+                let percent = (elapsed / totalDuration) * 100;
+                if (percent > 100) percent = 100;
+                progressBar.style.width = percent + '%';
+                const newIdx = Math.min(Math.floor(elapsed / stepDuration), mantras.length - 1);
+                if (newIdx !== mantraIdx) {
+                    mantraIdx = newIdx;
+                    mantraEl.style.opacity = '0';
+                    setTimeout(() => { mantraEl.textContent = mantras[mantraIdx]; mantraEl.style.opacity = '1'; }, 100);
+                }
+                if (elapsed < totalDuration) animFrame = requestAnimationFrame(updateProgress);
+                else {
+                    cancelAnimationFrame(animFrame);
+                    loadingScreen.classList.add('hide');
+                    setTimeout(() => { loadingScreen.style.display = 'none'; mainContent.style.display = 'block'; }, 300);
+                }
+            }
+            requestAnimationFrame(updateProgress);
+
+            // --- audio (bip de validation) ---
+            let audioCtx = null;
+            function initAudio() {
+                if (audioCtx) return;
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const buffer = audioCtx.createBuffer(1, 1, 22050);
+                const source = audioCtx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(audioCtx.destination);
+                source.start();
+            }
+            function playBeep() {
+                if (!audioCtx) return;
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.value = 880;
+                gain.gain.value = 0.15;
+                osc.start(now);
+                gain.gain.exponentialRampToValueAtTime(0.00001, now + 0.2);
+                osc.stop(now + 0.2);
+            }
+
+            // --- état principal pour expertise ---
+            let currentDomaine = '';
+            let currentProgression = [false, false, false, false, false, false, false];
+            let currentJours = {};
+            let currentDizaines = [];
+            let currentDizaineIndex = 0;
+            let currentPage = 0;
+            let blinkInterval = null;
+            let touchStartX = 0, touchEndX = 0;
+
+            function arreterClignotement() {
+                if (blinkInterval) { clearInterval(blinkInterval); blinkInterval = null; }
+                document.querySelectorAll('.segment').forEach(seg => seg.classList.remove('blink-segment'));
+            }
+            function demarrerClignotement() {
+                arreterClignotement();
+                const dayIndex = currentPage - 1;
+                if (dayIndex < 0 || dayIndex >= 7) return;
+                const segments = document.querySelectorAll('.segment');
+                if (segments[dayIndex]) {
+                    segments[dayIndex].classList.add('blink-segment');
+                    blinkInterval = setInterval(playBeep, 1000);
+                }
+            }
+
+            function decouperEnDizaines(contenuBrut) {
+                if (!contenuBrut) return [];
+                const regex = /(?:DIZAINE\s+\d+\s*[–-]?\s*\**\s*)([^]*?)(?=(?:DIZAINE\s+\d+|$))/gi;
+                let matches = [...contenuBrut.matchAll(regex)];
+                if (matches.length >= 5) return matches.slice(0,5).map(m => m[1].trim());
+                let paragraphs = contenuBrut.split(/\n\s*\n/);
+                if (paragraphs.length >= 5) return paragraphs.slice(0,5);
+                return [contenuBrut];
+            }
+
+            function afficherDizaine(index, afficherMessageDepassement = false) {
+                const contentDiv = document.getElementById('jourContent');
+                const leftArrow = document.getElementById('swipeLeftArrow');
+                const rightArrow = document.getElementById('swipeRightArrow');
+                if (!currentDizaines.length) {
+                    contentDiv.innerHTML = '<em>Contenu non disponible.</em>';
+                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
+                    return;
+                }
+                if (index < 0) index = 0;
+                if (index >= currentDizaines.length) {
+                    if (afficherMessageDepassement && currentPage >= 1 && !currentProgression[currentPage-1]) {
+                        const msgDiv = document.getElementById('progressHeaderMsg');
+                        if (msgDiv) { msgDiv.style.display = 'block'; msgDiv.style.animation = 'blinkText 1s infinite'; }
+                        demarrerClignotement();
+                        alert("📿 Vous avez terminé les 5 dizaines ! N'oubliez pas de valider cette journée en cliquant sur la case qui clignote (ou sur le message).");
+                    }
+                    return;
+                }
+                currentDizaineIndex = index;
+                const numero = currentDizaineIndex + 1;
+                const titre = `<div class="dizaine-title">📖 DIZAINE ${numero} / 5</div>`;
+                const contenu = currentDizaines[currentDizaineIndex];
+                contentDiv.innerHTML = titre + contenu.replace(/\n/g, '<br>');
+                leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
+                rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
+                contentDiv.scrollTop = 0;
+            }
+
+            function afficherBarreSegments() {
+                const container = document.getElementById('segmentsContainer');
+                if (!container) return;
+                container.innerHTML = '';
+                for (let i = 0; i < 7; i++) {
+                    const seg = document.createElement('div');
+                    seg.className = 'segment';
+                    if (currentProgression[i]) {
+                        seg.classList.add('completed');
+                        seg.onclick = (function(idx){ return () => naviguerVersJour(idx+1); })(i);
+                    } else {
+                        if (!currentProgression[i] && !currentJours[i+1]) seg.classList.add('disabled');
+                        if (currentJours[i+1] && !currentProgression[i]) seg.classList.add('loaded');
+                        seg.onclick = (function(idx){ return () => {
+                            if (!currentProgression[idx] && !currentJours[idx+1]) alert(`Générez d'abord le jour ${idx+1}.`);
+                            else cocherSegment(idx);
+                        }; })(i);
+                    }
+                    seg.innerHTML = `<div class="day-label">J${i+1}</div><div class="day-status">${currentProgression[i] ? '✓' : (currentJours[i+1] ? '📖' : '🔒')}</div>`;
+                    container.appendChild(seg);
+                }
+                updateValidationMessage();
+            }
+
+            function updateValidationMessage() {
+                const msgDiv = document.getElementById('progressHeaderMsg');
+                if (!msgDiv) return;
+                if (currentPage === 0 || !currentJours[currentPage] || currentProgression[currentPage-1]) {
+                    msgDiv.style.display = 'none';
+                    arreterClignotement();
+                } else {
+                    msgDiv.style.display = 'block';
+                    msgDiv.innerHTML = '👉 cliquez ici pour valider cette journée !';
+                    demarrerClignotement();
+                }
+            }
+
+            function naviguerVersJour(jourNum) {
+                if (jourNum >= 1 && jourNum <= 7 && currentJours[jourNum]) {
+                    currentPage = jourNum;
+                    currentDizaines = decouperEnDizaines(currentJours[jourNum]);
+                    currentDizaineIndex = 0;
+                    afficherPage();
+                } else if (jourNum >= 1 && jourNum <= 7 && !currentJours[jourNum]) {
+                    alert(`Le contenu du jour ${jourNum} n'a pas été trouvé. Utilisez la navigation “Suivant” pour le régénérer.`);
+                }
+            }
+
+            function cocherSegment(idx) {
+                for (let i = 0; i < idx; i++) if (!currentProgression[i]) { alert(`Validez d'abord le jour ${i+1}.`); return; }
+                if (!currentProgression[idx]) {
+                    currentProgression[idx] = true;
+                    sauvegarderFormationCourante();
+                    afficherBarreSegments();
+                    if (idx+1 === 7) {
+                        alert(`🎉 Félicitations ! Vous avez achevé votre expertise. Badge "Expert en ${currentDomaine}" débloqué.`);
+                        let badges = JSON.parse(localStorage.getItem('badges')) || [];
+                        const expertBadge = `🏅 Expert en ${currentDomaine}`;
+                        if (!badges.includes(expertBadge)) { badges.push(expertBadge); localStorage.setItem('badges', JSON.stringify(badges)); updateBadgeCounters(); }
+                        let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                        let entry = historique.find(h => h.domaine === currentDomaine);
+                        if (entry) entry.dateFin = new Date().toISOString();
+                        localStorage.setItem('historique', JSON.stringify(historique));
+                    } else alert(`🎊 Bravo ! Jour ${idx+1}/7 validé.`);
+                }
+            }
+
+            function sauvegarderFormationCourante() {
+                let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                joursParDomaine[currentDomaine] = currentJours;
+                localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
+                let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                let entry = historique.find(h => h.domaine === currentDomaine);
+                if (entry) { entry.progression = currentProgression.slice(); localStorage.setItem('historique', JSON.stringify(historique)); }
+            }
+
+            function chargerFormation(domaine, progression, jours) {
+                arreterClignotement();
+                currentDomaine = domaine;
+                currentProgression = progression.slice();
+                currentJours = JSON.parse(JSON.stringify(jours));
+                currentPage = 0;
+                afficherPage();
+                document.getElementById('jourContainer').style.display = 'block';
+                document.getElementById('startExpertise').style.display = 'none';
+                afficherBarreSegments();
+                setTimeout(() => {
+                    const introText = document.getElementById('jourContent').innerText;
+                    if (introText) playAudioChunks(introText, true);
+                }, 300);
+            }
+
+            const welcomeHTML = `
+                <div class="welcome-text">
+                    <strong>Bonjour ! Bienvenue dans le Chapelet Tazzz Bot Expertise.</strong><br><br>
+                    <strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>
+                    - Procurez vous un vrai chapelet pour égrener durant vos lectures.<br>
+                    - Glissez (swipe) à gauche/droite pour feuilleter les 5 dizaines d’un jour.<br>
+                    - Une fois la 5e dizaine lue, un message vous invitera à valider la journée.<br>
+                    - N'oubliez pas de valider votre journée dans la barre de progression (case clignotante).<br>
+                    - Cliquez sur <strong>“Suivant”</strong> pour commencer le <strong>Jour 1</strong>.
+                </div>
+            `;
+
+            function afficherPage() {
+                const contentDiv = document.getElementById('jourContent');
+                const daySpan = document.getElementById('dayCounter');
+                const prevBtn = document.getElementById('prevDay');
+                const nextBtn = document.getElementById('nextDay');
+                const feedbackBox = document.getElementById('feedbackBox');
+                const welcomeBtn = document.getElementById('audioWelcomeBtn');
+                const dayAudioBtn = document.getElementById('audioDayBtn');
+                const jourHeader = document.getElementById('jourHeader');
+                const jourTitleSpan = document.getElementById('jourTitle');
+                const leftArrow = document.getElementById('swipeLeftArrow');
+                const rightArrow = document.getElementById('swipeRightArrow');
+                const refreshBtn = document.getElementById('refreshDizaineBtn');
+                arreterClignotement();
+
+                if (currentPage === 0) {
+                    jourHeader.style.display = 'none';
+                    contentDiv.innerHTML = welcomeHTML;
+                    daySpan.innerText = 'Intro / 8';
+                    prevBtn.disabled = true;
+                    nextBtn.disabled = false;
+                    feedbackBox.style.display = 'none';
+                    welcomeBtn.style.display = 'flex';
+                    dayAudioBtn.style.display = 'none';
+                    leftArrow.style.display = 'none';
+                    rightArrow.style.display = 'none';
+                    refreshBtn.style.display = 'none';
+                    welcomeBtn.onclick = () => {
+                        const introText = document.getElementById('jourContent').innerText;
+                        if (introText) playAudioChunks(introText, true);
+                    };
+                } else {
+                    jourHeader.style.display = 'flex';
+                    jourTitleSpan.innerText = `📆 JOUR ${currentPage}`;
+                    welcomeBtn.style.display = 'none';
+                    if (currentJours[currentPage]) {
+                        currentDizaines = decouperEnDizaines(currentJours[currentPage]);
+                        currentDizaineIndex = 0;
+                        afficherDizaine(0);
+                        daySpan.innerText = `Jour ${currentPage} / 7`;
+                        prevBtn.disabled = (currentPage === 1);
+                        nextBtn.disabled = (currentPage === 7);
+                        feedbackBox.style.display = 'block';
+                        dayAudioBtn.style.display = 'flex';
+                        dayAudioBtn.onclick = () => {
+                            const fullText = currentJours[currentPage];
+                            if (fullText) playAudioChunks(fullText, true);
+                        };
+                        afficherBarreSegments();
+                        leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
+                        rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
+                        refreshBtn.style.display = 'flex';
+                    } else {
+                        contentDiv.innerHTML = '<em>Chargement du jour...</em>';
+                        refreshBtn.style.display = 'none';
+                        chargerJour(currentPage);
+                    }
+                }
+                updateValidationMessage();
+            }
+
+            function chargerJour(jourNum) {
+                if (currentExpertiseInterval) clearInterval(currentExpertiseInterval);
+                currentExpertiseInterval = startExpertiseProgressBar();
+                fetch('/generer_jour_expertise', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ domaine: currentDomaine, jour: jourNum })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) throw new Error(data.error);
+                    currentJours[jourNum] = data.contenu;
+                    sauvegarderFormationCourante();
+                    stopExpertiseProgressBar(currentExpertiseInterval, true);
+                    afficherPage();
+                    afficherBarreSegments();
+                })
+                .catch(err => {
+                    console.error(err);
+                    stopExpertiseProgressBar(currentExpertiseInterval, false);
+                    currentJours[jourNum] = `<strong>⚠️ Erreur de génération</strong><br>Contenu non disponible. Vérifiez votre connexion ou réessayez.`;
+                    sauvegarderFormationCourante();
+                    afficherPage();
+                    afficherBarreSegments();
+                });
+            }
+
+            async function regenererDizaine() {
+                if (!currentPage || currentPage === 0) return;
+                const refreshBtn = document.getElementById('refreshDizaineBtn');
+                refreshBtn.classList.add('loading');
+                const originalText = refreshBtn.innerHTML;
+                refreshBtn.innerHTML = '⏳';
+                try {
+                    const response = await fetch('/generer_jour_expertise', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ domaine: currentDomaine, jour: currentPage })
+                    });
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                    currentJours[currentPage] = data.contenu;
+                    sauvegarderFormationCourante();
+                    const nouvellesDizaines = decouperEnDizaines(data.contenu);
+                    if (nouvellesDizaines.length >= 5) {
+                        currentDizaines = nouvellesDizaines;
+                        if (currentDizaineIndex >= currentDizaines.length) currentDizaineIndex = currentDizaines.length - 1;
+                        afficherDizaine(currentDizaineIndex);
+                    } else {
+                        afficherPage();
+                    }
+                    alert("✓ Dizaine régénérée avec succès.");
+                } catch (err) {
+                    alert("Erreur lors de la régénération : " + err.message);
+                } finally {
+                    refreshBtn.classList.remove('loading');
+                    refreshBtn.innerHTML = originalText;
+                }
+            }
+
+            document.getElementById('startExpertise').addEventListener('click', () => {
+                initAudio();
+                const domaine = document.getElementById('domaine').value.trim();
+                if (!domaine) { alert('Domaine requis'); return; }
+                let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                let entry = historique.find(h => h.domaine === domaine);
+                if (!entry) {
+                    entry = { domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: false };
+                    historique.push(entry);
+                    localStorage.setItem('historique', JSON.stringify(historique));
+                }
+                let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                joursParDomaine[domaine] = {};
+                localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
+                chargerFormation(domaine, entry.progression.slice(), {});
+            });
+
+            document.getElementById('prevDay').addEventListener('click', () => {
+                if (currentPage === 0) return;
+                if (currentPage > 1) {
+                    currentPage--;
+                    afficherPage();
+                }
+            });
+            document.getElementById('nextDay').addEventListener('click', () => {
+                if (currentPage === 0) {
+                    currentPage = 1;
+                    afficherPage();
+                    return;
+                }
+                if (currentPage < 7) {
+                    const jourIdx = currentPage - 1;
+                    if (!currentProgression[jourIdx] && currentJours[currentPage]) {
+                        alert("Veuillez d'abord valider votre journée en cliquant sur la case qui clignote avant de passer au jour suivant.");
+                        const msgDiv = document.getElementById('progressHeaderMsg');
+                        if (msgDiv) msgDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                    currentPage++;
+                    afficherPage();
+                }
+            });
+
+            document.getElementById('prevDayTriangle').addEventListener('click', () => {
+                if (currentPage === 0) return;
+                if (currentPage > 1) {
+                    currentPage--;
+                    afficherPage();
+                }
+            });
+            document.getElementById('nextDayTriangle').addEventListener('click', () => {
+                if (currentPage === 0) {
+                    currentPage = 1;
+                    afficherPage();
+                    return;
+                }
+                if (currentPage < 7) {
+                    const jourIdx = currentPage - 1;
+                    if (!currentProgression[jourIdx] && currentJours[currentPage]) {
+                        alert("Veuillez d'abord valider votre journée en cliquant sur la case qui clignote avant de passer au jour suivant.");
+                        const msgDiv = document.getElementById('progressHeaderMsg');
+                        if (msgDiv) msgDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                    currentPage++;
+                    afficherPage();
+                }
+            });
+
+            document.getElementById('refreshDizaineBtn').addEventListener('click', regenererDizaine);
+
+            const contentZone = document.getElementById('jourContent');
+            if (contentZone) {
+                contentZone.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+                contentZone.addEventListener('touchend', (e) => {
+                    if (currentPage === 0) return;
+                    touchEndX = e.changedTouches[0].clientX;
+                    const deltaX = touchEndX - touchStartX;
+                    if (Math.abs(deltaX) < 50) return;
+                    if (deltaX > 0 && currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1, false);
+                    else if (deltaX < 0 && currentDizaineIndex < currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, false);
+                    else if (deltaX < 0 && currentDizaineIndex === currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, true);
+                });
+            }
+            document.getElementById('swipeLeftArrow').addEventListener('click', () => {
+                if (currentPage !== 0 && currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1, false);
+            });
+            document.getElementById('swipeRightArrow').addEventListener('click', () => {
+                if (currentPage !== 0) {
+                    if (currentDizaineIndex < currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, false);
+                    else if (currentDizaineIndex === currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, true);
+                }
+            });
+
+            // Feedback étoiles (expertise)
+            let currentNoteEx = 0;
+            function refreshStars() { document.querySelectorAll('#starsEx .star').forEach((s,idx) => { if (idx < currentNoteEx) { s.textContent='★'; s.classList.add('selected'); } else { s.textContent='☆'; s.classList.remove('selected'); } }); }
+            document.querySelectorAll('#starsEx .star').forEach(star => { star.addEventListener('click', () => { currentNoteEx = parseInt(star.getAttribute('data-value')); refreshStars(); }); });
+            document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
+                if (currentNoteEx === 0) { alert('Sélectionnez une note'); return; }
+                const comment = document.getElementById('feedbackCommentEx').value.trim();
+                try { await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) }); alert('Merci !'); document.getElementById('feedbackBox').style.display = 'none'; } catch(e) { alert('Erreur réseau'); }
+            });
+
+            document.getElementById('homeHeader').addEventListener('click', () => {
+                currentDomaine = '';
+                document.getElementById('jourContainer').style.display = 'none';
+                document.getElementById('startExpertise').style.display = 'block';
+                document.getElementById('domaine').value = '';
+                document.getElementById('jourContent').innerHTML = '';
+                document.getElementById('swipeLeftArrow').style.display = 'none';
+                document.getElementById('swipeRightArrow').style.display = 'none';
+                document.getElementById('jourHeader').style.display = 'none';
+                document.getElementById('refreshDizaineBtn').style.display = 'none';
+                stopAudio();
+                arreterClignotement();
+            });
+
+            function genererLienPartage() {
+                const baseUrl = window.location.href.split('?')[0];
+                if (currentDomaine) return `${baseUrl}?expertise=${encodeURIComponent(currentDomaine)}`;
+                return baseUrl;
+            }
+            document.getElementById('shareButton').addEventListener('click', async () => {
+                const shareUrl = genererLienPartage();
+                let shareText = `🧠 Découvrez cette expertise "${currentDomaine}" sur Chapelet Tazzz Bot ! Aucune donnée personnelle n'est partagée.`;
+                if (navigator.share) { try { await navigator.share({ title: 'Chapelet Tazzz Bot', text: shareText, url: shareUrl }); } catch(e) {} }
+                else { try { await navigator.clipboard.writeText(shareText + ' ' + shareUrl); alert('Lien copié'); } catch(e) { alert('Impossible de partager'); } }
+            });
+
+            function initFromUrl() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const expertiseParam = urlParams.get('expertise');
+                if (expertiseParam) {
+                    const domaine = decodeURIComponent(expertiseParam);
+                    document.getElementById('domaine').value = domaine;
+                    setTimeout(() => {
+                        const startBtn = document.getElementById('startExpertise');
+                        if (startBtn && startBtn.style.display !== 'none') startBtn.click();
+                        setTimeout(() => {
+                            let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                            let entry = historique.find(h => h.domaine === domaine);
+                            if (!entry) {
+                                entry = { domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: true };
+                                historique.push(entry);
+                                localStorage.setItem('historique', JSON.stringify(historique));
+                            } else if (!entry.shared) { entry.shared = true; localStorage.setItem('historique', JSON.stringify(historique)); }
+                        }, 500);
+                    }, 500);
+                }
+            }
+            initFromUrl();
+
+            // --- audio vocal (text to speech) ---
+            let frenchVoice = null;
+            function initFrenchVoice() { if (!window.speechSynthesis) return; const voices = window.speechSynthesis.getVoices(); frenchVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Thomas') || v.name.includes('Amélie'))); if (!frenchVoice) frenchVoice = voices.find(v => v.lang === 'fr-FR'); }
+            if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = initFrenchVoice; initFrenchVoice(); }
+            function cleanText(t) { return t ? t.replace(/\*\*/g,'').replace(/\*/g,'').replace(/#/g,'').replace(/`/g,'').replace(/_/g,'').replace(/\[([^\]]+)\]\([^\)]+\)/g,'$1').trim() : ''; }
+            function splitTextIntoChunks(text, maxLen=1800) {
+                let sentences = text.split(/(?<=[.!?])\s+/);
+                let chunks = [], current = '';
+                for (let s of sentences) { if ((current + s).length > maxLen && current.length) { chunks.push(current); current = s; } else current += (current ? ' ' : '') + s; }
+                if (current) chunks.push(current);
+                return chunks;
+            }
+            let currentAudioChunks = [], currentChunkIdx = 0, isPlaying = false, currentUtterance = null;
+            const playerBar = document.getElementById('audioPlayerBar');
+            const playPauseBtn = document.getElementById('audioPlayPauseBtn');
+            const stopBtn = document.getElementById('audioStopBtn');
+            const seekSlider = document.getElementById('audioSeekSlider');
+            function stopAudio() { if (window.speechSynthesis) window.speechSynthesis.cancel(); isPlaying = false; playPauseBtn.textContent = '▶'; playerBar.style.display = 'none'; currentUtterance = null; }
+            function updateSeekSlider() { if (currentAudioChunks.length) { seekSlider.max = currentAudioChunks.length-1; seekSlider.value = currentChunkIdx; seekSlider.disabled = false; } else seekSlider.disabled = true; }
+            function speakChunk(idx) {
+                if (idx<0 || idx>=currentAudioChunks.length) return;
+                currentChunkIdx = idx;
+                const text = currentAudioChunks[currentChunkIdx];
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'fr-FR'; utterance.rate = 0.9;
+                if (frenchVoice) utterance.voice = frenchVoice;
+                utterance.onend = () => { if (currentChunkIdx+1 < currentAudioChunks.length) speakChunk(currentChunkIdx+1); else stopAudio(); };
+                utterance.onerror = () => stopAudio();
+                currentUtterance = utterance;
+                window.speechSynthesis.speak(utterance);
+                isPlaying = true; playPauseBtn.textContent = '⏸'; updateSeekSlider();
+            }
+            function playAudioChunks(text, autoStart=true) {
+                stopAudio();
+                const cleaned = cleanText(text);
+                if (!cleaned) return;
+                currentAudioChunks = splitTextIntoChunks(cleaned, 1800);
+                if (!currentAudioChunks.length) return;
+                currentChunkIdx = 0; updateSeekSlider(); playerBar.style.display = 'flex';
+                if (autoStart) speakChunk(0);
+                else playPauseBtn.textContent = '▶';
+            }
+            function pauseAudio() { if (isPlaying) { window.speechSynthesis.cancel(); isPlaying=false; playPauseBtn.textContent='▶'; } }
+            function resumeAudio() { if (!isPlaying && currentAudioChunks.length) speakChunk(currentChunkIdx); }
+            playPauseBtn.addEventListener('click', () => { if (isPlaying) pauseAudio(); else resumeAudio(); });
+            stopBtn.addEventListener('click', stopAudio);
+            seekSlider.addEventListener('input', (e) => { if (currentAudioChunks.length) { const newIdx = parseInt(e.target.value); if (newIdx !== currentChunkIdx) { pauseAudio(); speakChunk(newIdx); } } });
+
+            let currentExpertiseInterval = null;
+            function startExpertiseProgressBar() {
+                const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
+                if (!area) return null;
+                area.style.display = 'block';
+                let p=0;
+                const interval = setInterval(() => { if (p<90) { p+=2; if(p>90)p=90; fill.style.width = p+'%'; percentSpan.innerText = p+'%'; } }, 150);
+                return interval;
+            }
+            function stopExpertiseProgressBar(interval, complete) {
+                const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
+                if (interval) clearInterval(interval);
+                if (complete && fill) {
+                    fill.style.width = '100%'; if(percentSpan) percentSpan.innerText='100%';
+                    setTimeout(() => { if(area) area.style.display='none'; fill.style.width='0%'; if(percentSpan) percentSpan.innerText=''; }, 300);
+                } else { if(area) area.style.display='none'; if(fill) fill.style.width='0%'; if(percentSpan) percentSpan.innerText=''; }
+            }
+
+            // ================= MODE COURS =================
+            function creerChapitresInterface() {
+                const container = document.getElementById('chapitresList');
+                container.innerHTML = '';
+                for (let i = 1; i <= 6; i++) {
+                    const card = document.createElement('div');
+                    card.className = 'chapitre-card';
+                    card.innerHTML = `
+                        <strong>Chapitre ${i}</strong>
+                        <textarea rows="8" class="chapitre-text" data-chapitre="${i}" placeholder="Collez ici le texte du chapitre..."></textarea>
+                        <div class="chapitre-status" id="status-chapitre-${i}"></div>
+                    `;
+                    container.appendChild(card);
+                }
+            }
+            creerChapitresInterface();
+
+            let coursProgressInterval = null;
+            function startCoursProgressBar() {
+                const area = document.getElementById('coursProgressArea');
+                const fill = document.getElementById('coursProgressFill');
+                const percentSpan = document.getElementById('coursProgressPercent');
+                if (!area) return null;
+                area.style.display = 'block';
+                let p=0;
+                const interval = setInterval(() => { if (p<90) { p+=2; if(p>90)p=90; fill.style.width = p+'%'; percentSpan.innerText = p+'%'; } }, 150);
+                return interval;
+            }
+            function stopCoursProgressBar(interval, complete) {
+                const area = document.getElementById('coursProgressArea');
+                const fill = document.getElementById('coursProgressFill');
+                const percentSpan = document.getElementById('coursProgressPercent');
+                if (interval) clearInterval(interval);
+                if (complete && fill) {
+                    fill.style.width = '100%'; if(percentSpan) percentSpan.innerText='100%';
+                    setTimeout(() => { if(area) area.style.display='none'; fill.style.width='0%'; if(percentSpan) percentSpan.innerText=''; }, 300);
+                } else { if(area) area.style.display='none'; if(fill) fill.style.width='0%'; if(percentSpan) percentSpan.innerText=''; }
+            }
+
+            document.getElementById('generateCoursBtn').addEventListener('click', async () => {
+                const textareas = document.querySelectorAll('.chapitre-text');
+                const chapitres = [];
+                for (let ta of textareas) {
+                    const txt = ta.value.trim();
+                    if (!txt) {
+                        alert('Veuillez remplir tous les chapitres.');
+                        return;
+                    }
+                    chapitres.push(txt);
+                }
+                const resultDiv = document.getElementById('coursResult');
+                resultDiv.innerHTML = '<div class="progress-container"><div class="progress-fill" style="width:0%"></div><div class="progress-percent">Génération en cours...</div></div>';
+                resultDiv.style.display = 'block';
+                if (coursProgressInterval) clearInterval(coursProgressInterval);
+                coursProgressInterval = startCoursProgressBar();
+                try {
+                    const response = await fetch('/generer_cours', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chapitres: chapitres })
+                    });
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+                    }
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                    stopCoursProgressBar(coursProgressInterval, true);
+                    const joursGen = data.jours;
+                    const titreCours = "Cours complet (6 chapitres)";
+                    let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                    let entry = historique.find(h => h.domaine === titreCours);
+                    if (!entry) {
+                        entry = { domaine: titreCours, dateDebut: new Date().toISOString(), dateFin: null, progression: [false,false,false,false,false,false,false], shared: false };
+                        historique.push(entry);
+                        localStorage.setItem('historique', JSON.stringify(historique));
+                    }
+                    let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                    joursParDomaine[titreCours] = joursGen;
+                    localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
+                    chargerFormation(titreCours, entry.progression.slice(), joursGen);
+                    // Revenir à l'onglet expertise
+                    document.getElementById('btnExpertise').click();
+                    resultDiv.style.display = 'none';
+                    resultDiv.innerHTML = '';
+                } catch(e) {
+                    stopCoursProgressBar(coursProgressInterval, false);
+                    resultDiv.innerHTML = `<div class="error">Erreur : ${e.message}</div>`;
+                    alert('Erreur : ' + e.message);
+                }
+            });
+
+            // Basculer entre les panneaux
+            document.getElementById('btnExpertise').addEventListener('click', () => {
+                document.getElementById('expertisePanel').style.display = 'block';
+                document.getElementById('coursPanel').style.display = 'none';
+            });
+            document.getElementById('btnCoursComplet').addEventListener('click', () => {
+                document.getElementById('expertisePanel').style.display = 'none';
+                document.getElementById('coursPanel').style.display = 'block';
+            });
+
+            // Historique
+            const historyModal = document.getElementById('historyModal');
+            const historyList = document.getElementById('historyList');
+            function formaterDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
+            function supprimerEntree(index) {
+                let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                if (confirm('Supprimer définitivement cette formation ?')) {
+                    const item = historique[index];
+                    if (item.progression && item.progression.filter(v=>v).length === 7) {
+                        let badges = JSON.parse(localStorage.getItem('badges')) || [];
+                        const expertBadge = `🏅 Expert en ${item.domaine}`;
+                        const newBadges = badges.filter(b => b !== expertBadge);
+                        localStorage.setItem('badges', JSON.stringify(newBadges));
+                        updateBadgeCounters();
+                    }
+                    let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                    delete joursParDomaine[item.domaine];
+                    localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
+                    historique.splice(index, 1);
+                    localStorage.setItem('historique', JSON.stringify(historique));
+                    afficherHistorique();
+                }
+            }
+            function afficherHistorique() {
+                let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                historyList.innerHTML = '';
+                historique.forEach((item, idx) => {
+                    const completed = item.progression.filter(v=>v).length;
+                    const containerDiv = document.createElement('div');
+                    containerDiv.className = 'history-item';
+                    const textDiv = document.createElement('div');
+                    textDiv.className = 'history-item-text';
+                    let text = (completed === 7) ? `Expertise en ${item.domaine} du ${formaterDate(item.dateDebut)} au ${formaterDate(item.dateFin)}` : `Expertise inachevée (${completed}/7) – ${item.domaine}`;
+                    if (item.shared) text += ' (partagée)';
+                    textDiv.innerHTML = `<strong>${text}</strong><br><small>Début: ${formaterDate(item.dateDebut)}</small>`;
+                    if (completed === 7 && item.domaine) {
+                        const badgeSpan = document.createElement('div');
+                        badgeSpan.className = 'badge-text';
+                        badgeSpan.innerHTML = `🏅 Expert en ${item.domaine}`;
+                        textDiv.appendChild(badgeSpan);
+                    }
+                    const delBtn = document.createElement('button');
+                    delBtn.textContent = '🗑️ Supprimer';
+                    delBtn.className = 'delete-history-item';
+                    delBtn.onclick = (e) => { e.stopPropagation(); supprimerEntree(idx); };
+                    containerDiv.appendChild(textDiv);
+                    containerDiv.appendChild(delBtn);
+                    textDiv.style.cursor = 'pointer';
+                    textDiv.onclick = () => {
+                        let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                        let savedJours = joursParDomaine[item.domaine] || {};
+                        chargerFormation(item.domaine, item.progression.slice(), savedJours);
+                        historyModal.style.display = 'none';
+                        document.getElementById('btnExpertise').click();
+                    };
+                    historyList.appendChild(containerDiv);
+                });
+                if (historique.length === 0) historyList.innerHTML = '<p>Aucune formation enregistrée.</p>';
+            }
+            document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display = 'flex'; });
+            document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
+            window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
+            document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 L'abonnement n'est pas encore actif.\nAccès gratuit pour l'instant."));
+
+            function updateBadgeCounters() {
+                let badges = JSON.parse(localStorage.getItem('badges')) || [];
+                let count = badges.length;
+                const elExp = document.getElementById('badgeCountExpertise');
+                if (elExp) { if (count > 0) { elExp.style.display = 'inline-block'; elExp.innerText = count + '🏅'; } else elExp.style.display = 'none'; }
+            }
+            updateBadgeCounters();
         })();
     </script>
 </body>
