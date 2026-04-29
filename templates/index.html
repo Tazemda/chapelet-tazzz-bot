@@ -681,7 +681,7 @@
                 chargerFormation(domaine, entry.progression.slice(), {});
             });
 
-            // Navigation par boutons classiques (bas)
+            // Navigation par boutons classiques (bas) avec scroll automatique après alerte
             document.getElementById('prevDay').addEventListener('click', () => {
                 if (currentPage > 0) { currentPage--; afficherPage(currentPage); }
             });
@@ -690,6 +690,9 @@
                     const jourIdx = currentPage - 1;
                     if (!currentProgression[jourIdx] && currentJours[currentPage]) {
                         alert("Veuillez d'abord valider votre journée en cliquant sur la case qui clignote avant de passer au jour suivant.");
+                        // Scroll automatique vers le message de validation
+                        const msgDiv = document.getElementById('progressHeaderMsg');
+                        if (msgDiv) msgDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         return;
                     }
                 }
@@ -697,7 +700,7 @@
                 else if (currentPage < 7) { currentPage++; afficherPage(currentPage); }
             });
 
-            // Navigation par triangles (haut)
+            // Navigation par triangles (haut) avec scroll automatique après alerte
             document.getElementById('prevDayTriangle').addEventListener('click', () => {
                 if (currentPage > 0) { currentPage--; afficherPage(currentPage); }
             });
@@ -706,6 +709,9 @@
                     const jourIdx = currentPage - 1;
                     if (!currentProgression[jourIdx] && currentJours[currentPage]) {
                         alert("Veuillez d'abord valider votre journée en cliquant sur la case qui clignote avant de passer au jour suivant.");
+                        // Scroll automatique vers le message de validation
+                        const msgDiv = document.getElementById('progressHeaderMsg');
+                        if (msgDiv) msgDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         return;
                     }
                 }
