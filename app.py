@@ -73,7 +73,7 @@ C) A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois en égrenan
 
 D) A la place du **Gloire au Père**, écrire : RÉPÈTE 3 fois sans égrener: "Le concept [nom] est consolidé."
 
-Soigne la qualité. Ne dépasse pas 2000 tokens au total.
+Soigne la qualité. Ne dépasse pas 2500 tokens au total.
 """
 
 def generer_jour_expertise(domaine, jour_num):
@@ -113,14 +113,14 @@ Génère le contenu du **Jour {jour_num}** selon le format exact suivant :
 ## **JOUR {jour_num} : [TITRE ADAPTÉ AU CHAPITRE]**
 
 **DIZAINE 1 : CONCEPT : [nom]**
-A) **Méditation** : 8 phrases (définition, rôle, exemple court).
-B) **Notre Père** : une question centrale (RÉPÈTE 3 fois).
-C) **Je vous salue Marie** : 6 phrases numérotées (RÉPÈTE 10 fois).
-D) **Gloire au Père** : "Le concept [nom] est consolidé." (RÉPÈTE 3 fois)
+A) **Synthèse générale Méditation à lire en tenant un gros grain du chapelet** : Exactement 8 phrases denses (définition, rôle, exemple court).
+B) A la place du **Notre Père**, écrire : RÉPÈTE 3 fois sans égrener le chapelet : une question centrale.
+C) A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois en égrenant 10 petits grains: Exactement 8 phrases légèrement denses numérotées.
+D) A la place du **Gloire au Père**, écrire : RÉPÈTE 3 fois sans égrener: "Le concept [nom] est consolidé." 
 
 (même structure pour DIZAINE 2 à 5)
 
-Soigne la qualité, reste fidèle au texte source. Ne dépasse pas 2500 tokens.
+Soigne la qualité, reste fidèle au texte source. Ne dépasse pas 3000 tokens.
 """
 
 @app.route('/generer_chapitre', methods=['POST'])
