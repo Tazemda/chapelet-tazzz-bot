@@ -54,10 +54,10 @@
         .mode-selector { display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
         .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
-        .mode-panel { display: block; animation: fadeIn 0.3s ease; }
+        .mode-panel { display: none; animation: fadeIn 0.3s ease; }
+        .mode-panel.active-panel { display: block; }
         .cours-panel { margin-top: 15px; }
         .chapitres-container { display: block; }
-        .chapitres-container.collapsed { display: none; }
         input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 14px; border: none; background: #f0f0f0; font-size: 1rem; }
         button { background: #e67e22; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
         button:hover { background: #d35400; transform: scale(0.98); }
@@ -386,12 +386,12 @@
                 <span class="home-header" id="homeHeader">🏠 Accueil</span>
             </div>
             <div class="mode-selector">
-                <button id="btnExpertise" class="mode-btn active">📚 Expertise (domaine libre)</button>
+                <button id="btnExpertise" class="mode-btn active">📚 Expertise en 7 jours</button>
                 <button id="btnCoursToggle" class="mode-btn">📘 Mes cours en 6 jours ▶</button>
             </div>
 
             <!-- Panneau Expertise classique -->
-            <div id="expertisePanel" class="mode-panel" style="display: block;">
+            <div id="expertisePanel" class="mode-panel active-panel">
                 <p>🔬 Domaine à maîtriser :</p>
                 <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, Prise de parole...">
                 <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
@@ -434,7 +434,7 @@
             </div>
 
             <!-- Panneau Cours (6 chapitres) -->
-            <div id="coursPanel" class="cours-panel" style="display: none;">
+            <div id="coursPanel" class="mode-panel">
                 <div class="warning-limit">
                     📚 Saisissez vos 6 chapitres (copier-coller puis enregistrer chaque chapitre).<br>
                     ⚠️ Attention ! Pas plus de 8000 caractères par chapitre (vérifiable sur Word).
@@ -920,7 +920,7 @@
             }
             initFromUrl();
 
-            // ================= MODE COURS =================
+            // ================= MODE COURS (6 CHAPITRES) =================
             let chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
             let coursTemp = JSON.parse(localStorage.getItem('cours_temp')) || {};
             for (let i=1;i<=6;i++) if (coursTemp[i]) chapitresSauvegardes[i] = coursTemp[i];
@@ -946,20 +946,7 @@
                         </div>
                     `;
                     container.appendChild(card);
-                    if (chapitresSauvegardes[i]) {
-                        const txt = card.querySelector('.chapitre-text');
-                        txt.value = chapitresSauvegardes[i]; // on affiche le texte, mais normalement on veut le texte source? Non, on ne peut pas afficher le résultat de l'API (c'est du contenu structuré). Plutôt on laisse vide ou on met un indicateur. On va laisser vide.
-                        // Pour éviter de pré-remplir, on ne met rien.
-                    }
-                }
-                // Rafraîchir les statuts
-                for (let i=1;i<=6;i++) {
-                    const statusDiv = document.getElementById(`status-chapitre-${i}`);
-                    if (chapitresSauvegardes[i]) {
-                        statusDiv.innerHTML = '✅ Chapitre enregistré avec succès.';
-                    } else {
-                        statusDiv.innerHTML = '';
-                    }
+                    // On ne préremplit pas le textarea
                 }
                 attachEvents();
             }
@@ -1110,30 +1097,34 @@
                 statusDiv.style.display = 'none';
             });
 
-            // Gestion du bouton "Mes cours en 6 jours" (plier/déplier le panneau)
+            // Gestion de l'affichage exclusif entre Expertise et Cours
+            const btnExpertise = document.getElementById('btnExpertise');
             const btnCoursToggle = document.getElementById('btnCoursToggle');
+            const expertisePanel = document.getElementById('expertisePanel');
             const coursPanel = document.getElementById('coursPanel');
-            btnCoursToggle.addEventListener('click', () => {
-                if (coursPanel.style.display === 'none' || coursPanel.style.display === '') {
-                    coursPanel.style.display = 'block';
-                    btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▼';
-                    // Réinitialiser les chapitres à chaque ouverture ? Non, l'utilisateur peut souhaiter continuer. Mais pour éviter "déjà enregistré", on ne fait rien.
-                } else {
-                    coursPanel.style.display = 'none';
-                    btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▶';
-                }
-            });
 
-            // Gestion de l'onglet Expertise (pour masquer l'autre)
-            document.getElementById('btnExpertise').addEventListener('click', () => {
-                document.getElementById('btnExpertise').classList.add('active');
+            function showExpertise() {
+                expertisePanel.classList.add('active-panel');
+                coursPanel.classList.remove('active-panel');
+                btnExpertise.classList.add('active');
                 btnCoursToggle.classList.remove('active');
-                document.getElementById('expertisePanel').style.display = 'block';
-                coursPanel.style.display = 'none';
                 btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▶';
-            });
+            }
 
-            // Initialisation de l'interface cours (vide)
+            function showCours() {
+                coursPanel.classList.add('active-panel');
+                expertisePanel.classList.remove('active-panel');
+                btnCoursToggle.classList.add('active');
+                btnExpertise.classList.remove('active');
+                btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▼';
+                // Optionnel : réinitialiser les chapitres si nécessaire ? On ne le fait pas automatiquement.
+            }
+
+            btnExpertise.addEventListener('click', showExpertise);
+            btnCoursToggle.addEventListener('click', showCours);
+
+            // Initialisation (expertise visible)
+            showExpertise();
             createChapitresUI();
 
             // ---------- HISTORIQUE ACCORDÉON ----------
