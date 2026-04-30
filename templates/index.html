@@ -48,9 +48,28 @@
         }
         h1 { text-align: center; font-size: 1.5rem; margin-bottom: 0px; letter-spacing: 1px; }
         .subtitle { text-align: center; font-size: 0.9rem; opacity: 0.8; margin-bottom: 30px; margin-top: 5px; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .history-link, .home-header { background: #2c3e4e; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
-        .history-link:hover, .home-header:hover { background: #e67e22; }
+        .top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+        .history-link, .home-header, .auth-btn {
+            background: #2c3e4e;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+            border: none;
+            color: white;
+            font-family: inherit;
+        }
+        .history-link:hover, .home-header:hover, .auth-btn:hover {
+            background: #e67e22;
+        }
         .mode-selector { display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
         .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
@@ -185,7 +204,7 @@
             font-weight: bold;
             color: #f1c40f;
             cursor: pointer;
-            display: none; /* caché par défaut, sera affiché via JS */
+            display: none;
         }
         .blink-text { animation: blinkText 1s infinite; }
         @keyframes blinkText { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
@@ -384,7 +403,10 @@
             <div class="subtitle">Transformez votre structure mentale</div>
             <div class="top-bar">
                 <span class="history-link" id="historyLink">📜 Historique</span>
+                <div style="flex:1;"></div>
                 <span class="home-header" id="homeHeader">🏠 Accueil</span>
+                <button class="auth-btn" id="loginBtn" style="margin-left: 10px;">🔐 Connexion</button>
+                <button class="auth-btn" id="registerBtn">📝 S'inscrire</button>
             </div>
             <div class="mode-selector">
                 <button id="btnExpertise" class="mode-btn active">📚 Expertise en 7 jours</button>
@@ -576,7 +598,6 @@
                     msgDiv.classList.add('blink-text');
                 }
 
-                // Initialiser l'audio si nécessaire
                 if (!audioCtx) initAudio();
 
                 blinkInterval = setInterval(() => {
@@ -653,7 +674,6 @@
                     msgDiv.style.display = 'none';
                     arreterClignotement();
                 } else {
-                    // La journée n'est pas validée : on affiche le message seulement à la 5e dizaine
                     if (currentDizaineIndex === 4) {
                         msgDiv.style.display = 'block';
                         demarrerClignotement();
@@ -1057,12 +1077,11 @@
             function resetCours() {
                 localStorage.removeItem('cours_temp');
                 chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
-                createChapitresUI(); // recrée l'interface avec des champs vides
+                createChapitresUI();
             }
 
             document.getElementById('resetCoursBtn').addEventListener('click', resetCours);
 
-            // Plier/Déplier tous les chapitres
             let tousPlies = false;
             document.getElementById('toggleChapitresBtn').addEventListener('click', () => {
                 tousPlies = !tousPlies;
@@ -1136,9 +1155,16 @@
             btnExpertise.addEventListener('click', showExpertise);
             btnCoursToggle.addEventListener('click', showCours);
 
-            // Initialisation
             showExpertise();
             createChapitresUI();
+
+            // Ajout des alertes pour Connexion / Inscription
+            document.getElementById('loginBtn').addEventListener('click', () => {
+                alert("🔐 La fonctionnalité de connexion sera disponible prochainement.");
+            });
+            document.getElementById('registerBtn').addEventListener('click', () => {
+                alert("📝 La fonctionnalité d'inscription sera disponible prochainement.");
+            });
 
             // ---------- HISTORIQUE ACCORDÉON ----------
             const historyModal = document.getElementById('historyModal');
