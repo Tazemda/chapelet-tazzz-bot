@@ -387,11 +387,11 @@
             </div>
             <div class="mode-selector">
                 <button id="btnExpertise" class="mode-btn active">📚 Expertise (domaine libre)</button>
-                <button id="btnCoursToggle" class="mode-btn">📘 Mes cours en 6 jours ▼</button>
+                <button id="btnCoursToggle" class="mode-btn">📘 Mes cours en 6 jours ▶</button>
             </div>
 
             <!-- Panneau Expertise classique -->
-            <div id="expertisePanel" class="mode-panel">
+            <div id="expertisePanel" class="mode-panel" style="display: block;">
                 <p>🔬 Domaine à maîtriser :</p>
                 <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, Prise de parole...">
                 <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
@@ -433,7 +433,7 @@
                 </div>
             </div>
 
-            <!-- Panneau Cours (6 chapitres) avec bouton de pliage intégré -->
+            <!-- Panneau Cours (6 chapitres) -->
             <div id="coursPanel" class="cours-panel" style="display: none;">
                 <div class="warning-limit">
                     📚 Saisissez vos 6 chapitres (copier-coller puis enregistrer chaque chapitre).<br>
@@ -441,6 +441,7 @@
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <button id="toggleChapitresBtn" class="btn-toggle-chapitres">▼ Plier tous les chapitres</button>
+                    <button id="resetCoursBtn" style="background: #2c3e4e;">🔄 Nouveau cours</button>
                 </div>
                 <div id="chapitresList" style="margin-top: 15px;"></div>
                 <div style="display: flex; justify-content: center; margin-top: 20px;">
@@ -919,7 +920,7 @@
             }
             initFromUrl();
 
-            // ================= MODE COURS (6 CHAPITRES) =================
+            // ================= MODE COURS =================
             let chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
             let coursTemp = JSON.parse(localStorage.getItem('cours_temp')) || {};
             for (let i=1;i<=6;i++) if (coursTemp[i]) chapitresSauvegardes[i] = coursTemp[i];
@@ -946,90 +947,121 @@
                     `;
                     container.appendChild(card);
                     if (chapitresSauvegardes[i]) {
-                        card.querySelector('.chapitre-text').value = '[Chapitre déjà enregistré]';
-                        document.getElementById(`status-chapitre-${i}`).innerHTML = '✅ Enregistré.';
+                        const txt = card.querySelector('.chapitre-text');
+                        txt.value = chapitresSauvegardes[i]; // on affiche le texte, mais normalement on veut le texte source? Non, on ne peut pas afficher le résultat de l'API (c'est du contenu structuré). Plutôt on laisse vide ou on met un indicateur. On va laisser vide.
+                        // Pour éviter de pré-remplir, on ne met rien.
                     }
                 }
+                // Rafraîchir les statuts
+                for (let i=1;i<=6;i++) {
+                    const statusDiv = document.getElementById(`status-chapitre-${i}`);
+                    if (chapitresSauvegardes[i]) {
+                        statusDiv.innerHTML = '✅ Chapitre enregistré avec succès.';
+                    } else {
+                        statusDiv.innerHTML = '';
+                    }
+                }
+                attachEvents();
+            }
+
+            function attachEvents() {
                 document.querySelectorAll('.save-chapitre-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        const num = parseInt(btn.dataset.chapitre);
-                        const card = document.getElementById(`chapitre-card-${num}`);
-                        const texte = card.querySelector('.chapitre-text').value.trim();
-                        if (!texte) { alert(`Collez le texte du chapitre ${num}.`); return; }
-                        const statusDiv = document.getElementById(`status-chapitre-${num}`);
-                        const progDiv = document.createElement('div'); progDiv.className = 'custom-progress'; progDiv.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
-                        statusDiv.innerHTML = ''; statusDiv.appendChild(progDiv);
-                        let percent = 0;
-                        const bar = progDiv.querySelector('.custom-progress-bar');
-                        const pct = progDiv.querySelector('.progress-percent-text');
-                        const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
-                        try {
-                            const res = await fetch('/generer_chapitre', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ texte, num }) });
-                            const data = await res.json();
-                            if (data.error) throw new Error(data.error);
-                            chapitresSauvegardes[num] = data.contenu;
-                            let temp = JSON.parse(localStorage.getItem('cours_temp')) || {};
-                            temp[num] = data.contenu;
-                            localStorage.setItem('cours_temp', JSON.stringify(temp));
-                            clearInterval(interval);
-                            bar.style.width = '100%'; pct.innerText = '100%';
-                            setTimeout(() => { statusDiv.innerHTML = '✅ Chapitre enregistré.'; }, 500);
-                        } catch(err) {
-                            clearInterval(interval);
-                            statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
-                        }
-                    });
+                    btn.removeEventListener('click', saveHandler);
+                    btn.addEventListener('click', saveHandler);
                 });
                 document.querySelectorAll('.refresh-chapitre-btn').forEach(btn => {
-                    btn.addEventListener('click', async (e) => {
-                        const num = parseInt(btn.dataset.chapitre);
-                        const card = document.getElementById(`chapitre-card-${num}`);
-                        const texte = card.querySelector('.chapitre-text').value.trim();
-                        if (!texte) { alert(`Collez le texte du chapitre ${num}.`); return; }
-                        const statusDiv = document.getElementById(`status-chapitre-${num}`);
-                        const progDiv = document.createElement('div'); progDiv.className = 'custom-progress'; progDiv.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
-                        statusDiv.innerHTML = ''; statusDiv.appendChild(progDiv);
-                        let percent = 0;
-                        const bar = progDiv.querySelector('.custom-progress-bar');
-                        const pct = progDiv.querySelector('.progress-percent-text');
-                        const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
-                        try {
-                            const res = await fetch('/generer_chapitre', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ texte, num }) });
-                            const data = await res.json();
-                            if (data.error) throw new Error(data.error);
-                            chapitresSauvegardes[num] = data.contenu;
-                            let temp = JSON.parse(localStorage.getItem('cours_temp')) || {};
-                            temp[num] = data.contenu;
-                            localStorage.setItem('cours_temp', JSON.stringify(temp));
-                            clearInterval(interval);
-                            bar.style.width = '100%'; pct.innerText = '100%';
-                            setTimeout(() => { statusDiv.innerHTML = '✅ Chapitre regénéré.'; }, 500);
-                        } catch(err) {
-                            clearInterval(interval);
-                            statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
-                        }
-                    });
+                    btn.removeEventListener('click', refreshHandler);
+                    btn.addEventListener('click', refreshHandler);
                 });
                 document.querySelectorAll('.toggle-chapitre').forEach(t => {
-                    t.addEventListener('click', (e) => {
-                        const num = parseInt(t.dataset.chapitre);
-                        const card = document.getElementById(`chapitre-card-${num}`);
-                        const body = card.querySelector('.chapitre-body');
-                        const isCollapsed = body.classList.contains('collapsed');
-                        if (isCollapsed) {
-                            body.classList.remove('collapsed');
-                            t.textContent = '▼';
-                            localStorage.setItem(`chapitre-${num}-collapsed`, 'false');
-                        } else {
-                            body.classList.add('collapsed');
-                            t.textContent = '▶';
-                            localStorage.setItem(`chapitre-${num}-collapsed`, 'true');
-                        }
-                    });
+                    t.removeEventListener('click', toggleHandler);
+                    t.addEventListener('click', toggleHandler);
                 });
             }
-            createChapitresUI();
 
+            async function saveHandler(e) {
+                const num = parseInt(e.currentTarget.dataset.chapitre);
+                const card = document.getElementById(`chapitre-card-${num}`);
+                const texte = card.querySelector('.chapitre-text').value.trim();
+                if (!texte) { alert(`Collez le texte du chapitre ${num}.`); return; }
+                const statusDiv = document.getElementById(`status-chapitre-${num}`);
+                const progDiv = document.createElement('div'); progDiv.className = 'custom-progress'; progDiv.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
+                statusDiv.innerHTML = ''; statusDiv.appendChild(progDiv);
+                let percent = 0;
+                const bar = progDiv.querySelector('.custom-progress-bar');
+                const pct = progDiv.querySelector('.progress-percent-text');
+                const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
+                try {
+                    const res = await fetch('/generer_chapitre', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ texte, num }) });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error);
+                    chapitresSauvegardes[num] = data.contenu;
+                    let temp = JSON.parse(localStorage.getItem('cours_temp')) || {};
+                    temp[num] = data.contenu;
+                    localStorage.setItem('cours_temp', JSON.stringify(temp));
+                    clearInterval(interval);
+                    bar.style.width = '100%'; pct.innerText = '100%';
+                    setTimeout(() => { statusDiv.innerHTML = '✅ Chapitre enregistré.'; }, 500);
+                } catch(err) {
+                    clearInterval(interval);
+                    statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
+                }
+            }
+
+            async function refreshHandler(e) {
+                const num = parseInt(e.currentTarget.dataset.chapitre);
+                const card = document.getElementById(`chapitre-card-${num}`);
+                const texte = card.querySelector('.chapitre-text').value.trim();
+                if (!texte) { alert(`Collez le texte du chapitre ${num}.`); return; }
+                const statusDiv = document.getElementById(`status-chapitre-${num}`);
+                const progDiv = document.createElement('div'); progDiv.className = 'custom-progress'; progDiv.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
+                statusDiv.innerHTML = ''; statusDiv.appendChild(progDiv);
+                let percent = 0;
+                const bar = progDiv.querySelector('.custom-progress-bar');
+                const pct = progDiv.querySelector('.progress-percent-text');
+                const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
+                try {
+                    const res = await fetch('/generer_chapitre', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ texte, num }) });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error);
+                    chapitresSauvegardes[num] = data.contenu;
+                    let temp = JSON.parse(localStorage.getItem('cours_temp')) || {};
+                    temp[num] = data.contenu;
+                    localStorage.setItem('cours_temp', JSON.stringify(temp));
+                    clearInterval(interval);
+                    bar.style.width = '100%'; pct.innerText = '100%';
+                    setTimeout(() => { statusDiv.innerHTML = '✅ Chapitre regénéré.'; }, 500);
+                } catch(err) {
+                    clearInterval(interval);
+                    statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
+                }
+            }
+
+            function toggleHandler(e) {
+                const num = parseInt(e.currentTarget.dataset.chapitre);
+                const card = document.getElementById(`chapitre-card-${num}`);
+                const body = card.querySelector('.chapitre-body');
+                const isCollapsed = body.classList.contains('collapsed');
+                if (isCollapsed) {
+                    body.classList.remove('collapsed');
+                    e.currentTarget.textContent = '▼';
+                    localStorage.setItem(`chapitre-${num}-collapsed`, 'false');
+                } else {
+                    body.classList.add('collapsed');
+                    e.currentTarget.textContent = '▶';
+                    localStorage.setItem(`chapitre-${num}-collapsed`, 'true');
+                }
+            }
+
+            function resetCours() {
+                localStorage.removeItem('cours_temp');
+                chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
+                createChapitresUI(); // recrée l'interface avec des champs vides
+            }
+
+            document.getElementById('resetCoursBtn').addEventListener('click', resetCours);
+
+            // Plier/Déplier tous les chapitres
             let tousPlies = false;
             document.getElementById('toggleChapitresBtn').addEventListener('click', () => {
                 tousPlies = !tousPlies;
@@ -1078,13 +1110,14 @@
                 statusDiv.style.display = 'none';
             });
 
-            // Gestion du bouton "Mes cours en 6 jours" (plie/déplie le panneau)
+            // Gestion du bouton "Mes cours en 6 jours" (plier/déplier le panneau)
             const btnCoursToggle = document.getElementById('btnCoursToggle');
             const coursPanel = document.getElementById('coursPanel');
             btnCoursToggle.addEventListener('click', () => {
-                if (coursPanel.style.display === 'none') {
+                if (coursPanel.style.display === 'none' || coursPanel.style.display === '') {
                     coursPanel.style.display = 'block';
                     btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▼';
+                    // Réinitialiser les chapitres à chaque ouverture ? Non, l'utilisateur peut souhaiter continuer. Mais pour éviter "déjà enregistré", on ne fait rien.
                 } else {
                     coursPanel.style.display = 'none';
                     btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▶';
@@ -1099,9 +1132,9 @@
                 coursPanel.style.display = 'none';
                 btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▶';
             });
-            // Initialisation : expertise visible, cours caché
-            document.getElementById('expertisePanel').style.display = 'block';
-            coursPanel.style.display = 'none';
+
+            // Initialisation de l'interface cours (vide)
+            createChapitresUI();
 
             // ---------- HISTORIQUE ACCORDÉON ----------
             const historyModal = document.getElementById('historyModal');
