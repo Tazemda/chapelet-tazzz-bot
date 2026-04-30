@@ -477,7 +477,6 @@
 
             <div class="action-buttons">
                 <button id="shareButton">📤 Partager</button>
-                <!-- Bouton S'abonner supprimé -->
             </div>
             <div class="footer">
                 <div class="copyright">Plasticité cérébrale & répétition rythmée.<br>© Dr Tazzz</div>
@@ -744,7 +743,18 @@
                 }, 300);
             }
 
-            const welcomeHTML = `<div class="welcome-text"><strong>Bonjour ! Bienvenue dans le Chapelet Tazzz Bot.</strong><br><br><strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>- Procurez-vous un vrai chapelet.<br>- Glissez à gauche/droite pour feuilleter les 5 dizaines d’un jour.<br>- À la 5e dizaine, validez en cliquant sur la case clignotante.<br>- Cliquez sur <strong>“Suivant”</strong> pour passer au jour suivant.</div>`;
+            // Nouveau message d'accueil
+            const welcomeHTML = `
+                <div class="welcome-text">
+                    <strong>Bonjour !</strong><br>
+                    Bienvenue dans le Chapelet Tazzz Bot.<br><br>
+                    <strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>
+                    - Procurez-vous un vrai chapelet.<br>
+                    - Glissez à gauche ou à droite pour feuilleter les 5 dizaines d’un jour.<br>
+                    - À la 5e dizaine, validez votre journée en cliquant sur la case clignotante.<br>
+                    - Cliquez sur <strong>“Suivant”</strong> pour passer au jour suivant.
+                </div>
+            `;
 
             function afficherPage() {
                 const contentDiv = document.getElementById('jourContent');
@@ -1157,11 +1167,9 @@
             btnExpertise.addEventListener('click', showExpertise);
             btnCoursToggle.addEventListener('click', showCours);
 
-            // Initialisation
             showExpertise();
             createChapitresUI();
 
-            // Alertes pour Connexion / Inscription
             document.getElementById('loginBtn').addEventListener('click', () => {
                 alert("🔐 La fonctionnalité de connexion sera disponible prochainement.");
             });
@@ -1320,5 +1328,4 @@
         })();
     </script>
 </body>
-</html>
 </html>
