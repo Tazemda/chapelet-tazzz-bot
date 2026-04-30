@@ -3,6 +3,7 @@ import re
 import sqlite3
 import secrets
 from datetime import datetime, timedelta
+from functools import wraps
 from flask import Flask, request, jsonify, render_template, session, url_for
 from werkzeug.security import generate_password_hash, check_password_hash
 import requests
@@ -12,7 +13,9 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
-RESEND_API_KEY = os.environ.get("RESEND_API_KEY")  # Clé API Resend (gratuite)
+
+# Récupère la clé Resend depuis les variables d'environnement (Render)
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
 
 # ================= BASE DE DONNÉES UTILISATEURS =================
 def init_users_db():
@@ -32,11 +35,15 @@ def init_users_db():
 init_users_db()
 
 def send_confirmation_email(email, pseudo, token):
+    confirm_url = url_for('confirm_email', token=token, _external=True)
+    
+    # Si la clé API n'est pas configurée, on renvoie juste le lien (pas d'envoi)
     if not RESEND_API_KEY:
-        print(f"Lien de confirmation (mode dev) : {url_for('confirm_email', token=token, _external=True)}")
-        return True
+        print(f"\n=== LIEN DE CONFIRMATION (clé manquante) ===\n{confirm_url}\n============================================\n")
+        return True, confirm_url
+    
+    # Tentative d'envoi réel via Resend
     try:
-        confirm_url = url_for('confirm_email', token=token, _external=True)
         html = f"""
         <h2>Bienvenue {pseudo} !</h2>
         <p>Merci de vous être inscrit sur Chapelet Tazzz Bot.</p>
@@ -52,12 +59,30 @@ def send_confirmation_email(email, pseudo, token):
                 "to": email,
                 "subject": "Confirmation d'inscription - Chapelet Tazzz Bot",
                 "html": html
-            }
+            },
+            timeout=10
         )
-        return resp.status_code == 200
-    except:
-        return False
+        if resp.status_code == 200:
+            print(f"Email envoyé avec succès à {email}")
+            return True, None   # Pas besoin de renvoyer le lien car l'email est parti
+        else:
+            print(f"Erreur Resend: {resp.status_code} - {resp.text}")
+            # En cas d'erreur, on renvoie quand même le lien pour ne pas bloquer l'utilisateur
+            return True, confirm_url
+    except Exception as e:
+        print(f"Exception lors de l'envoi: {e}")
+        # En cas d'exception, on renvoie le lien pour que l'utilisateur puisse confirmer
+        return True, confirm_url
 
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({'error': 'Authentification requise'}), 401
+        return f(*args, **kwargs)
+    return decorated
+
+# ================= FONCTIONS IA =================
 def call_deepseek(prompt, max_tokens=3000):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API manquante")
@@ -74,6 +99,8 @@ def call_deepseek(prompt, max_tokens=3000):
             return resp.json()["choices"][0]["message"]["content"]
         else:
             raise Exception(f"API error {resp.status_code}: {resp.text[:500]}")
+    except requests.exceptions.Timeout:
+        raise Exception("L'API DeepSeek a mis trop de temps à répondre. Réessayez.")
     except Exception as e:
         raise Exception(f"Erreur API: {str(e)}")
 
@@ -99,13 +126,80 @@ def init_db():
     conn.close()
 init_db()
 
-# ================= PROMPTS (inchangés) =================
-PROMPT_JOUR = """... (identique à avant) ..."""
-PROMPT_CHAPITRE_JOUR = """... (identique) ..."""
+# ================= PROMPTS =================
+PROMPT_JOUR = """
+Tu es un expert pédagogique. Domaine : "{domaine}".
+
+Génère le contenu complet du **Jour {jour_num}** sur 7 jours.  
+L'objectif général du jour {jour_num} est : {titre_objectif}.
+
+Commence par le titre : `## **JOUR {jour_num} : [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**`
+
+Puis, EXACTEMENT 5 DIZAINES. Chaque dizaine doit suivre ce format (concis) :
+
+**DIZAINE X : CONCEPT : [nom du concept]**
+
+A) **Synthèse générale Méditation à lire en tenant un gros grain du chapelet** : exactement 8 phrases moyennement denses non numérotés (toutes les méditations, tous les jours) : définition + rôle + exemple court.
+
+B) A la place du **Notre Père**, écrire : RÉPÈTE 3 fois sans égrener le chapelet : une seule phrase, question centrale.
+
+C) A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois en égrenant 10 petits grains: exactement 6 phrases (toutes les méditations, tous les jours) synthétiques, numérotées et mémorisables.
+
+D) A la place du **Gloire au Père**, écrire : RÉPÈTE 3 fois sans égrener: "Le concept [nom] est consolidé."
+
+(même structure pour DIZAINE 2 à 5)
+
+Soigne la qualité. Ne dépasse pas 2500 tokens au total.
+"""
+
+PROMPT_CHAPITRE_JOUR = """
+Tu es un expert pédagogique. Tu reçois le texte d'un chapitre (environ 3 pages A4).
+Transforme ce chapitre en un contenu structuré pour une journée d'étude (5 dizaines).
+
+Voici le texte du chapitre :
+
+{texte_chapitre}
+
+Génère le contenu du **Jour {jour_num}** selon le format exact suivant :
+
+## **JOUR {jour_num} : [TITRE ADAPTÉ AU CHAPITRE]**
+
+**DIZAINE 1 : CONCEPT : [nom]**
+A) **Synthèse générale Méditation à lire en tenant un gros grain du chapelet** : exactement 8 phrases moyennement denses non numérotés (toutes les méditations, tous les jours) : définition + rôle + exemple court.
+
+B) A la place du **Notre Père**, écrire : RÉPÈTE 3 fois sans égrener le chapelet : une seule phrase, question centrale.
+
+C) A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois en égrenant 10 petits grains: exactement 6 phrases (toutes les méditations, tous les jours) synthétiques, numérotées et mémorisables.
+
+D) A la place du **Gloire au Père**, écrire : RÉPÈTE 3 fois sans égrener: "Le concept [nom] est consolidé."
+
+(même structure pour DIZAINE 2 à 5)
+
+Soigne la qualité, reste fidèle au texte source. Ne dépasse pas 2800 tokens.
+"""
 
 def generer_jour_expertise(domaine, jour_num):
-    # ... identique ...
-    pass
+    objectifs = [
+        "Découverte des bases fondamentales",
+        "Approfondissement des pratiques clés",
+        "Cas complexes et exceptions",
+        "Contrôle qualité et indicateurs",
+        "Gestion des risques et plan d'action",
+        "Synthèse et liens entre concepts",
+        "Auto‑évaluation et perfectionnement"
+    ]
+    titre_objectif = objectifs[jour_num-1]
+    prompt = PROMPT_JOUR.format(domaine=domaine, jour_num=jour_num, titre_objectif=titre_objectif)
+    try:
+        raw = call_deepseek(prompt, max_tokens=3000)
+        contenu = clean_markdown(raw)
+        contenu = remove_markdown_chars(contenu)
+        if not re.search(r'JOUR\s+\d+', contenu, re.IGNORECASE):
+            contenu = f"JOUR {jour_num} – {titre_objectif.upper()}\n\n{contenu}"
+        return contenu
+    except Exception as e:
+        print(f"Erreur jour {jour_num}: {e}")
+        return f"JOUR {jour_num} – {titre_objectif.upper()} (version de secours)\n\n(erreur technique: {str(e)})"
 
 # ================= ROUTES D'AUTH =================
 @app.route('/api/register', methods=['POST'])
@@ -121,7 +215,7 @@ def register():
     if password != password_confirm:
         return jsonify({'error': 'Les mots de passe ne correspondent pas'}), 400
     if len(password) < 6:
-        return jsonify({'error': 'Mot de passe trop court (min 6 caractères)'}), 400
+        return jsonify({'error': 'Le mot de passe doit contenir au moins 6 caractères'}), 400
     
     password_hash = generate_password_hash(password)
     token = secrets.token_urlsafe(32)
@@ -134,15 +228,21 @@ def register():
                   (pseudo, email, password_hash, token, token_expiry, str(datetime.now())))
         conn.commit()
         conn.close()
-        if send_confirmation_email(email, pseudo, token):
-            return jsonify({'message': 'Inscription réussie. Vérifiez vos emails pour confirmer.'}), 201
+        
+        success, link = send_confirmation_email(email, pseudo, token)
+        if success:
+            response = {'message': 'Inscription réussie. Vérifiez vos emails pour confirmer.'}
+            if link:
+                response['confirmation_link'] = link
+            return jsonify(response), 201
         else:
+            # Normalement on ne passe jamais ici car on renvoie toujours success=True
             conn = sqlite3.connect('users.db')
             c = conn.cursor()
             c.execute("DELETE FROM users WHERE email = ?", (email,))
             conn.commit()
             conn.close()
-            return jsonify({'error': 'Erreur envoi email. Réessayez.'}), 500
+            return jsonify({'error': 'Erreur lors de l\'envoi de l\'email. Réessayez.'}), 500
     except sqlite3.IntegrityError:
         return jsonify({'error': 'Email ou pseudo déjà utilisé'}), 400
 
@@ -157,7 +257,7 @@ def confirm_email(token):
         return "Lien invalide ou déjà utilisé.", 400
     if datetime.now() > datetime.fromisoformat(user[2]):
         conn.close()
-        return "Lien expiré. Veuillez réinscrire.", 400
+        return "Lien expiré. Veuillez vous réinscrire.", 400
     c.execute("UPDATE users SET confirmed = 1, confirmation_token = NULL WHERE id = ?", (user[0],))
     conn.commit()
     conn.close()
@@ -195,15 +295,6 @@ def me():
     return jsonify({'logged_in': False}), 200
 
 # ================= ROUTES PROTÉGÉES =================
-def login_required(f):
-    from functools import wraps
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'user_id' not in session:
-            return jsonify({'error': 'Authentification requise'}), 401
-        return f(*args, **kwargs)
-    return decorated
-
 @app.route('/generer_jour_expertise', methods=['POST'])
 @login_required
 def generer_jour_expertise_route():
@@ -237,8 +328,18 @@ def generer_chapitre_route():
 
 @app.route('/feedback', methods=['POST'])
 def feedback():
-    # ... inchangé ...
-    pass
+    data = request.get_json()
+    note = data.get('note')
+    commentaire = data.get('commentaire')
+    if note is None or commentaire is None:
+        return jsonify({'error': 'Note et commentaire requis'}), 400
+    conn = sqlite3.connect('tazbot.db')
+    c = conn.cursor()
+    c.execute("INSERT INTO feedback (date, note, commentaire) VALUES (?, ?, ?)",
+              (str(datetime.now()), note, commentaire))
+    conn.commit()
+    conn.close()
+    return jsonify({'status': 'ok'})
 
 @app.route('/')
 def index():
