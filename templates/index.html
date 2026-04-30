@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Chapelet Tazzz Bot</title>
     <style>
-        /* ========== STYLES COMPLETS ========== */
         * { box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -465,7 +464,6 @@
                 <button id="btnCoursToggle" class="mode-btn">📘 Mes cours en 6 jours ▶</button>
             </div>
 
-            <!-- Panneau Expertise classique -->
             <div id="expertisePanel" class="mode-panel active-panel">
                 <p>🔬 Domaine à maîtriser :</p>
                 <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, Prise de parole...">
@@ -508,11 +506,10 @@
                 </div>
             </div>
 
-            <!-- Panneau Cours (6 chapitres) -->
             <div id="coursPanel" class="mode-panel">
                 <div class="warning-limit">
                     📚 Saisissez vos 6 chapitres (copier-coller puis enregistrer chaque chapitre).<br>
-                    ⚠️ Attention ! Pas plus de 8000 caractères par chapitre (vérifiable sur Word).
+                    ⚠️ Attention ! Pas plus de 8000 caractères par chapitre.
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <button id="toggleChapitresBtn" class="btn-toggle-chapitres">▼ Plier tous les chapitres</button>
@@ -555,9 +552,10 @@
             <input type="text" id="authPseudo" placeholder="Pseudo">
             <input type="email" id="authEmail" placeholder="Email">
             <input type="password" id="authPassword" placeholder="Mot de passe (min. 6 caractères)">
+            <input type="password" id="authPasswordConfirm" placeholder="Confirmer le mot de passe">
             <div class="checkbox-group">
                 <input type="checkbox" id="authConsent">
-                <label>J'accepte la collecte et le stockage de mes données conformément à la politique de confidentialité</label>
+                <label>J'accepte la collecte et le stockage de mes données</label>
             </div>
             <button id="authSubmitBtn">Valider</button>
             <button id="closeAuthModal" style="background:#2c3e4e; margin-top:10px;">Fermer</button>
@@ -566,8 +564,10 @@
 
     <script>
         (function() {
-            // ================= AUTHENTIFICATION =================
+            // ================= AUTHENTIFICATION OBLIGATOIRE =================
             let currentUser = null;
+            let pendingAction = null;
+            let pendingData = null;
 
             async function checkAuth() {
                 try {
@@ -579,10 +579,12 @@
                         currentUser = null;
                     }
                     updateAuthFooter();
+                    return currentUser !== null;
                 } catch(e) {
                     console.error(e);
                     currentUser = null;
                     updateAuthFooter();
+                    return false;
                 }
             }
 
@@ -614,16 +616,30 @@
                 updateAuthFooter();
             }
 
+            async function requireAuth(action, data) {
+                const loggedIn = await checkAuth();
+                if (loggedIn) {
+                    if (action) action(data);
+                } else {
+                    pendingAction = action;
+                    pendingData = data;
+                    openAuthModal('register');
+                }
+            }
+
             function openAuthModal(mode) {
                 const modal = document.getElementById('authModal');
                 const title = document.getElementById('authModalTitle');
                 const pseudoInput = document.getElementById('authPseudo');
                 const emailInput = document.getElementById('authEmail');
                 const passwordInput = document.getElementById('authPassword');
+                const passwordConfirmInput = document.getElementById('authPasswordConfirm');
                 const consentCheck = document.getElementById('authConsent');
+                
                 pseudoInput.value = '';
                 emailInput.value = '';
                 passwordInput.value = '';
+                passwordConfirmInput.value = '';
                 consentCheck.checked = false;
                 
                 if (mode === 'register') {
@@ -632,14 +648,19 @@
                         const pseudo = pseudoInput.value.trim();
                         const email = emailInput.value.trim();
                         const password = passwordInput.value;
+                        const passwordConfirm = passwordConfirmInput.value;
                         const consent = consentCheck.checked;
                         
-                        if (!pseudo || !email || !password) {
+                        if (!pseudo || !email || !password || !passwordConfirm) {
                             alert('Veuillez remplir tous les champs');
                             return;
                         }
+                        if (password !== passwordConfirm) {
+                            alert('Les mots de passe ne correspondent pas');
+                            return;
+                        }
                         if (!consent) {
-                            alert('Vous devez accepter les conditions de protection des données');
+                            alert('Vous devez accepter les conditions');
                             return;
                         }
                         if (password.length < 6) {
@@ -650,13 +671,12 @@
                             const res = await fetch('/api/register', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ pseudo, email, password })
+                                body: JSON.stringify({ pseudo, email, password, password_confirm: passwordConfirm })
                             });
                             const data = await res.json();
                             if (res.ok) {
-                                alert('Inscription réussie ! Vous pouvez vous connecter.');
+                                alert('Inscription réussie ! Un email de confirmation vous a été envoyé. Vérifiez vos spams.');
                                 modal.style.display = 'none';
-                                openAuthModal('login');
                             } else {
                                 alert(data.error || 'Erreur lors de l\'inscription');
                             }
@@ -670,7 +690,7 @@
                         const email = emailInput.value.trim();
                         const password = passwordInput.value;
                         if (!email || !password) {
-                            alert('Veuillez remplir tous les champs');
+                            alert('Email et mot de passe requis');
                             return;
                         }
                         try {
@@ -685,6 +705,11 @@
                                 updateAuthFooter();
                                 modal.style.display = 'none';
                                 alert('Connecté !');
+                                if (pendingAction) {
+                                    pendingAction(pendingData);
+                                    pendingAction = null;
+                                    pendingData = null;
+                                }
                             } else {
                                 alert(data.error || 'Erreur de connexion');
                             }
@@ -704,7 +729,8 @@
                 if (e.target === modal) modal.style.display = 'none';
             });
 
-            // ================= ÉCRAN DE CHARGEMENT =================
+            // ================= FONCTIONS DE L'APPLICATION (EXPERTISE, COURS, etc.) =================
+            // écran de chargement
             const loadingScreen = document.getElementById('loadingScreen');
             const mainContent = document.getElementById('mainContent');
             const progressBar = document.getElementById('loadingProgressBar');
@@ -740,7 +766,7 @@
             }
             requestAnimationFrame(updateProgress);
 
-            // ================= AUDIO (bip) =================
+            // audio (bip)
             let audioCtx = null;
             function initAudio() {
                 if (audioCtx) return;
@@ -765,7 +791,7 @@
                 osc.stop(now + 0.2);
             }
 
-            // ================= ÉTAT GLOBAL EXPERTISE =================
+            // état global expertise
             let currentDomaine = '';
             let currentProgression = [];
             let currentJours = {};
@@ -1050,8 +1076,8 @@
                 finally { refreshBtn.classList.remove('loading'); refreshBtn.innerHTML = '⟳'; }
             }
 
-            document.getElementById('startExpertise').addEventListener('click', () => {
-                initAudio();
+            // Actions protégées
+            function doStartExpertise() {
                 const domaine = document.getElementById('domaine').value.trim();
                 if (!domaine) { alert('Saisissez un domaine'); return; }
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
@@ -1065,98 +1091,9 @@
                 joursParDomaine[domaine] = {};
                 localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
                 chargerFormation(domaine, entry.progression.slice(), {}, 7);
-            });
-
-            document.getElementById('prevDay').addEventListener('click', () => { if (currentPage > 1) { currentPage--; afficherPage(); } });
-            document.getElementById('nextDay').addEventListener('click', () => {
-                if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
-                if (currentPage < currentNbJours) {
-                    if (!currentProgression[currentPage-1] && currentJours[currentPage]) {
-                        alert("Validez d'abord cette journée.");
-                        document.getElementById('progressHeaderMsg')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        return;
-                    }
-                    currentPage++; afficherPage();
-                }
-            });
-            document.getElementById('prevDayTriangle').addEventListener('click', () => { if (currentPage > 1) { currentPage--; afficherPage(); } });
-            document.getElementById('nextDayTriangle').addEventListener('click', () => {
-                if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
-                if (currentPage < currentNbJours) {
-                    if (!currentProgression[currentPage-1] && currentJours[currentPage]) {
-                        alert("Validez d'abord cette journée.");
-                        document.getElementById('progressHeaderMsg')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        return;
-                    }
-                    currentPage++; afficherPage();
-                }
-            });
-            document.getElementById('refreshDizaineBtn').addEventListener('click', regenererDizaine);
-
-            const contentZone = document.getElementById('jourContent');
-            if (contentZone) {
-                contentZone.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
-                contentZone.addEventListener('touchend', (e) => {
-                    if (currentPage === 0) return;
-                    touchEndX = e.changedTouches[0].clientX;
-                    const deltaX = touchEndX - touchStartX;
-                    if (Math.abs(deltaX) < 50) return;
-                    if (deltaX > 0 && currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1, false);
-                    else if (deltaX < 0 && currentDizaineIndex < currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, false);
-                    else if (deltaX < 0 && currentDizaineIndex === currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, true);
-                });
             }
-            document.getElementById('swipeLeftArrow').addEventListener('click', () => { if (currentPage !== 0 && currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1, false); });
-            document.getElementById('swipeRightArrow').addEventListener('click', () => {
-                if (currentPage !== 0) {
-                    if (currentDizaineIndex < currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, false);
-                    else if (currentDizaineIndex === currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, true);
-                }
-            });
 
-            let currentNoteEx = 0;
-            function refreshStars() { document.querySelectorAll('#starsEx .star').forEach((s,i) => { if (i < currentNoteEx) s.textContent='★'; else s.textContent='☆'; }); }
-            document.querySelectorAll('#starsEx .star').forEach(star => { star.addEventListener('click', () => { currentNoteEx = parseInt(star.dataset.value); refreshStars(); }); });
-            document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
-                if (currentNoteEx === 0) { alert('Choisissez une note'); return; }
-                const comment = document.getElementById('feedbackCommentEx').value.trim();
-                try { await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) }); alert('Merci !'); document.getElementById('feedbackBox').style.display = 'none'; } catch(e) { alert('Erreur réseau'); }
-            });
-
-            document.getElementById('homeHeader').addEventListener('click', () => {
-                currentDomaine = '';
-                document.getElementById('jourContainer').style.display = 'none';
-                document.getElementById('startExpertise').style.display = 'block';
-                document.getElementById('domaine').value = '';
-                document.getElementById('jourContent').innerHTML = '';
-                document.getElementById('swipeLeftArrow').style.display = 'none';
-                document.getElementById('swipeRightArrow').style.display = 'none';
-                document.getElementById('jourHeader').style.display = 'none';
-                document.getElementById('refreshDizaineBtn').style.display = 'none';
-                stopAudio();
-                arreterClignotement();
-                document.getElementById('btnExpertise').click();
-            });
-
-            function genererLienPartage() { const base = window.location.href.split('?')[0]; if (currentDomaine) return `${base}?expertise=${encodeURIComponent(currentDomaine)}`; return base; }
-            document.getElementById('shareButton').addEventListener('click', async () => {
-                const url = genererLienPartage();
-                let text = `🧠 Découvrez "${currentDomaine}" sur Chapelet Tazzz Bot !`;
-                if (navigator.share) { try { await navigator.share({ title: 'Chapelet Tazzz Bot', text, url }); } catch(e) {} }
-                else { try { await navigator.clipboard.writeText(text + ' ' + url); alert('Lien copié'); } catch(e) { alert('Erreur'); } }
-            });
-
-            function initFromUrl() {
-                const params = new URLSearchParams(window.location.search);
-                const expertise = params.get('expertise');
-                if (expertise) {
-                    document.getElementById('domaine').value = decodeURIComponent(expertise);
-                    setTimeout(() => { const btn = document.getElementById('startExpertise'); if (btn && btn.style.display !== 'none') btn.click(); }, 500);
-                }
-            }
-            initFromUrl();
-
-            // ================= MODE COURS =================
+            // Gestion des cours (chapitres)
             let chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
             let coursTemp = JSON.parse(localStorage.getItem('cours_temp')) || {};
             for (let i=1;i<=6;i++) if (coursTemp[i]) chapitresSauvegardes[i] = coursTemp[i];
@@ -1310,7 +1247,7 @@
                 document.getElementById('toggleChapitresBtn').innerHTML = tousPlies ? '▶ Déplier tous' : '▼ Plier tous';
             });
 
-            document.getElementById('submitCoursBtn').addEventListener('click', async () => {
+            function doGenerateCours() {
                 const missing = [];
                 for (let i=1;i<=6;i++) if (!chapitresSauvegardes[i]) missing.push(i);
                 if (missing.length) { alert(`Chapitres manquants : ${missing.join(', ')}. Enregistrez-les d'abord.`); return; }
@@ -1335,9 +1272,107 @@
                 chargerFormation(titre, entry.progression.slice(), joursComplets, 6);
                 document.getElementById('btnExpertise').click();
                 statusDiv.style.display = 'none';
+            }
+
+            // Interception des boutons protégés
+            document.getElementById('startExpertise').addEventListener('click', () => {
+                requireAuth(doStartExpertise, null);
+            });
+            document.getElementById('submitCoursBtn').addEventListener('click', () => {
+                requireAuth(doGenerateCours, null);
             });
 
-            // Gestion de l'affichage exclusif entre Expertise et Cours
+            // Autres événements de navigation
+            document.getElementById('prevDay').addEventListener('click', () => { if (currentPage > 1) { currentPage--; afficherPage(); } });
+            document.getElementById('nextDay').addEventListener('click', () => {
+                if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
+                if (currentPage < currentNbJours) {
+                    if (!currentProgression[currentPage-1] && currentJours[currentPage]) {
+                        alert("Validez d'abord cette journée.");
+                        document.getElementById('progressHeaderMsg')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                    currentPage++; afficherPage();
+                }
+            });
+            document.getElementById('prevDayTriangle').addEventListener('click', () => { if (currentPage > 1) { currentPage--; afficherPage(); } });
+            document.getElementById('nextDayTriangle').addEventListener('click', () => {
+                if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
+                if (currentPage < currentNbJours) {
+                    if (!currentProgression[currentPage-1] && currentJours[currentPage]) {
+                        alert("Validez d'abord cette journée.");
+                        document.getElementById('progressHeaderMsg')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                    currentPage++; afficherPage();
+                }
+            });
+            document.getElementById('refreshDizaineBtn').addEventListener('click', regenererDizaine);
+
+            const contentZone = document.getElementById('jourContent');
+            if (contentZone) {
+                contentZone.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+                contentZone.addEventListener('touchend', (e) => {
+                    if (currentPage === 0) return;
+                    touchEndX = e.changedTouches[0].clientX;
+                    const deltaX = touchEndX - touchStartX;
+                    if (Math.abs(deltaX) < 50) return;
+                    if (deltaX > 0 && currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1, false);
+                    else if (deltaX < 0 && currentDizaineIndex < currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, false);
+                    else if (deltaX < 0 && currentDizaineIndex === currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, true);
+                });
+            }
+            document.getElementById('swipeLeftArrow').addEventListener('click', () => { if (currentPage !== 0 && currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1, false); });
+            document.getElementById('swipeRightArrow').addEventListener('click', () => {
+                if (currentPage !== 0) {
+                    if (currentDizaineIndex < currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, false);
+                    else if (currentDizaineIndex === currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, true);
+                }
+            });
+
+            let currentNoteEx = 0;
+            function refreshStars() { document.querySelectorAll('#starsEx .star').forEach((s,i) => { if (i < currentNoteEx) s.textContent='★'; else s.textContent='☆'; }); }
+            document.querySelectorAll('#starsEx .star').forEach(star => { star.addEventListener('click', () => { currentNoteEx = parseInt(star.dataset.value); refreshStars(); }); });
+            document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
+                if (currentNoteEx === 0) { alert('Choisissez une note'); return; }
+                const comment = document.getElementById('feedbackCommentEx').value.trim();
+                try { await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) }); alert('Merci !'); document.getElementById('feedbackBox').style.display = 'none'; } catch(e) { alert('Erreur réseau'); }
+            });
+
+            document.getElementById('homeHeader').addEventListener('click', () => {
+                currentDomaine = '';
+                document.getElementById('jourContainer').style.display = 'none';
+                document.getElementById('startExpertise').style.display = 'block';
+                document.getElementById('domaine').value = '';
+                document.getElementById('jourContent').innerHTML = '';
+                document.getElementById('swipeLeftArrow').style.display = 'none';
+                document.getElementById('swipeRightArrow').style.display = 'none';
+                document.getElementById('jourHeader').style.display = 'none';
+                document.getElementById('refreshDizaineBtn').style.display = 'none';
+                stopAudio();
+                arreterClignotement();
+                document.getElementById('btnExpertise').click();
+            });
+
+            function genererLienPartage() { const base = window.location.href.split('?')[0]; if (currentDomaine) return `${base}?expertise=${encodeURIComponent(currentDomaine)}`; return base; }
+            document.getElementById('shareButton').addEventListener('click', async () => {
+                const url = genererLienPartage();
+                let text = `🧠 Découvrez "${currentDomaine}" sur Chapelet Tazzz Bot !`;
+                if (navigator.share) { try { await navigator.share({ title: 'Chapelet Tazzz Bot', text, url }); } catch(e) {} }
+                else { try { await navigator.clipboard.writeText(text + ' ' + url); alert('Lien copié'); } catch(e) { alert('Erreur'); } }
+            });
+
+            function initFromUrl() {
+                const params = new URLSearchParams(window.location.search);
+                const expertise = params.get('expertise');
+                if (expertise) {
+                    document.getElementById('domaine').value = decodeURIComponent(expertise);
+                    setTimeout(() => { const btn = document.getElementById('startExpertise'); if (btn && btn.style.display !== 'none') btn.click(); }, 500);
+                }
+            }
+            initFromUrl();
+
+            // Gestion des onglets
             const btnExpertise = document.getElementById('btnExpertise');
             const btnCoursToggle = document.getElementById('btnCoursToggle');
             const expertisePanel = document.getElementById('expertisePanel');
@@ -1361,11 +1396,10 @@
 
             btnExpertise.addEventListener('click', showExpertise);
             btnCoursToggle.addEventListener('click', showCours);
-
             showExpertise();
             createChapitresUI();
 
-            // ================= HISTORIQUE ACCORDÉON =================
+            // Historique accordéon
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
             function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
@@ -1442,7 +1476,7 @@
             document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
             window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
 
-            // ================= AUDIO VOCAL (TTS) =================
+            // Audio vocal (TTS)
             let frenchVoice = null;
             function initFrenchVoice() { if (!window.speechSynthesis) return; const voices = window.speechSynthesis.getVoices(); frenchVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Thomas') || v.name.includes('Amélie'))); if (!frenchVoice) frenchVoice = voices.find(v => v.lang === 'fr-FR'); }
             if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = initFrenchVoice; initFrenchVoice(); }
@@ -1490,7 +1524,6 @@
             stopBtn.addEventListener('click', stopAudio);
             seekSlider.addEventListener('input', (e) => { if (currentAudioChunks.length) { const newIdx = parseInt(e.target.value); if (newIdx !== currentChunkIdx) { pauseAudio(); speakChunk(newIdx); } } });
 
-            // ================= BARRE DE PROGRESSION =================
             let currentExpertiseInterval = null;
             function startExpertiseProgressBar() {
                 const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
