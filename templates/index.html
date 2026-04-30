@@ -48,8 +48,25 @@
         }
         h1 { text-align: center; font-size: 1.5rem; margin-bottom: 0px; letter-spacing: 1px; }
         .subtitle { text-align: center; font-size: 0.9rem; opacity: 0.8; margin-bottom: 30px; margin-top: 5px; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-        .history-link, .home-header { background: #2c3e4e; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; white-space: nowrap; border: none; color: white; }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .history-link, .home-header {
+            background: #2c3e4e;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+            border: none;
+            color: white;
+        }
         .history-link:hover, .home-header:hover { background: #e67e22; }
         .mode-selector { display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
         .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
@@ -60,9 +77,41 @@
         input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 14px; border: none; background: #f0f0f0; font-size: 1rem; }
         button { background: #e67e22; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
         button:hover { background: #d35400; transform: scale(0.98); }
-        .result { background: #0b1620; border-radius: 20px; padding: 20px; margin-top: 20px; white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; line-height: 1.5; min-height: 400px; max-height: 550px; overflow-y: auto; border-left: 5px solid #e67e22; position: relative; touch-action: pan-y pinch-zoom; }
+        .result {
+            background: #0b1620;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            min-height: 400px;
+            max-height: 550px;
+            overflow-y: auto;
+            border-left: 5px solid #e67e22;
+            position: relative;
+            touch-action: pan-y pinch-zoom;
+        }
         .result p { margin-bottom: 1em; }
-        .refresh-dizaine { position: absolute; bottom: 15px; right: 15px; background: rgba(46,204,113,0.2); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; backdrop-filter: blur(4px); z-index: 25; color: #2ecc71; font-size: 1.5rem; border: 1px solid rgba(46,204,113,0.5); }
+        .refresh-dizaine {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(46,204,113,0.2);
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            backdrop-filter: blur(4px);
+            z-index: 25;
+            color: #2ecc71;
+            font-size: 1.5rem;
+            border: 1px solid rgba(46,204,113,0.5);
+        }
         .refresh-dizaine:hover { background: rgba(46,204,113,0.6); transform: scale(1.05); color: white; }
         .refresh-dizaine.loading { animation: spin 1s linear infinite; pointer-events: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -269,15 +318,8 @@
             <h3 id="authModalTitle">Inscription</h3>
             <input type="text" id="authPseudo" placeholder="Pseudo">
             <input type="email" id="authEmail" placeholder="Email">
-            <div class="password-wrapper">
-                <input type="password" id="authPassword" placeholder="Mot de passe (min. 6 caractères)">
-                <button type="button" class="toggle-password" data-target="authPassword">👁️</button>
-            </div>
-            <div class="password-wrapper">
-                <input type="password" id="authPasswordConfirm" placeholder="Confirmer le mot de passe">
-                <button type="button" class="toggle-password" data-target="authPasswordConfirm">👁️</button>
-            </div>
-            <div class="checkbox-group">
+            <div id="authPasswordContainer"></div>
+            <div class="checkbox-group" id="authConsentGroup">
                 <input type="checkbox" id="authConsent">
                 <label>J'accepte la collecte et le stockage de mes données</label>
             </div>
@@ -288,22 +330,26 @@
 
     <script>
         (function() {
-            // ================= GESTION DES YEUX POUR MOTS DE PASSE =================
-            document.querySelectorAll('.toggle-password').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const targetId = this.getAttribute('data-target');
-                    const input = document.getElementById(targetId);
-                    if (input.type === 'password') {
-                        input.type = 'text';
-                        this.textContent = '🙈';
-                    } else {
-                        input.type = 'password';
-                        this.textContent = '👁️';
-                    }
+            // ================= FONCTION POUR ATTACHER LES YEUX =================
+            function attachPasswordToggle(container) {
+                container.querySelectorAll('.toggle-password').forEach(btn => {
+                    btn.removeEventListener('click', toggleHandler);
+                    btn.addEventListener('click', toggleHandler);
                 });
-            });
+            }
+            function toggleHandler(e) {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    this.textContent = '🙈';
+                } else {
+                    input.type = 'password';
+                    this.textContent = '👁️';
+                }
+            }
 
-            // ================= AUTHENTIFICATION OBLIGATOIRE =================
+            // ================= AUTHENTIFICATION =================
             let currentUser = null;
             let pendingAction = null;
             let pendingData = null;
@@ -330,20 +376,10 @@
             function updateAuthFooter() {
                 const footer = document.getElementById('authFooter');
                 if (currentUser) {
-                    footer.innerHTML = `
-                        <div class="user-info-footer">
-                            <span>👤 ${currentUser.pseudo}</span>
-                            <span class="logout-btn-small" id="logoutBtnFooter">Déconnexion</span>
-                        </div>
-                    `;
+                    footer.innerHTML = `<div class="user-info-footer"><span>👤 ${currentUser.pseudo}</span><span class="logout-btn-small" id="logoutBtnFooter">Déconnexion</span></div>`;
                     document.getElementById('logoutBtnFooter')?.addEventListener('click', logout);
                 } else {
-                    footer.innerHTML = `
-                        <div class="auth-buttons">
-                            <button class="auth-btn-small" id="registerBtnFooter">📝 S'inscrire</button>
-                            <button class="auth-btn-small" id="loginBtnFooter">🔑 Connexion</button>
-                        </div>
-                    `;
+                    footer.innerHTML = `<div class="auth-buttons"><button class="auth-btn-small" id="registerBtnFooter">📝 S'inscrire</button><button class="auth-btn-small" id="loginBtnFooter">🔑 Connexion</button></div>`;
                     document.getElementById('registerBtnFooter')?.addEventListener('click', () => openAuthModal('register'));
                     document.getElementById('loginBtnFooter')?.addEventListener('click', () => openAuthModal('login'));
                 }
@@ -371,22 +407,34 @@
                 const title = document.getElementById('authModalTitle');
                 const pseudoInput = document.getElementById('authPseudo');
                 const emailInput = document.getElementById('authEmail');
-                const passwordInput = document.getElementById('authPassword');
-                const passwordConfirmInput = document.getElementById('authPasswordConfirm');
-                const consentCheck = document.getElementById('authConsent');
+                const container = document.getElementById('authPasswordContainer');
+                const consentGroup = document.getElementById('authConsentGroup');
+                
                 pseudoInput.value = '';
                 emailInput.value = '';
-                passwordInput.value = '';
-                passwordConfirmInput.value = '';
-                consentCheck.checked = false;
+                
                 if (mode === 'register') {
                     title.innerText = 'Inscription';
+                    container.innerHTML = `
+                        <div class="password-wrapper">
+                            <input type="password" id="authPassword" placeholder="Mot de passe (min. 6 caractères)">
+                            <button type="button" class="toggle-password" data-target="authPassword">👁️</button>
+                        </div>
+                        <div class="password-wrapper">
+                            <input type="password" id="authPasswordConfirm" placeholder="Confirmer le mot de passe">
+                            <button type="button" class="toggle-password" data-target="authPasswordConfirm">👁️</button>
+                        </div>
+                    `;
+                    consentGroup.style.display = 'flex';
+                    attachPasswordToggle(container);
+                    
                     document.getElementById('authSubmitBtn').onclick = async () => {
                         const pseudo = pseudoInput.value.trim();
                         const email = emailInput.value.trim();
-                        const password = passwordInput.value;
-                        const passwordConfirm = passwordConfirmInput.value;
-                        const consent = consentCheck.checked;
+                        const password = document.getElementById('authPassword').value;
+                        const passwordConfirm = document.getElementById('authPasswordConfirm').value;
+                        const consent = document.getElementById('authConsent').checked;
+                        
                         if (!pseudo || !email || !password || !passwordConfirm) {
                             alert('Veuillez remplir tous les champs');
                             return;
@@ -412,7 +460,6 @@
                             const data = await res.json();
                             if (res.ok) {
                                 if (data.confirmation_link) {
-                                    // Si le backend renvoie le lien (mode debug), on l'affiche
                                     alert(`Inscription réussie ! Confirmez votre email en cliquant sur le lien : ${data.confirmation_link}`);
                                 } else {
                                     alert('Inscription réussie ! Un email de confirmation vous a été envoyé. Vérifiez vos spams.');
@@ -422,15 +469,24 @@
                                 alert(data.error || 'Erreur lors de l\'inscription');
                             }
                         } catch (err) {
-                            console.error('Erreur réseau:', err);
-                            alert('Erreur réseau : impossible de contacter le serveur. Vérifiez votre connexion ou réessayez plus tard.');
+                            console.error(err);
+                            alert('Erreur réseau : impossible de contacter le serveur.');
                         }
                     };
-                } else {
+                } else {  // mode === 'login'
                     title.innerText = 'Connexion';
+                    container.innerHTML = `
+                        <div class="password-wrapper">
+                            <input type="password" id="authPassword" placeholder="Mot de passe">
+                            <button type="button" class="toggle-password" data-target="authPassword">👁️</button>
+                        </div>
+                    `;
+                    consentGroup.style.display = 'none';
+                    attachPasswordToggle(container);
+                    
                     document.getElementById('authSubmitBtn').onclick = async () => {
                         const email = emailInput.value.trim();
-                        const password = passwordInput.value;
+                        const password = document.getElementById('authPassword').value;
                         if (!email || !password) {
                             alert('Email et mot de passe requis');
                             return;
@@ -456,8 +512,8 @@
                                 alert(data.error || 'Erreur de connexion');
                             }
                         } catch (err) {
-                            console.error('Erreur réseau:', err);
-                            alert('Erreur réseau : impossible de contacter le serveur.');
+                            console.error(err);
+                            alert('Erreur réseau');
                         }
                     };
                 }
@@ -508,7 +564,7 @@
             }
             requestAnimationFrame(updateProgress);
 
-            // ================= AUDIO (BIP) =================
+            // ================= AUDIO =================
             let audioCtx = null;
             function initAudio() {
                 if (audioCtx) return;
@@ -830,7 +886,7 @@
                 chargerFormation(domaine, entry.progression.slice(), {}, 7);
             }
 
-            // Gestion des cours
+            // ================= GESTION DES COURS =================
             let chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
             let coursTemp = JSON.parse(localStorage.getItem('cours_temp')) || {};
             for (let i=1;i<=6;i++) if (coursTemp[i]) chapitresSauvegardes[i] = coursTemp[i];
@@ -1129,7 +1185,7 @@
             showExpertise();
             createChapitresUI();
 
-            // Historique
+            // ================= HISTORIQUE =================
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
             function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
@@ -1206,7 +1262,7 @@
             document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
             window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
 
-            // Audio vocal (TTS)
+            // ================= AUDIO VOCAL =================
             let frenchVoice = null;
             function initFrenchVoice() { if (!window.speechSynthesis) return; const voices = window.speechSynthesis.getVoices(); frenchVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Thomas') || v.name.includes('Amélie'))); if (!frenchVoice) frenchVoice = voices.find(v => v.lang === 'fr-FR'); }
             if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = initFrenchVoice; initFrenchVoice(); }
@@ -1254,6 +1310,7 @@
             stopBtn.addEventListener('click', stopAudio);
             seekSlider.addEventListener('input', (e) => { if (currentAudioChunks.length) { const newIdx = parseInt(e.target.value); if (newIdx !== currentChunkIdx) { pauseAudio(); speakChunk(newIdx); } } });
 
+            // ================= BARRE DE PROGRESSION =================
             let currentExpertiseInterval = null;
             function startExpertiseProgressBar() {
                 const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
