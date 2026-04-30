@@ -67,9 +67,9 @@ Puis, EXACTEMENT 5 DIZAINES. Chaque dizaine doit suivre ce format (concis) :
 
 **DIZAINE X : CONCEPT : [nom du concept]**
 
-A) **Synthèse générale Méditation à lire en tenant un gros grain du chapelet** : Exactement 8 phrases légèrement denses (définition, rôle, exemple court).
+A) **Synthèse générale Méditation à lire en tenant un gros grain du chapelet** : Exactement 8 phrases (définition, rôle, exemple court).
 B) A la place du **Notre Père**, écrire : RÉPÈTE 3 fois sans égrener le chapelet : une question centrale.
-C) A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois en égrenant 10 petits grains: Exactement 6 phrases légèrement denses numérotées.
+C) A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois en égrenant 10 petits grains: 6 phrases numérotées.
 D) A la place du **Gloire au Père**, écrire : RÉPÈTE 3 fois sans égrener: "Le concept [nom] est consolidé." 
 
 (même structure pour DIZAINE 2 à 5)
