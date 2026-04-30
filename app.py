@@ -74,7 +74,7 @@ D) A la place du **Gloire au Père**, écrire : RÉPÈTE 3 fois sans égrener: "
 
 (même structure pour DIZAINE 2 à 5)
 
-Soigne la qualité. Ne dépasse pas 2800 tokens au total.
+Soigne la qualité. Ne dépasse pas 2500 tokens au total.
 """
 
 def generer_jour_expertise(domaine, jour_num):
