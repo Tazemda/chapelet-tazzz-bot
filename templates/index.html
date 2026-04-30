@@ -52,12 +52,12 @@
         .history-link, .home-header { background: #2c3e4e; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
         .history-link:hover, .home-header:hover { background: #e67e22; }
         .mode-selector { display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
-        .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.2s; }
+        .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
-        .medal-counter { background: transparent; color: #f1c40f; font-weight: bold; padding: 0 4px; margin-left: 6px; font-size: 0.8rem; display: inline-block; text-shadow: 0 0 2px #000; cursor: pointer; }
-        .medal-counter:hover { text-decoration: underline; transform: scale(1.05); }
-        .mode-panel { display: none; animation: fadeIn 0.3s ease; }
-        .mode-panel.active-panel { display: block; }
+        .mode-panel { display: block; animation: fadeIn 0.3s ease; }
+        .cours-panel { margin-top: 15px; }
+        .chapitres-container { display: block; }
+        .chapitres-container.collapsed { display: none; }
         input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 14px; border: none; background: #f0f0f0; font-size: 1rem; }
         button { background: #e67e22; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
         button:hover { background: #d35400; transform: scale(0.98); }
@@ -299,7 +299,6 @@
             padding: 15px;
             margin-bottom: 20px;
             border-left: 4px solid #e67e22;
-            transition: all 0.2s;
         }
         .chapitre-header {
             display: flex;
@@ -388,11 +387,11 @@
             </div>
             <div class="mode-selector">
                 <button id="btnExpertise" class="mode-btn active">📚 Expertise (domaine libre)</button>
-                <button id="btnCours" class="mode-btn">📘 Mes cours en 6 jours ▶</button>
+                <button id="btnCoursToggle" class="mode-btn">📘 Mes cours en 6 jours ▼</button>
             </div>
 
-            <!-- Panneau Expertise -->
-            <div id="expertisePanel" class="mode-panel active-panel">
+            <!-- Panneau Expertise classique -->
+            <div id="expertisePanel" class="mode-panel">
                 <p>🔬 Domaine à maîtriser :</p>
                 <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, Prise de parole...">
                 <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
@@ -434,17 +433,19 @@
                 </div>
             </div>
 
-            <!-- Panneau Cours -->
-            <div id="coursPanel" class="mode-panel">
+            <!-- Panneau Cours (6 chapitres) avec bouton de pliage intégré -->
+            <div id="coursPanel" class="cours-panel" style="display: none;">
                 <div class="warning-limit">
                     📚 Saisissez vos 6 chapitres (copier-coller puis enregistrer chaque chapitre).<br>
-                    ⚠️ Attention ! Pas plus de 8000 caractères par chapitre (vous pouvez vérifier le nombre de caractères sur un fichier Word).
+                    ⚠️ Attention ! Pas plus de 8000 caractères par chapitre (vérifiable sur Word).
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <button id="toggleChapitresBtn" class="btn-toggle-chapitres">▼ Plier tous les chapitres</button>
-                    <button id="submitCoursBtn" style="background: #8a2be2;">✨ GÉNÉRER LE PROGRAMME (6 JOURS) ✨</button>
                 </div>
                 <div id="chapitresList" style="margin-top: 15px;"></div>
+                <div style="display: flex; justify-content: center; margin-top: 20px;">
+                    <button id="submitCoursBtn" style="background: #8a2be2;">✨ GÉNÉRER LE PROGRAMME (6 JOURS) ✨</button>
+                </div>
                 <div id="coursResult" class="result" style="display:none;"></div>
             </div>
 
@@ -473,7 +474,7 @@
     </div>
 
     <script>
-        (function(){
+        (function() {
             // ---------- ÉCRAN DE CHARGEMENT ----------
             const loadingScreen = document.getElementById('loadingScreen');
             const mainContent = document.getElementById('mainContent');
@@ -573,12 +574,12 @@
                 const regex = /(?:DIZAINE\s+\d+\s*[–-]?\s*\**\s*)([^]*?)(?=(?:DIZAINE\s+\d+|$))/gi;
                 let matches = [...contenuBrut.matchAll(regex)];
                 if (matches.length >= 5) return matches.slice(0,5).map(m => m[1].trim());
-                let paragraphs = contenuBrut.split(/\n\s*\n/);
-                if (paragraphs.length >= 5) return paragraphs.slice(0,5);
+                let ps = contenuBrut.split(/\n\s*\n/);
+                if (ps.length >= 5) return ps.slice(0,5);
                 return [contenuBrut];
             }
 
-            function afficherDizaine(index, afficherMessageDepassement = false) {
+            function afficherDizaine(index, afficherMessage = false) {
                 const contentDiv = document.getElementById('jourContent');
                 const leftArrow = document.getElementById('swipeLeftArrow');
                 const rightArrow = document.getElementById('swipeRightArrow');
@@ -589,22 +590,20 @@
                 }
                 if (index < 0) index = 0;
                 if (index >= currentDizaines.length) {
-                    if (afficherMessageDepassement && currentPage >= 1 && !currentProgression[currentPage-1]) {
+                    if (afficherMessage && currentPage >= 1 && !currentProgression[currentPage-1]) {
                         const msgDiv = document.getElementById('progressHeaderMsg');
                         if (msgDiv) { msgDiv.style.display = 'block'; demarrerClignotement(); }
-                        alert("📿 Vous avez terminé les 5 dizaines ! N'oubliez pas de valider cette journée en cliquant sur la case qui clignote.");
+                        alert("📿 Vous avez terminé les 5 dizaines ! N'oubliez pas de valider cette journée.");
                     }
                     return;
                 }
                 currentDizaineIndex = index;
                 const numero = currentDizaineIndex + 1;
                 const titre = `<div class="dizaine-title">📖 DIZAINE ${numero} / 5</div>`;
-                const contenu = currentDizaines[currentDizaineIndex];
-                contentDiv.innerHTML = titre + contenu.replace(/\n/g, '<br>');
+                contentDiv.innerHTML = titre + currentDizaines[currentDizaineIndex].replace(/\n/g, '<br>');
                 leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
                 rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
                 contentDiv.scrollTop = 0;
-                // Gérer clignotement : seulement à la 5e dizaine si non validé
                 if (currentPage > 0 && currentDizaineIndex === 4 && !currentProgression[currentPage-1]) {
                     demarrerClignotement();
                 } else {
@@ -656,21 +655,23 @@
                     currentDizaineIndex = 0;
                     afficherPage();
                 } else if (jourNum >= 1 && jourNum <= currentNbJours && !currentJours[jourNum]) {
-                    alert(`Le contenu du jour ${jourNum} n'a pas été trouvé. Utilisez la navigation “Suivant” pour le régénérer.`);
+                    alert(`Jour ${jourNum} non trouvé. Générez-le d'abord.`);
                 }
             }
 
             function cocherSegment(idx) {
-                for (let i = 0; i < idx; i++) if (!currentProgression[i]) { alert(`Validez d'abord le jour ${i+1}.`); return; }
+                for (let i=0; i<idx; i++) if (!currentProgression[i]) { alert(`Validez d'abord le jour ${i+1}.`); return; }
                 if (!currentProgression[idx]) {
                     currentProgression[idx] = true;
                     sauvegarderFormationCourante();
                     afficherBarreSegments();
                     if (idx+1 === currentNbJours) {
-                        alert(`🎉 Félicitations ! Vous avez achevé votre formation. Badge débloqué.`);
+                        alert(`🎉 Félicitations ! Formation achevée. Badge débloqué.`);
                         let badges = JSON.parse(localStorage.getItem('badges')) || [];
-                        const expertBadge = `🏅 Expert en ${currentDomaine}`;
-                        if (!badges.includes(expertBadge)) { badges.push(expertBadge); localStorage.setItem('badges', JSON.stringify(badges)); updateBadgeCounters(); }
+                        const badge = `🏅 Expert en ${currentDomaine}`;
+                        if (!badges.includes(badge)) badges.push(badge);
+                        localStorage.setItem('badges', JSON.stringify(badges));
+                        updateBadgeCounters();
                         let historique = JSON.parse(localStorage.getItem('historique')) || [];
                         let entry = historique.find(h => h.domaine === currentDomaine);
                         if (entry) entry.dateFin = new Date().toISOString();
@@ -700,12 +701,12 @@
                 document.getElementById('startExpertise').style.display = 'none';
                 afficherBarreSegments();
                 setTimeout(() => {
-                    const introText = document.getElementById('jourContent').innerText;
-                    if (introText) playAudioChunks(introText, true);
+                    const intro = document.getElementById('jourContent').innerText;
+                    if (intro) playAudioChunks(intro, true);
                 }, 300);
             }
 
-            const welcomeHTML = `<div class="welcome-text"><strong>Bonjour ! Bienvenue dans le Chapelet Tazzz Bot.</strong><br><br><strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>- Procurez vous un vrai chapelet pour égrener durant vos lectures.<br>- Glissez (swipe) à gauche/droite pour feuilleter les 5 dizaines d’un jour.<br>- Une fois la 5e dizaine lue, un message vous invitera à valider la journée.<br>- N'oubliez pas de valider votre journée dans la barre de progression (case clignotante).<br>- Cliquez sur <strong>“Suivant”</strong> pour commencer le <strong>Jour 1</strong>.</div>`;
+            const welcomeHTML = `<div class="welcome-text"><strong>Bonjour ! Bienvenue dans le Chapelet Tazzz Bot.</strong><br><br><strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>- Procurez-vous un vrai chapelet.<br>- Glissez à gauche/droite pour feuilleter les 5 dizaines d’un jour.<br>- À la 5e dizaine, validez en cliquant sur la case clignotante.<br>- Cliquez sur <strong>“Suivant”</strong> pour passer au jour suivant.</div>`;
 
             function afficherPage() {
                 const contentDiv = document.getElementById('jourContent');
@@ -731,7 +732,7 @@
                     welcomeBtn.style.display = 'flex'; dayAudioBtn.style.display = 'none';
                     leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
                     refreshBtn.style.display = 'none';
-                    welcomeBtn.onclick = () => { const introText = document.getElementById('jourContent').innerText; if (introText) playAudioChunks(introText, true); };
+                    welcomeBtn.onclick = () => { const intro = document.getElementById('jourContent').innerText; if (intro) playAudioChunks(intro, true); };
                 } else {
                     jourHeader.style.display = 'flex';
                     jourTitleSpan.innerText = `📆 JOUR ${currentPage}`;
@@ -745,7 +746,7 @@
                         nextBtn.disabled = (currentPage === currentNbJours);
                         feedbackBox.style.display = 'block';
                         dayAudioBtn.style.display = 'flex';
-                        dayAudioBtn.onclick = () => { const fullText = currentJours[currentPage]; if (fullText) playAudioChunks(fullText, true); };
+                        dayAudioBtn.onclick = () => { const full = currentJours[currentPage]; if (full) playAudioChunks(full, true); };
                         afficherBarreSegments();
                         leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
                         rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
@@ -779,7 +780,7 @@
                 .catch(err => {
                     console.error(err);
                     stopExpertiseProgressBar(currentExpertiseInterval, false);
-                    currentJours[jourNum] = `<strong>⚠️ Erreur de génération</strong><br>Contenu non disponible. Vérifiez votre connexion ou réessayez.`;
+                    currentJours[jourNum] = `<strong>⚠️ Erreur: ${err.message}</strong>`;
                     sauvegarderFormationCourante();
                     afficherPage();
                     afficherBarreSegments();
@@ -806,7 +807,7 @@
                         currentDizaines = nouvellesDizaines;
                         if (currentDizaineIndex >= currentDizaines.length) currentDizaineIndex = currentDizaines.length - 1;
                         afficherDizaine(currentDizaineIndex);
-                    } else { afficherPage(); }
+                    } else afficherPage();
                     alert("✓ Dizaine régénérée.");
                 } catch (err) { alert("Erreur: " + err.message); }
                 finally { refreshBtn.classList.remove('loading'); refreshBtn.innerHTML = '⟳'; }
@@ -815,7 +816,7 @@
             document.getElementById('startExpertise').addEventListener('click', () => {
                 initAudio();
                 const domaine = document.getElementById('domaine').value.trim();
-                if (!domaine) { alert('Domaine requis'); return; }
+                if (!domaine) { alert('Saisissez un domaine'); return; }
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 let entry = historique.find(h => h.domaine === domaine);
                 if (!entry) {
@@ -829,13 +830,12 @@
                 chargerFormation(domaine, entry.progression.slice(), {}, 7);
             });
 
-            document.getElementById('prevDay').addEventListener('click', () => { if (currentPage > 0) { if (currentPage > 1) { currentPage--; afficherPage(); } } });
+            document.getElementById('prevDay').addEventListener('click', () => { if (currentPage > 1) { currentPage--; afficherPage(); } });
             document.getElementById('nextDay').addEventListener('click', () => {
                 if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
                 if (currentPage < currentNbJours) {
-                    const jourIdx = currentPage - 1;
-                    if (!currentProgression[jourIdx] && currentJours[currentPage]) {
-                        alert("Veuillez d'abord valider votre journée.");
+                    if (!currentProgression[currentPage-1] && currentJours[currentPage]) {
+                        alert("Validez d'abord cette journée.");
                         document.getElementById('progressHeaderMsg')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         return;
                     }
@@ -846,9 +846,8 @@
             document.getElementById('nextDayTriangle').addEventListener('click', () => {
                 if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
                 if (currentPage < currentNbJours) {
-                    const jourIdx = currentPage - 1;
-                    if (!currentProgression[jourIdx] && currentJours[currentPage]) {
-                        alert("Veuillez d'abord valider votre journée.");
+                    if (!currentProgression[currentPage-1] && currentJours[currentPage]) {
+                        alert("Validez d'abord cette journée.");
                         document.getElementById('progressHeaderMsg')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         return;
                     }
@@ -879,10 +878,10 @@
             });
 
             let currentNoteEx = 0;
-            function refreshStars() { document.querySelectorAll('#starsEx .star').forEach((s,idx) => { if (idx < currentNoteEx) { s.textContent='★'; s.classList.add('selected'); } else { s.textContent='☆'; s.classList.remove('selected'); } }); }
-            document.querySelectorAll('#starsEx .star').forEach(star => { star.addEventListener('click', () => { currentNoteEx = parseInt(star.getAttribute('data-value')); refreshStars(); }); });
+            function refreshStars() { document.querySelectorAll('#starsEx .star').forEach((s,i) => { if (i < currentNoteEx) s.textContent='★'; else s.textContent='☆'; }); }
+            document.querySelectorAll('#starsEx .star').forEach(star => { star.addEventListener('click', () => { currentNoteEx = parseInt(star.dataset.value); refreshStars(); }); });
             document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
-                if (currentNoteEx === 0) { alert('Sélectionnez une note'); return; }
+                if (currentNoteEx === 0) { alert('Choisissez une note'); return; }
                 const comment = document.getElementById('feedbackCommentEx').value.trim();
                 try { await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) }); alert('Merci !'); document.getElementById('feedbackBox').style.display = 'none'; } catch(e) { alert('Erreur réseau'); }
             });
@@ -902,159 +901,128 @@
                 document.getElementById('btnExpertise').click();
             });
 
-            function genererLienPartage() { const baseUrl = window.location.href.split('?')[0]; if (currentDomaine) return `${baseUrl}?expertise=${encodeURIComponent(currentDomaine)}`; return baseUrl; }
+            function genererLienPartage() { const base = window.location.href.split('?')[0]; if (currentDomaine) return `${base}?expertise=${encodeURIComponent(currentDomaine)}`; return base; }
             document.getElementById('shareButton').addEventListener('click', async () => {
-                const shareUrl = genererLienPartage();
-                let shareText = `🧠 Découvrez cette expertise "${currentDomaine}" sur Chapelet Tazzz Bot ! Aucune donnée personnelle n'est partagée.`;
-                if (navigator.share) { try { await navigator.share({ title: 'Chapelet Tazzz Bot', text: shareText, url: shareUrl }); } catch(e) {} }
-                else { try { await navigator.clipboard.writeText(shareText + ' ' + shareUrl); alert('Lien copié'); } catch(e) { alert('Impossible de partager'); } }
+                const url = genererLienPartage();
+                let text = `🧠 Découvrez "${currentDomaine}" sur Chapelet Tazzz Bot !`;
+                if (navigator.share) { try { await navigator.share({ title: 'Chapelet Tazzz Bot', text, url }); } catch(e) {} }
+                else { try { await navigator.clipboard.writeText(text + ' ' + url); alert('Lien copié'); } catch(e) { alert('Erreur'); } }
             });
 
             function initFromUrl() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const expertiseParam = urlParams.get('expertise');
-                if (expertiseParam) {
-                    const domaine = decodeURIComponent(expertiseParam);
-                    document.getElementById('domaine').value = domaine;
-                    setTimeout(() => { const startBtn = document.getElementById('startExpertise'); if (startBtn && startBtn.style.display !== 'none') startBtn.click(); }, 500);
+                const params = new URLSearchParams(window.location.search);
+                const expertise = params.get('expertise');
+                if (expertise) {
+                    document.getElementById('domaine').value = decodeURIComponent(expertise);
+                    setTimeout(() => { const btn = document.getElementById('startExpertise'); if (btn && btn.style.display !== 'none') btn.click(); }, 500);
                 }
             }
             initFromUrl();
 
-            // ================= MODE COURS =================
-            let chapitresSauvegardes = {1: null, 2: null, 3: null, 4: null, 5: null, 6: null};
+            // ================= MODE COURS (6 CHAPITRES) =================
+            let chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
             let coursTemp = JSON.parse(localStorage.getItem('cours_temp')) || {};
-            for (let i=1; i<=6; i++) if (coursTemp[i]) chapitresSauvegardes[i] = coursTemp[i];
+            for (let i=1;i<=6;i++) if (coursTemp[i]) chapitresSauvegardes[i] = coursTemp[i];
 
             function createChapitresUI() {
                 const container = document.getElementById('chapitresList');
                 container.innerHTML = '';
-                for (let i = 1; i <= 6; i++) {
+                for (let i=1;i<=6;i++) {
+                    const isCollapsed = localStorage.getItem(`chapitre-${i}-collapsed`) === 'true';
                     const card = document.createElement('div');
                     card.className = 'chapitre-card';
                     card.id = `chapitre-card-${i}`;
-                    const isCollapsed = localStorage.getItem(`chapitre-${i}-collapsed`) === 'true';
                     card.innerHTML = `
                         <div class="chapitre-header">
                             <button class="toggle-chapitre" data-chapitre="${i}">${isCollapsed ? '▶' : '▼'}</button>
                             <strong>Chapitre ${i}</strong>
                         </div>
                         <div class="chapitre-body ${isCollapsed ? 'collapsed' : ''}">
-                            <textarea rows="6" class="chapitre-text" data-chapitre="${i}" placeholder="Collez ici le texte du chapitre..."></textarea>
-                            <button class="save-chapitre-btn" data-chapitre="${i}">📎 Enregistrer le chapitre</button>
+                            <textarea rows="6" class="chapitre-text" data-chapitre="${i}" placeholder="Collez le texte du chapitre..."></textarea>
+                            <button class="save-chapitre-btn" data-chapitre="${i}">📎 Enregistrer</button>
                             <button class="refresh-chapitre-btn" data-chapitre="${i}">⟳</button>
                             <div class="chapitre-status" id="status-chapitre-${i}"></div>
                         </div>
                     `;
                     container.appendChild(card);
                     if (chapitresSauvegardes[i]) {
-                        const textarea = card.querySelector(`.chapitre-text[data-chapitre="${i}"]`);
-                        textarea.value = '[Chapitre déjà enregistré]';
-                        const statusDiv = document.getElementById(`status-chapitre-${i}`);
-                        statusDiv.innerHTML = '✅ Chapitre enregistré avec succès.';
+                        card.querySelector('.chapitre-text').value = '[Chapitre déjà enregistré]';
+                        document.getElementById(`status-chapitre-${i}`).innerHTML = '✅ Enregistré.';
                     }
                 }
-                // Attacher les événements
                 document.querySelectorAll('.save-chapitre-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
-                        const num = parseInt(btn.getAttribute('data-chapitre'));
-                        const cardDiv = document.getElementById(`chapitre-card-${num}`);
-                        const textarea = cardDiv.querySelector(`.chapitre-text[data-chapitre="${num}"]`);
-                        const texte = textarea.value.trim();
-                        if (!texte) {
-                            alert(`Veuillez coller le texte du chapitre ${num}.`);
-                            return;
-                        }
+                        const num = parseInt(btn.dataset.chapitre);
+                        const card = document.getElementById(`chapitre-card-${num}`);
+                        const texte = card.querySelector('.chapitre-text').value.trim();
+                        if (!texte) { alert(`Collez le texte du chapitre ${num}.`); return; }
                         const statusDiv = document.getElementById(`status-chapitre-${num}`);
-                        // Affichage barre de progression personnalisée
-                        const progressContainer = document.createElement('div');
-                        progressContainer.className = 'custom-progress';
-                        progressContainer.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
-                        statusDiv.innerHTML = '';
-                        statusDiv.appendChild(progressContainer);
+                        const progDiv = document.createElement('div'); progDiv.className = 'custom-progress'; progDiv.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
+                        statusDiv.innerHTML = ''; statusDiv.appendChild(progDiv);
                         let percent = 0;
-                        const progressBarDiv = progressContainer.querySelector('.custom-progress-bar');
-                        const percentText = progressContainer.querySelector('.progress-percent-text');
-                        const interval = setInterval(() => {
-                            if (percent < 90) { percent += 10; progressBarDiv.style.width = percent+'%'; percentText.innerText = percent+'%'; }
-                        }, 300);
+                        const bar = progDiv.querySelector('.custom-progress-bar');
+                        const pct = progDiv.querySelector('.progress-percent-text');
+                        const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
                         try {
-                            const response = await fetch('/generer_chapitre', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ texte: texte, num: num })
-                            });
-                            const data = await response.json();
+                            const res = await fetch('/generer_chapitre', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ texte, num }) });
+                            const data = await res.json();
                             if (data.error) throw new Error(data.error);
                             chapitresSauvegardes[num] = data.contenu;
                             let temp = JSON.parse(localStorage.getItem('cours_temp')) || {};
                             temp[num] = data.contenu;
                             localStorage.setItem('cours_temp', JSON.stringify(temp));
                             clearInterval(interval);
-                            progressBarDiv.style.width = '100%'; percentText.innerText = '100%';
-                            setTimeout(() => { statusDiv.innerHTML = '✅ Chapitre enregistré avec succès.'; }, 500);
-                        } catch (err) {
+                            bar.style.width = '100%'; pct.innerText = '100%';
+                            setTimeout(() => { statusDiv.innerHTML = '✅ Chapitre enregistré.'; }, 500);
+                        } catch(err) {
                             clearInterval(interval);
-                            statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez le bouton ⟳ pour réessayer.</span>`;
+                            statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
                         }
                     });
                 });
                 document.querySelectorAll('.refresh-chapitre-btn').forEach(btn => {
                     btn.addEventListener('click', async (e) => {
-                        const num = parseInt(btn.getAttribute('data-chapitre'));
-                        const cardDiv = document.getElementById(`chapitre-card-${num}`);
-                        const textarea = cardDiv.querySelector(`.chapitre-text[data-chapitre="${num}"]`);
-                        const texte = textarea.value.trim();
-                        if (!texte) {
-                            alert(`Veuillez coller le texte du chapitre ${num}.`);
-                            return;
-                        }
+                        const num = parseInt(btn.dataset.chapitre);
+                        const card = document.getElementById(`chapitre-card-${num}`);
+                        const texte = card.querySelector('.chapitre-text').value.trim();
+                        if (!texte) { alert(`Collez le texte du chapitre ${num}.`); return; }
                         const statusDiv = document.getElementById(`status-chapitre-${num}`);
-                        const progressContainer = document.createElement('div');
-                        progressContainer.className = 'custom-progress';
-                        progressContainer.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
-                        statusDiv.innerHTML = '';
-                        statusDiv.appendChild(progressContainer);
+                        const progDiv = document.createElement('div'); progDiv.className = 'custom-progress'; progDiv.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
+                        statusDiv.innerHTML = ''; statusDiv.appendChild(progDiv);
                         let percent = 0;
-                        const progressBarDiv = progressContainer.querySelector('.custom-progress-bar');
-                        const percentText = progressContainer.querySelector('.progress-percent-text');
-                        const interval = setInterval(() => {
-                            if (percent < 90) { percent += 10; progressBarDiv.style.width = percent+'%'; percentText.innerText = percent+'%'; }
-                        }, 300);
+                        const bar = progDiv.querySelector('.custom-progress-bar');
+                        const pct = progDiv.querySelector('.progress-percent-text');
+                        const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
                         try {
-                            const response = await fetch('/generer_chapitre', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ texte: texte, num: num })
-                            });
-                            const data = await response.json();
+                            const res = await fetch('/generer_chapitre', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ texte, num }) });
+                            const data = await res.json();
                             if (data.error) throw new Error(data.error);
                             chapitresSauvegardes[num] = data.contenu;
                             let temp = JSON.parse(localStorage.getItem('cours_temp')) || {};
                             temp[num] = data.contenu;
                             localStorage.setItem('cours_temp', JSON.stringify(temp));
                             clearInterval(interval);
-                            progressBarDiv.style.width = '100%'; percentText.innerText = '100%';
-                            setTimeout(() => { statusDiv.innerHTML = '✅ Chapitre regénéré avec succès.'; }, 500);
-                        } catch (err) {
+                            bar.style.width = '100%'; pct.innerText = '100%';
+                            setTimeout(() => { statusDiv.innerHTML = '✅ Chapitre regénéré.'; }, 500);
+                        } catch(err) {
                             clearInterval(interval);
-                            statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez le bouton ⟳ pour réessayer.</span>`;
+                            statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
                         }
                     });
                 });
-                document.querySelectorAll('.toggle-chapitre').forEach(toggle => {
-                    toggle.addEventListener('click', (e) => {
-                        const num = parseInt(toggle.getAttribute('data-chapitre'));
-                        const cardDiv = document.getElementById(`chapitre-card-${num}`);
-                        const bodyDiv = cardDiv.querySelector('.chapitre-body');
-                        const isCollapsed = bodyDiv.classList.contains('collapsed');
+                document.querySelectorAll('.toggle-chapitre').forEach(t => {
+                    t.addEventListener('click', (e) => {
+                        const num = parseInt(t.dataset.chapitre);
+                        const card = document.getElementById(`chapitre-card-${num}`);
+                        const body = card.querySelector('.chapitre-body');
+                        const isCollapsed = body.classList.contains('collapsed');
                         if (isCollapsed) {
-                            bodyDiv.classList.remove('collapsed');
-                            toggle.textContent = '▼';
+                            body.classList.remove('collapsed');
+                            t.textContent = '▼';
                             localStorage.setItem(`chapitre-${num}-collapsed`, 'false');
                         } else {
-                            bodyDiv.classList.add('collapsed');
-                            toggle.textContent = '▶';
+                            body.classList.add('collapsed');
+                            t.textContent = '▶';
                             localStorage.setItem(`chapitre-${num}-collapsed`, 'true');
                         }
                     });
@@ -1062,42 +1030,38 @@
             }
             createChapitresUI();
 
-            // Bouton plier/déplier tous les chapitres
-            let allCollapsed = false;
+            let tousPlies = false;
             document.getElementById('toggleChapitresBtn').addEventListener('click', () => {
-                const cards = document.querySelectorAll('.chapitre-card');
-                allCollapsed = !allCollapsed;
-                cards.forEach((card, idx) => {
-                    const num = idx+1;
-                    const bodyDiv = card.querySelector('.chapitre-body');
-                    const toggleBtn = card.querySelector('.toggle-chapitre');
-                    if (allCollapsed) {
-                        bodyDiv.classList.add('collapsed');
-                        if (toggleBtn) toggleBtn.textContent = '▶';
-                        localStorage.setItem(`chapitre-${num}-collapsed`, 'true');
+                tousPlies = !tousPlies;
+                for (let i=1;i<=6;i++) {
+                    const card = document.getElementById(`chapitre-card-${i}`);
+                    if (!card) continue;
+                    const body = card.querySelector('.chapitre-body');
+                    const toggle = card.querySelector('.toggle-chapitre');
+                    if (tousPlies) {
+                        body.classList.add('collapsed');
+                        if (toggle) toggle.textContent = '▶';
+                        localStorage.setItem(`chapitre-${i}-collapsed`, 'true');
                     } else {
-                        bodyDiv.classList.remove('collapsed');
-                        if (toggleBtn) toggleBtn.textContent = '▼';
-                        localStorage.setItem(`chapitre-${num}-collapsed`, 'false');
+                        body.classList.remove('collapsed');
+                        if (toggle) toggle.textContent = '▼';
+                        localStorage.setItem(`chapitre-${i}-collapsed`, 'false');
                     }
-                });
-                document.getElementById('toggleChapitresBtn').innerHTML = allCollapsed ? '▶ Déplier tous les chapitres' : '▼ Plier tous les chapitres';
+                }
+                document.getElementById('toggleChapitresBtn').innerHTML = tousPlies ? '▶ Déplier tous' : '▼ Plier tous';
             });
 
             document.getElementById('submitCoursBtn').addEventListener('click', async () => {
                 const missing = [];
-                for (let i = 1; i <= 6; i++) if (!chapitresSauvegardes[i]) missing.push(i);
-                if (missing.length > 0) {
-                    alert(`Chapitres manquants : ${missing.join(', ')}. Veuillez enregistrer tous les chapitres.`);
-                    return;
-                }
-                const titre = prompt("Donnez un titre à cette section (ex: 'Maths Terminale S1') :", "Mes cours (6 chapitres)");
+                for (let i=1;i<=6;i++) if (!chapitresSauvegardes[i]) missing.push(i);
+                if (missing.length) { alert(`Chapitres manquants : ${missing.join(', ')}. Enregistrez-les d'abord.`); return; }
+                const titre = prompt("Nom de votre section (ex: Maths Terminale) :", "Mes cours (6 chapitres)");
                 if (!titre) return;
                 const statusDiv = document.getElementById('coursResult');
-                statusDiv.innerHTML = '<div class="progress-container"><div class="progress-fill" style="width:0%"></div><div class="progress-percent">Génération du programme (6 jours)...</div></div>';
+                statusDiv.innerHTML = '<div class="progress-container"><div class="progress-fill" style="width:0%"></div><div class="progress-percent">Génération...</div></div>';
                 statusDiv.style.display = 'block';
-                const joursComplets = {};
-                for (let i = 1; i <= 6; i++) joursComplets[i] = chapitresSauvegardes[i];
+                let joursComplets = {};
+                for (let i=1;i<=6;i++) joursComplets[i] = chapitresSauvegardes[i];
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 let entry = historique.find(h => h.domaine === titre);
                 if (!entry) {
@@ -1110,31 +1074,42 @@
                 localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
                 localStorage.removeItem('cours_temp');
                 chargerFormation(titre, entry.progression.slice(), joursComplets, 6);
-                document.querySelector('#btnExpertise').click();
+                document.getElementById('btnExpertise').click();
                 statusDiv.style.display = 'none';
-                statusDiv.innerHTML = '';
             });
 
+            // Gestion du bouton "Mes cours en 6 jours" (plie/déplie le panneau)
+            const btnCoursToggle = document.getElementById('btnCoursToggle');
+            const coursPanel = document.getElementById('coursPanel');
+            btnCoursToggle.addEventListener('click', () => {
+                if (coursPanel.style.display === 'none') {
+                    coursPanel.style.display = 'block';
+                    btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▼';
+                } else {
+                    coursPanel.style.display = 'none';
+                    btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▶';
+                }
+            });
+
+            // Gestion de l'onglet Expertise (pour masquer l'autre)
             document.getElementById('btnExpertise').addEventListener('click', () => {
                 document.getElementById('btnExpertise').classList.add('active');
-                document.getElementById('btnCours').classList.remove('active');
-                document.getElementById('expertisePanel').classList.add('active-panel');
-                document.getElementById('coursPanel').classList.remove('active-panel');
+                btnCoursToggle.classList.remove('active');
+                document.getElementById('expertisePanel').style.display = 'block';
+                coursPanel.style.display = 'none';
+                btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▶';
             });
-            document.getElementById('btnCours').addEventListener('click', () => {
-                document.getElementById('btnCours').classList.add('active');
-                document.getElementById('btnExpertise').classList.remove('active');
-                document.getElementById('coursPanel').classList.add('active-panel');
-                document.getElementById('expertisePanel').classList.remove('active-panel');
-            });
+            // Initialisation : expertise visible, cours caché
+            document.getElementById('expertisePanel').style.display = 'block';
+            coursPanel.style.display = 'none';
 
-            // historique accordéon
+            // ---------- HISTORIQUE ACCORDÉON ----------
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
-            function formaterDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
-            function supprimerEntree(index, type) {
+            function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
+            function supprimerEntree(index) {
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                if (confirm('Supprimer définitivement cette formation ?')) {
+                if (confirm('Supprimer définitivement ?')) {
                     const item = historique[index];
                     if (item.progression && item.progression.filter(v=>v).length === item.nbJours) {
                         let badges = JSON.parse(localStorage.getItem('badges')) || [];
@@ -1145,81 +1120,70 @@
                     let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
                     delete joursParDomaine[item.domaine];
                     localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
-                    historique.splice(index, 1);
+                    historique.splice(index,1);
                     localStorage.setItem('historique', JSON.stringify(historique));
                     afficherHistorique();
                 }
             }
-            function toggleCategory(catId) {
-                const list = document.getElementById(catId);
-                if (list) list.classList.toggle('collapsed');
-            }
+            function toggleCat(catId) { document.getElementById(catId)?.classList.toggle('collapsed'); }
             function afficherHistorique() {
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 const expertises = historique.filter(h => h.type !== 'cours');
                 const cours = historique.filter(h => h.type === 'cours');
                 historyList.innerHTML = '';
                 if (expertises.length) {
-                    const divCat = document.createElement('div');
-                    divCat.className = 'history-category';
+                    const divCat = document.createElement('div'); divCat.className = 'history-category';
                     const catId = 'hist-expertises';
-                    divCat.innerHTML = `<h4 onclick="toggleCategory('${catId}')">📚 Expertises classiques (${expertises.length})</h4><div id="${catId}" class="history-list">`;
+                    divCat.innerHTML = `<h4 onclick="toggleCat('${catId}')">📚 Expertises (${expertises.length})</h4><div id="${catId}" class="history-list">`;
                     const listDiv = divCat.querySelector(`#${catId}`);
-                    expertises.forEach((item, idxGlobal) => {
+                    expertises.forEach((item, idx) => {
                         const completed = item.progression.filter(v=>v).length;
                         const total = item.nbJours || 7;
-                        const itemDiv = document.createElement('div');
-                        itemDiv.className = 'history-item';
-                        itemDiv.innerHTML = `<div class="history-item-text"><strong>${item.domaine}</strong> (${completed}/${total}) – Début: ${formaterDate(item.dateDebut)}${completed===total ? `<div class="badge-text">🏅 Expert en ${item.domaine}</div>` : ''}</div><button class="delete-history-item">🗑️</button>`;
-                        itemDiv.querySelector('.history-item-text').onclick = () => {
-                            let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
-                            let savedJours = joursParDomaine[item.domaine] || {};
-                            chargerFormation(item.domaine, item.progression.slice(), savedJours, total);
+                        const div = document.createElement('div'); div.className = 'history-item';
+                        div.innerHTML = `<div class="history-item-text"><strong>${item.domaine}</strong> (${completed}/${total}) – Début: ${formatDate(item.dateDebut)}${completed===total ? `<div class="badge-text">🏅 Expert en ${item.domaine}</div>` : ''}</div><button class="delete-history-item">🗑️</button>`;
+                        div.querySelector('.history-item-text').onclick = () => {
+                            let saved = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                            chargerFormation(item.domaine, item.progression.slice(), saved[item.domaine] || {}, total);
                             historyModal.style.display = 'none';
-                            document.querySelector('#btnExpertise').click();
+                            document.getElementById('btnExpertise').click();
                         };
-                        itemDiv.querySelector('.delete-history-item').onclick = (e) => { e.stopPropagation(); supprimerEntree(idxGlobal, 'expertise'); };
-                        listDiv.appendChild(itemDiv);
+                        div.querySelector('.delete-history-item').onclick = (e) => { e.stopPropagation(); supprimerEntree(idx); };
+                        listDiv.appendChild(div);
                     });
                     historyList.appendChild(divCat);
                 }
                 if (cours.length) {
-                    const divCat = document.createElement('div');
-                    divCat.className = 'history-category';
+                    const divCat = document.createElement('div'); divCat.className = 'history-category';
                     const catId = 'hist-cours';
-                    divCat.innerHTML = `<h4 onclick="toggleCategory('${catId}')">📘 Mes cours en 6 jours (${cours.length})</h4><div id="${catId}" class="history-list">`;
+                    divCat.innerHTML = `<h4 onclick="toggleCat('${catId}')">📘 Cours (${cours.length})</h4><div id="${catId}" class="history-list">`;
                     const listDiv = divCat.querySelector(`#${catId}`);
-                    cours.forEach((item, idxGlobal) => {
+                    cours.forEach((item, idx) => {
                         const completed = item.progression.filter(v=>v).length;
                         const total = item.nbJours || 6;
-                        const itemDiv = document.createElement('div');
-                        itemDiv.className = 'history-item';
-                        itemDiv.innerHTML = `<div class="history-item-text"><strong>${item.domaine}</strong> (${completed}/${total}) – Début: ${formaterDate(item.dateDebut)}${completed===total ? `<div class="badge-text">🏅 Expert en ${item.domaine}</div>` : ''}</div><button class="delete-history-item">🗑️</button>`;
-                        itemDiv.querySelector('.history-item-text').onclick = () => {
-                            let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
-                            let savedJours = joursParDomaine[item.domaine] || {};
-                            chargerFormation(item.domaine, item.progression.slice(), savedJours, total);
+                        const div = document.createElement('div'); div.className = 'history-item';
+                        div.innerHTML = `<div class="history-item-text"><strong>${item.domaine}</strong> (${completed}/${total}) – Début: ${formatDate(item.dateDebut)}${completed===total ? `<div class="badge-text">🏅 Expert en ${item.domaine}</div>` : ''}</div><button class="delete-history-item">🗑️</button>`;
+                        div.querySelector('.history-item-text').onclick = () => {
+                            let saved = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                            chargerFormation(item.domaine, item.progression.slice(), saved[item.domaine] || {}, total);
                             historyModal.style.display = 'none';
-                            document.querySelector('#btnExpertise').click();
+                            document.getElementById('btnExpertise').click();
                         };
-                        itemDiv.querySelector('.delete-history-item').onclick = (e) => { e.stopPropagation(); supprimerEntree(idxGlobal, 'cours'); };
-                        listDiv.appendChild(itemDiv);
+                        div.querySelector('.delete-history-item').onclick = (e) => { e.stopPropagation(); supprimerEntree(idx); };
+                        listDiv.appendChild(div);
                     });
                     historyList.appendChild(divCat);
                 }
-                if (historique.length === 0) historyList.innerHTML = '<p>Aucune formation enregistrée.</p>';
-                window.toggleCategory = toggleCategory;
+                if (!historique.length) historyList.innerHTML = '<p>Aucune formation.</p>';
+                window.toggleCat = toggleCat;
             }
             document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display = 'flex'; });
             document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
             window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
-            document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 L'abonnement n'est pas encore actif.\nAccès gratuit pour l'instant."));
+            document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 Abonnement à venir."));
 
             let currentExpertiseInterval = null;
             function startExpertiseProgressBar() {
-                const area = document.getElementById('expertiseProgressArea');
-                const fill = document.getElementById('expertiseProgressFill');
-                const percentSpan = document.getElementById('expertiseProgressPercent');
+                const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
                 if (!area) return null;
                 area.style.display = 'block';
                 let p=0;
@@ -1227,9 +1191,7 @@
                 return interval;
             }
             function stopExpertiseProgressBar(interval, complete) {
-                const area = document.getElementById('expertiseProgressArea');
-                const fill = document.getElementById('expertiseProgressFill');
-                const percentSpan = document.getElementById('expertiseProgressPercent');
+                const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
                 if (interval) clearInterval(interval);
                 if (complete && fill) {
                     fill.style.width = '100%'; if(percentSpan) percentSpan.innerText='100%';
