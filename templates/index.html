@@ -60,11 +60,7 @@
             display: flex;
             gap: 10px;
         }
-        .top-bar-right {
-            display: flex;
-            gap: 10px;
-        }
-        .history-link, .home-header, .auth-btn {
+        .history-link, .home-header {
             background: #2c3e4e;
             padding: 4px 12px;
             border-radius: 30px;
@@ -72,27 +68,9 @@
             cursor: pointer;
             transition: 0.2s;
             white-space: nowrap;
-            border: none;
             color: white;
         }
-        .history-link:hover, .home-header:hover, .auth-btn:hover { background: #e67e22; }
-        .user-info {
-            font-size: 0.7rem;
-            background: #2c3e4e;
-            padding: 4px 12px;
-            border-radius: 30px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .logout-btn {
-            background: #aa2e1e;
-            padding: 2px 8px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.6rem;
-        }
-        .logout-btn:hover { background: #ff5c33; }
+        .history-link:hover, .home-header:hover { background: #e67e22; }
         .mode-selector { display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
         .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
@@ -211,8 +189,6 @@
             .dizaine-title { font-size: 1.1rem; }
             h1 { font-size: 1.2rem; }
             .refresh-dizaine { width: 32px; height: 32px; font-size: 1.2rem; bottom: 10px; right: 10px; }
-            .top-bar { flex-direction: column; align-items: stretch; }
-            .top-bar-left, .top-bar-right { justify-content: center; }
         }
         .audio-welcome { position: absolute; top: 15px; left: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
         .audio-welcome:hover { background: #e67e22; }
@@ -280,13 +256,59 @@
         .audio-player-bar button { background: #2c3e4e; border: none; color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 1rem; cursor: pointer; margin: 0; padding: 0; }
         .audio-player-bar button:hover { background: #e67e22; }
         .audio-player-bar input[type="range"] { width: 160px; margin: 0 5px; cursor: pointer; }
-        .footer { text-align: center; margin-top: 25px; font-size: 0.7rem; opacity: 0.7; }
-        .copyright { font-size: 0.65rem; margin-top: 8px; }
+        .footer-auth {
+            margin-top: 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .auth-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        .auth-btn {
+            background: #2c3e4e;
+            border: none;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.2s;
+        }
+        .auth-btn:hover { background: #e67e22; }
+        .user-info {
+            background: #2c3e4e;
+            padding: 6px 16px;
+            border-radius: 30px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.8rem;
+        }
+        .logout-btn {
+            background: #aa2e1e;
+            padding: 2px 8px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+        .logout-btn:hover { background: #ff5c33; }
+        .copyright {
+            font-size: 0.65rem;
+            margin-top: 8px;
+            opacity: 0.6;
+        }
         .modal {
             display: none;
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(0,0,0,0.85);
             z-index: 1000;
             justify-content: center;
@@ -431,10 +453,6 @@
                     <span class="history-link" id="historyLink">📜 Historique</span>
                     <span class="home-header" id="homeHeader">🏠 Accueil</span>
                 </div>
-                <div class="top-bar-right" id="authSection">
-                    <button class="auth-btn" id="registerBtn">📝 S'inscrire</button>
-                    <button class="auth-btn" id="loginBtn">🔑 Connexion</button>
-                </div>
             </div>
             <div class="mode-selector">
                 <button id="btnExpertise" class="mode-btn active">📚 Expertise en 7 jours</button>
@@ -457,7 +475,7 @@
                     <div id="jourContentContainer" style="position: relative;">
                         <div id="jourContent" class="result"></div>
                         <div id="swipeLeftArrow" class="swipe-arrow swipe-left" style="display: none;">◀</div>
-                        <div id="swipeRightArrow" class="swipe-arrow swipe-right" style="display: none;">▶</div>
+                        <div id="swipeRightArrow" class="swipe-arrow swipe-right" style="display: none">▶</div>
                         <button id="audioWelcomeBtn" class="audio-welcome" style="display:none;">🔊</button>
                         <button id="audioDayBtn" class="audio-day" style="display:none;">🔊</button>
                         <div id="refreshDizaineBtn" class="refresh-dizaine" style="display: none;">⟳</div>
@@ -503,9 +521,12 @@
 
             <div class="action-buttons">
                 <button id="shareButton">📤 Partager</button>
-                <button id="subscribeButton">🔒 S'abonner</button>
             </div>
-            <div class="footer">
+            <div class="footer-auth">
+                <div id="authSection" class="auth-buttons">
+                    <button class="auth-btn" id="registerBtn">📝 S'inscrire</button>
+                    <button class="auth-btn" id="loginBtn">🔑 Connexion</button>
+                </div>
                 <div class="copyright">Plasticité cérébrale & répétition rythmée.<br>© Dr Tazzz</div>
             </div>
         </div>
@@ -1360,7 +1381,6 @@
             document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display = 'flex'; });
             document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
             window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
-            document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 Abonnement à venir."));
 
             let currentExpertiseInterval = null;
             function startExpertiseProgressBar() {
