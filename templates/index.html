@@ -48,25 +48,8 @@
         }
         h1 { text-align: center; font-size: 1.5rem; margin-bottom: 0px; letter-spacing: 1px; }
         .subtitle { text-align: center; font-size: 0.9rem; opacity: 0.8; margin-bottom: 30px; margin-top: 5px; }
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .history-link, .home-header {
-            background: #2c3e4e;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            transition: 0.2s;
-            white-space: nowrap;
-            border: none;
-            color: white;
-        }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .history-link, .home-header { background: #2c3e4e; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; white-space: nowrap; border: none; color: white; }
         .history-link:hover, .home-header:hover { background: #e67e22; }
         .mode-selector { display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
         .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
@@ -77,115 +60,28 @@
         input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 14px; border: none; background: #f0f0f0; font-size: 1rem; }
         button { background: #e67e22; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
         button:hover { background: #d35400; transform: scale(0.98); }
-        .result {
-            background: #0b1620;
-            border-radius: 20px;
-            padding: 20px;
-            margin-top: 20px;
-            white-space: pre-wrap;
-            font-family: monospace;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            min-height: 400px;
-            max-height: 550px;
-            overflow-y: auto;
-            border-left: 5px solid #e67e22;
-            position: relative;
-            touch-action: pan-y pinch-zoom;
-        }
+        .result { background: #0b1620; border-radius: 20px; padding: 20px; margin-top: 20px; white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; line-height: 1.5; min-height: 400px; max-height: 550px; overflow-y: auto; border-left: 5px solid #e67e22; position: relative; touch-action: pan-y pinch-zoom; }
         .result p { margin-bottom: 1em; }
-        .refresh-dizaine {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
-            background: rgba(46, 204, 113, 0.2);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: 0.2s;
-            backdrop-filter: blur(4px);
-            z-index: 25;
-            color: #2ecc71;
-            font-size: 1.5rem;
-            border: 1px solid rgba(46, 204, 113, 0.5);
-        }
-        .refresh-dizaine:hover { background: rgba(46, 204, 113, 0.6); transform: scale(1.05); color: white; }
+        .refresh-dizaine { position: absolute; bottom: 15px; right: 15px; background: rgba(46,204,113,0.2); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; backdrop-filter: blur(4px); z-index: 25; color: #2ecc71; font-size: 1.5rem; border: 1px solid rgba(46,204,113,0.5); }
+        .refresh-dizaine:hover { background: rgba(46,204,113,0.6); transform: scale(1.05); color: white; }
         .refresh-dizaine.loading { animation: spin 1s linear infinite; pointer-events: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .jour-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin: 15px 0 10px;
-            gap: 15px;
-        }
-        .jour-title {
-            font-size: 2rem;
-            font-weight: bold;
-            letter-spacing: 6px;
-            color: #f1c40f;
-            text-shadow: 0 0 8px rgba(0,0,0,0.6);
-            background: rgba(0,0,0,0.3);
-            border-radius: 40px;
-            padding: 5px 20px;
-            text-align: center;
-            flex: 1;
-        }
-        .nav-triangle {
-            font-size: 2rem;
-            background: rgba(230,126,34,0.3);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: 0.2s;
-            user-select: none;
-        }
+        .jour-header { display: flex; align-items: center; justify-content: space-between; margin: 15px 0 10px; gap: 15px; }
+        .jour-title { font-size: 2rem; font-weight: bold; letter-spacing: 6px; color: #f1c40f; text-shadow: 0 0 8px rgba(0,0,0,0.6); background: rgba(0,0,0,0.3); border-radius: 40px; padding: 5px 20px; text-align: center; flex: 1; }
+        .nav-triangle { font-size: 2rem; background: rgba(230,126,34,0.3); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; user-select: none; }
         .nav-triangle:hover { background: #e67e22; transform: scale(1.05); }
-        .dizaine-title {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #e67e22;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #e67e22;
-            display: inline-block;
-            padding-right: 20px;
-        }
-        .swipe-arrow {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 40px;
-            height: 40px;
-            background-color: rgba(200,200,200,0.2);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            cursor: pointer;
-            transition: 0.2s;
-            z-index: 15;
-            backdrop-filter: blur(4px);
-            opacity: 0.3;
-        }
+        .dizaine-title { font-size: 1.3rem; font-weight: bold; color: #e67e22; margin-bottom: 15px; border-bottom: 2px solid #e67e22; display: inline-block; padding-right: 20px; }
+        .swipe-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; background-color: rgba(200,200,200,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; z-index: 15; backdrop-filter: blur(4px); opacity: 0.3; }
         .swipe-arrow:hover { opacity: 0.8; background-color: rgba(230,126,34,0.6); }
         .swipe-left { left: 5px; }
         .swipe-right { right: 5px; }
-        @media (max-width: 600px) {
-            .swipe-arrow { width: 32px; height: 32px; font-size: 22px; opacity: 0.2; }
-            .jour-title { font-size: 1.5rem; letter-spacing: 3px; }
-            .nav-triangle { width: 40px; height: 40px; font-size: 1.5rem; }
-            .dizaine-title { font-size: 1.1rem; }
-            h1 { font-size: 1.2rem; }
-            .refresh-dizaine { width: 32px; height: 32px; font-size: 1.2rem; bottom: 10px; right: 10px; }
+        @media (max-width:600px) {
+            .swipe-arrow { width:32px; height:32px; font-size:22px; opacity:0.2; }
+            .jour-title { font-size:1.5rem; letter-spacing:3px; }
+            .nav-triangle { width:40px; height:40px; font-size:1.5rem; }
+            .dizaine-title { font-size:1.1rem; }
+            h1 { font-size:1.2rem; }
+            .refresh-dizaine { width:32px; height:32px; font-size:1.2rem; bottom:10px; right:10px; }
         }
         .audio-welcome { position: absolute; top: 15px; left: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
         .audio-welcome:hover { background: #e67e22; }
@@ -194,38 +90,13 @@
         .nav-buttons { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; }
         .nav-buttons button { width: auto; margin: 0; padding: 8px 20px; font-size: 0.9rem; }
         .day-counter { font-size: 0.9rem; font-weight: bold; background: #2c3e4e; padding: 5px 12px; border-radius: 30px; }
-        .progress-header {
-            text-align: center;
-            font-size: 0.75rem;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #f1c40f;
-            cursor: pointer;
-            display: none;
-        }
+        .progress-header { text-align: center; font-size: 0.75rem; margin-bottom: 5px; font-weight: bold; color: #f1c40f; cursor: pointer; display: none; }
         .blink-text { animation: blinkText 1s infinite; }
-        @keyframes blinkText { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
+        @keyframes blinkText { 0% { opacity:1; } 50% { opacity:0.2; } 100% { opacity:1; } }
         .blink-segment { animation: blinkSegment 1s infinite; }
-        @keyframes blinkSegment {
-            0% { background-color: #2c3e4e; box-shadow: 0 0 0px #f39c12; }
-            50% { background-color: #f39c12; box-shadow: 0 0 8px #f39c12; color: #1e2b3c; }
-            100% { background-color: #2c3e4e; box-shadow: 0 0 0px #f39c12; }
-        }
+        @keyframes blinkSegment { 0% { background-color:#2c3e4e; box-shadow:0 0 0px #f39c12; } 50% { background-color:#f39c12; box-shadow:0 0 8px #f39c12; color:#1e2b3c; } 100% { background-color:#2c3e4e; box-shadow:0 0 0px #f39c12; } }
         .progress-segments { display: flex; gap: 8px; justify-content: center; margin: 5px 0 20px; flex-wrap: wrap; }
-        .segment {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background-color: #2c3e4e;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.7rem;
-            cursor: pointer;
-            transition: 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
+        .segment { width: 48px; height: 48px; border-radius: 12px; background-color: #2c3e4e; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.7rem; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .segment .day-label { font-weight: bold; font-size: 1rem; margin-bottom: 2px; }
         .segment .day-status { font-size: 0.6rem; }
         .segment.loaded .day-label { font-weight: 900; color: #f39c12; text-shadow: 0 0 2px #f39c12; }
@@ -234,210 +105,57 @@
         .segment.disabled { cursor: not-allowed; opacity: 0.4; pointer-events: none; }
         .action-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
         .action-buttons button { background: #2c3e4e; margin-top: 0; padding: 6px 18px; font-size: 0.8rem; }
-        .audio-player-bar {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1e2b3c;
-            border-radius: 40px;
-            padding: 8px 16px;
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            z-index: 2000;
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.2);
-        }
+        .audio-player-bar { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: #1e2b3c; border-radius: 40px; padding: 8px 16px; display: flex; gap: 12px; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.4); z-index: 2000; backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.2); }
         .audio-player-bar button { background: #2c3e4e; border: none; color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 1rem; cursor: pointer; margin: 0; padding: 0; }
         .audio-player-bar button:hover { background: #e67e22; }
         .audio-player-bar input[type="range"] { width: 160px; margin: 0 5px; cursor: pointer; }
-        .footer-auth {
-            text-align: center;
-            margin-top: 25px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(230,126,34,0.3);
-        }
-        .auth-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-bottom: 10px;
-        }
-        .auth-btn-small {
-            background: #2c3e4e;
-            border: none;
-            color: white;
-            padding: 6px 16px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            transition: 0.2s;
-        }
+        .footer-auth { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(230,126,34,0.3); }
+        .auth-buttons { display: flex; gap: 15px; justify-content: center; margin-bottom: 10px; }
+        .auth-btn-small { background: #2c3e4e; border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 0.75rem; transition: 0.2s; }
         .auth-btn-small:hover { background: #e67e22; }
-        .user-info-footer {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 10px;
-            font-size: 0.8rem;
-        }
-        .logout-btn-small {
-            background: #aa2e1e;
-            padding: 4px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.7rem;
-        }
+        .user-info-footer { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 10px; font-size: 0.8rem; }
+        .logout-btn-small { background: #aa2e1e; padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 0.7rem; }
         .logout-btn-small:hover { background: #ff5c33; }
         .copyright { font-size: 0.65rem; margin-top: 8px; opacity: 0.7; }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-content {
-            background: #1e2b3c;
-            max-width: 400px;
-            width: 90%;
-            border-radius: 24px;
-            padding: 25px;
-            text-align: center;
-        }
-        .modal-content input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 12px;
-            border: none;
-        }
-        .checkbox-group {
-            text-align: left;
-            margin: 15px 0;
-            font-size: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .checkbox-group input {
-            width: auto;
-            margin: 0;
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: #1e2b3c; max-width: 400px; width: 90%; border-radius: 24px; padding: 25px; text-align: center; }
+        .modal-content input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 12px; border: none; }
+        .password-wrapper { position: relative; }
+        .toggle-password { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; background: none; border: none; color: #aaa; font-size: 1.1rem; }
+        .checkbox-group { text-align: left; margin: 15px 0; font-size: 0.75rem; display: flex; align-items: center; gap: 8px; }
+        .checkbox-group input { width: auto; margin: 0; }
         .history-category { margin-top: 20px; border-top: 1px solid #e67e22; padding-top: 10px; }
         .history-category h4 { color: #f1c40f; margin: 10px 0; cursor: pointer; display: inline-block; padding: 5px 10px; border-radius: 20px; background: rgba(0,0,0,0.3); }
         .history-category h4:hover { background: #e67e22; }
         .history-list { margin-top: 10px; transition: 0.2s; }
         .history-list.collapsed { display: none; }
-        .history-item {
-            background: #2c3e4e;
-            margin: 8px 0;
-            padding: 10px;
-            border-radius: 14px;
-            cursor: pointer;
-            transition: 0.1s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+        .history-item { background: #2c3e4e; margin: 8px 0; padding: 10px; border-radius: 14px; cursor: pointer; transition: 0.1s; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
         .history-item:hover { background: #e67e22; }
         .history-item-text { flex: 1; text-align: left; }
-        .delete-history-item {
-            background: #aa2e1e;
-            border: none;
-            color: white;
-            border-radius: 30px;
-            padding: 4px 12px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            margin-left: 10px;
-            transition: 0.1s;
-        }
+        .delete-history-item { background: #aa2e1e; border: none; color: white; border-radius: 30px; padding: 4px 12px; font-size: 0.7rem; cursor: pointer; margin-left: 10px; transition: 0.1s; }
         .delete-history-item:hover { background: #ff5c33; transform: scale(0.95); }
         .badge-text { font-size: 0.8rem; color: #f39c12; margin-top: 5px; }
         .progress-container { margin: 15px 0 10px; width: 100%; background-color: #2c3e4e; border-radius: 10px; overflow: hidden; height: 12px; position: relative; }
         .progress-fill { width: 0%; height: 100%; background-color: #2ecc71; transition: width 0.2s ease; }
         .progress-percent { text-align: center; font-size: 0.7rem; margin-top: 4px; color: #2ecc71; }
-        .chapitre-card {
-            background: rgba(0,0,0,0.3);
-            border-radius: 16px;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-left: 4px solid #e67e22;
-        }
-        .chapitre-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            user-select: none;
-        }
-        .chapitre-header strong {
-            font-size: 1.2rem;
-            color: #f1c40f;
-            flex: 1;
-        }
-        .toggle-chapitre {
-            font-size: 1.2rem;
-            transition: transform 0.2s;
-            background: none;
-            border: none;
-            color: #e67e22;
-            width: 30px;
-            cursor: pointer;
-            margin: 0;
-            padding: 0;
-        }
+        .chapitre-card { background: rgba(0,0,0,0.3); border-radius: 16px; padding: 15px; margin-bottom: 20px; border-left: 4px solid #e67e22; }
+        .chapitre-header { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+        .chapitre-header strong { font-size: 1.2rem; color: #f1c40f; flex: 1; }
+        .toggle-chapitre { font-size: 1.2rem; transition: transform 0.2s; background: none; border: none; color: #e67e22; width: 30px; cursor: pointer; margin: 0; padding: 0; }
         .toggle-chapitre:hover { background: none; transform: scale(1.1); }
         .chapitre-body { margin-top: 10px; }
         .chapitre-body.collapsed { display: none; }
-        .chapitre-status {
-            font-size: 0.8rem;
-            margin-top: 8px;
-            color: #2ecc71;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        .chapitre-status { font-size: 0.8rem; margin-top: 8px; color: #2ecc71; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .error-status { color: #ff5555; animation: blinkError 0.8s infinite; font-weight: bold; }
-        @keyframes blinkError { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-        .save-chapitre-btn, .refresh-chapitre-btn {
-            background: #2c3e4e;
-            padding: 5px 15px;
-            margin-top: 5px;
-            margin-right: 8px;
-            font-size: 0.8rem;
-            display: inline-block;
-        }
+        @keyframes blinkError { 0% { opacity:1; } 50% { opacity:0.3; } 100% { opacity:1; } }
+        .save-chapitre-btn, .refresh-chapitre-btn { background: #2c3e4e; padding: 5px 15px; margin-top: 5px; margin-right: 8px; font-size: 0.8rem; display: inline-block; }
         .refresh-chapitre-btn { background: #8e44ad; font-size: 1.2rem; padding: 5px 10px; }
-        .warning-limit {
-            background: rgba(230,126,34,0.2);
-            border-left: 3px solid #e67e22;
-            padding: 5px 10px;
-            margin: 10px 0;
-            font-size: 0.8rem;
-            border-radius: 6px;
-        }
+        .warning-limit { background: rgba(230,126,34,0.2); border-left: 3px solid #e67e22; padding: 5px 10px; margin: 10px 0; font-size: 0.8rem; border-radius: 6px; }
         .custom-progress { width: 100%; background-color: #2c3e4e; border-radius: 20px; overflow: hidden; margin-top: 5px; }
         .custom-progress-bar { width: 0%; height: 6px; background-color: #3498db; transition: width 0.3s; }
         .progress-percent-text { font-size: 0.7rem; margin-left: 10px; }
-        .btn-toggle-chapitres {
-            background: #8a2be2;
-            margin-left: 10px;
-            padding: 6px 15px;
-            font-size: 0.8rem;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .btn-toggle-chapitres { background: #8a2be2; margin-left: 10px; padding: 6px 15px; font-size: 0.8rem; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
     </style>
 </head>
 <body>
@@ -551,8 +269,14 @@
             <h3 id="authModalTitle">Inscription</h3>
             <input type="text" id="authPseudo" placeholder="Pseudo">
             <input type="email" id="authEmail" placeholder="Email">
-            <input type="password" id="authPassword" placeholder="Mot de passe (min. 6 caractères)">
-            <input type="password" id="authPasswordConfirm" placeholder="Confirmer le mot de passe">
+            <div class="password-wrapper">
+                <input type="password" id="authPassword" placeholder="Mot de passe (min. 6 caractères)">
+                <button type="button" class="toggle-password" data-target="authPassword">👁️</button>
+            </div>
+            <div class="password-wrapper">
+                <input type="password" id="authPasswordConfirm" placeholder="Confirmer le mot de passe">
+                <button type="button" class="toggle-password" data-target="authPasswordConfirm">👁️</button>
+            </div>
             <div class="checkbox-group">
                 <input type="checkbox" id="authConsent">
                 <label>J'accepte la collecte et le stockage de mes données</label>
@@ -564,6 +288,21 @@
 
     <script>
         (function() {
+            // ================= GESTION DES YEUX POUR MOTS DE PASSE =================
+            document.querySelectorAll('.toggle-password').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        this.textContent = '🙈';
+                    } else {
+                        input.type = 'password';
+                        this.textContent = '👁️';
+                    }
+                });
+            });
+
             // ================= AUTHENTIFICATION OBLIGATOIRE =================
             let currentUser = null;
             let pendingAction = null;
@@ -635,13 +374,11 @@
                 const passwordInput = document.getElementById('authPassword');
                 const passwordConfirmInput = document.getElementById('authPasswordConfirm');
                 const consentCheck = document.getElementById('authConsent');
-                
                 pseudoInput.value = '';
                 emailInput.value = '';
                 passwordInput.value = '';
                 passwordConfirmInput.value = '';
                 consentCheck.checked = false;
-                
                 if (mode === 'register') {
                     title.innerText = 'Inscription';
                     document.getElementById('authSubmitBtn').onclick = async () => {
@@ -650,7 +387,6 @@
                         const password = passwordInput.value;
                         const passwordConfirm = passwordConfirmInput.value;
                         const consent = consentCheck.checked;
-                        
                         if (!pseudo || !email || !password || !passwordConfirm) {
                             alert('Veuillez remplir tous les champs');
                             return;
@@ -660,7 +396,7 @@
                             return;
                         }
                         if (!consent) {
-                            alert('Vous devez accepter les conditions');
+                            alert('Vous devez accepter les conditions de protection des données');
                             return;
                         }
                         if (password.length < 6) {
@@ -675,13 +411,19 @@
                             });
                             const data = await res.json();
                             if (res.ok) {
-                                alert('Inscription réussie ! Un email de confirmation vous a été envoyé. Vérifiez vos spams.');
+                                if (data.confirmation_link) {
+                                    // Si le backend renvoie le lien (mode debug), on l'affiche
+                                    alert(`Inscription réussie ! Confirmez votre email en cliquant sur le lien : ${data.confirmation_link}`);
+                                } else {
+                                    alert('Inscription réussie ! Un email de confirmation vous a été envoyé. Vérifiez vos spams.');
+                                }
                                 modal.style.display = 'none';
                             } else {
                                 alert(data.error || 'Erreur lors de l\'inscription');
                             }
-                        } catch(e) {
-                            alert('Erreur réseau');
+                        } catch (err) {
+                            console.error('Erreur réseau:', err);
+                            alert('Erreur réseau : impossible de contacter le serveur. Vérifiez votre connexion ou réessayez plus tard.');
                         }
                     };
                 } else {
@@ -713,8 +455,9 @@
                             } else {
                                 alert(data.error || 'Erreur de connexion');
                             }
-                        } catch(e) {
-                            alert('Erreur réseau');
+                        } catch (err) {
+                            console.error('Erreur réseau:', err);
+                            alert('Erreur réseau : impossible de contacter le serveur.');
                         }
                     };
                 }
@@ -729,8 +472,7 @@
                 if (e.target === modal) modal.style.display = 'none';
             });
 
-            // ================= FONCTIONS DE L'APPLICATION (EXPERTISE, COURS, etc.) =================
-            // écran de chargement
+            // ================= CHARGEMENT ÉCRAN =================
             const loadingScreen = document.getElementById('loadingScreen');
             const mainContent = document.getElementById('mainContent');
             const progressBar = document.getElementById('loadingProgressBar');
@@ -766,7 +508,7 @@
             }
             requestAnimationFrame(updateProgress);
 
-            // audio (bip)
+            // ================= AUDIO (BIP) =================
             let audioCtx = null;
             function initAudio() {
                 if (audioCtx) return;
@@ -791,7 +533,7 @@
                 osc.stop(now + 0.2);
             }
 
-            // état global expertise
+            // ================= ÉTAT GLOBAL EXPERTISE =================
             let currentDomaine = '';
             let currentProgression = [];
             let currentJours = {};
@@ -827,9 +569,7 @@
                     msgDiv.classList.add('blink-text');
                 }
                 if (!audioCtx) initAudio();
-                blinkInterval = setInterval(() => {
-                    playBeep();
-                }, 1000);
+                blinkInterval = setInterval(() => { playBeep(); }, 1000);
             }
 
             function decouperEnDizaines(contenuBrut) {
@@ -1027,8 +767,7 @@
                 if (currentExpertiseInterval) clearInterval(currentExpertiseInterval);
                 currentExpertiseInterval = startExpertiseProgressBar();
                 fetch('/generer_jour_expertise', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ domaine: currentDomaine, jour: jourNum })
                 })
                 .then(res => res.json())
@@ -1057,8 +796,7 @@
                 refreshBtn.innerHTML = '⏳';
                 try {
                     const response = await fetch('/generer_jour_expertise', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ domaine: currentDomaine, jour: currentPage })
                     });
                     const data = await response.json();
@@ -1076,7 +814,6 @@
                 finally { refreshBtn.classList.remove('loading'); refreshBtn.innerHTML = '⟳'; }
             }
 
-            // Actions protégées
             function doStartExpertise() {
                 const domaine = document.getElementById('domaine').value.trim();
                 if (!domaine) { alert('Saisissez un domaine'); return; }
@@ -1093,7 +830,7 @@
                 chargerFormation(domaine, entry.progression.slice(), {}, 7);
             }
 
-            // Gestion des cours (chapitres)
+            // Gestion des cours
             let chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
             let coursTemp = JSON.parse(localStorage.getItem('cours_temp')) || {};
             for (let i=1;i<=6;i++) if (coursTemp[i]) chapitresSauvegardes[i] = coursTemp[i];
@@ -1274,15 +1011,9 @@
                 statusDiv.style.display = 'none';
             }
 
-            // Interception des boutons protégés
-            document.getElementById('startExpertise').addEventListener('click', () => {
-                requireAuth(doStartExpertise, null);
-            });
-            document.getElementById('submitCoursBtn').addEventListener('click', () => {
-                requireAuth(doGenerateCours, null);
-            });
+            document.getElementById('startExpertise').addEventListener('click', () => { requireAuth(doStartExpertise, null); });
+            document.getElementById('submitCoursBtn').addEventListener('click', () => { requireAuth(doGenerateCours, null); });
 
-            // Autres événements de navigation
             document.getElementById('prevDay').addEventListener('click', () => { if (currentPage > 1) { currentPage--; afficherPage(); } });
             document.getElementById('nextDay').addEventListener('click', () => {
                 if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
@@ -1372,7 +1103,6 @@
             }
             initFromUrl();
 
-            // Gestion des onglets
             const btnExpertise = document.getElementById('btnExpertise');
             const btnCoursToggle = document.getElementById('btnCoursToggle');
             const expertisePanel = document.getElementById('expertisePanel');
@@ -1399,7 +1129,7 @@
             showExpertise();
             createChapitresUI();
 
-            // Historique accordéon
+            // Historique
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
             function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
