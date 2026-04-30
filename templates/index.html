@@ -53,6 +53,16 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .top-bar-left {
+            display: flex;
+            gap: 10px;
+        }
+        .top-bar-right {
+            display: flex;
+            gap: 10px;
         }
         .history-link, .home-header, .auth-btn {
             background: #2c3e4e;
@@ -64,18 +74,31 @@
             white-space: nowrap;
             border: none;
             color: white;
-            font-family: inherit;
         }
-        .history-link:hover, .home-header:hover, .auth-btn:hover {
-            background: #e67e22;
+        .history-link:hover, .home-header:hover, .auth-btn:hover { background: #e67e22; }
+        .user-info {
+            font-size: 0.7rem;
+            background: #2c3e4e;
+            padding: 4px 12px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+        .logout-btn {
+            background: #aa2e1e;
+            padding: 2px 8px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.6rem;
+        }
+        .logout-btn:hover { background: #ff5c33; }
         .mode-selector { display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
         .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
         .mode-panel { display: none; animation: fadeIn 0.3s ease; }
         .mode-panel.active-panel { display: block; }
         .cours-panel { margin-top: 15px; }
-        .chapitres-container { display: block; }
         input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 14px; border: none; background: #f0f0f0; font-size: 1rem; }
         button { background: #e67e22; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
         button:hover { background: #d35400; transform: scale(0.98); }
@@ -188,6 +211,8 @@
             .dizaine-title { font-size: 1.1rem; }
             h1 { font-size: 1.2rem; }
             .refresh-dizaine { width: 32px; height: 32px; font-size: 1.2rem; bottom: 10px; right: 10px; }
+            .top-bar { flex-direction: column; align-items: stretch; }
+            .top-bar-left, .top-bar-right { justify-content: center; }
         }
         .audio-welcome { position: absolute; top: 15px; left: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
         .audio-welcome:hover { background: #e67e22; }
@@ -269,13 +294,14 @@
         }
         .modal-content {
             background: #1e2b3c;
-            max-width: 600px;
+            max-width: 400px;
             width: 90%;
             border-radius: 24px;
             padding: 20px;
             text-align: center;
-            max-height: 80%;
-            overflow-y: auto;
+        }
+        .modal-content input {
+            margin: 10px 0;
         }
         .history-category { margin-top: 20px; border-top: 1px solid #e67e22; padding-top: 10px; }
         .history-category h4 { color: #f1c40f; margin: 10px 0; cursor: pointer; display: inline-block; padding: 5px 10px; border-radius: 20px; background: rgba(0,0,0,0.3); }
@@ -398,18 +424,18 @@
 
     <div id="mainContent" style="display: none;">
         <div class="container">
+            <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
+            <div class="subtitle">Transformez votre structure mentale</div>
             <div class="top-bar">
-                <div style="display: flex; gap: 10px;">
+                <div class="top-bar-left">
                     <span class="history-link" id="historyLink">📜 Historique</span>
                     <span class="home-header" id="homeHeader">🏠 Accueil</span>
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <button class="auth-btn" id="loginBtn">🔐 Connexion</button>
+                <div class="top-bar-right" id="authSection">
                     <button class="auth-btn" id="registerBtn">📝 S'inscrire</button>
+                    <button class="auth-btn" id="loginBtn">🔑 Connexion</button>
                 </div>
             </div>
-            <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
-            <div class="subtitle">Transformez votre structure mentale</div>
             <div class="mode-selector">
                 <button id="btnExpertise" class="mode-btn active">📚 Expertise en 7 jours</button>
                 <button id="btnCoursToggle" class="mode-btn">📘 Mes cours en 6 jours ▶</button>
@@ -477,6 +503,7 @@
 
             <div class="action-buttons">
                 <button id="shareButton">📤 Partager</button>
+                <button id="subscribeButton">🔒 S'abonner</button>
             </div>
             <div class="footer">
                 <div class="copyright">Plasticité cérébrale & répétition rythmée.<br>© Dr Tazzz</div>
@@ -498,8 +525,106 @@
         </div>
     </div>
 
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <h3 id="authModalTitle">Inscription</h3>
+            <input type="text" id="authPseudo" placeholder="Pseudo">
+            <input type="email" id="authEmail" placeholder="Email">
+            <button id="authSubmitBtn">Valider</button>
+            <button id="closeAuthModal" style="background:#2c3e4e; margin-top:10px;">Fermer</button>
+        </div>
+    </div>
+
     <script>
         (function() {
+            // ================= AUTHENTIFICATION (locale, non obligatoire) =================
+            let currentUser = null;
+
+            function loadUser() {
+                const saved = localStorage.getItem('tazbot_user');
+                if (saved) {
+                    try {
+                        currentUser = JSON.parse(saved);
+                        updateAuthUI();
+                    } catch(e) {}
+                }
+            }
+
+            function saveUser(user) {
+                localStorage.setItem('tazbot_user', JSON.stringify(user));
+                currentUser = user;
+                updateAuthUI();
+            }
+
+            function logout() {
+                localStorage.removeItem('tazbot_user');
+                currentUser = null;
+                updateAuthUI();
+            }
+
+            function updateAuthUI() {
+                const authSection = document.getElementById('authSection');
+                if (currentUser) {
+                    authSection.innerHTML = `<div class="user-info">👤 ${currentUser.pseudo} <span class="logout-btn" id="logoutBtn">Déconnexion</span></div>`;
+                    document.getElementById('logoutBtn')?.addEventListener('click', logout);
+                } else {
+                    authSection.innerHTML = `<button class="auth-btn" id="registerBtn">📝 S'inscrire</button><button class="auth-btn" id="loginBtn">🔑 Connexion</button>`;
+                    document.getElementById('registerBtn')?.addEventListener('click', () => openAuthModal('register'));
+                    document.getElementById('loginBtn')?.addEventListener('click', () => openAuthModal('login'));
+                }
+            }
+
+            function openAuthModal(mode) {
+                const modal = document.getElementById('authModal');
+                const title = document.getElementById('authModalTitle');
+                const pseudoInput = document.getElementById('authPseudo');
+                const emailInput = document.getElementById('authEmail');
+                pseudoInput.value = '';
+                emailInput.value = '';
+                if (mode === 'register') {
+                    title.innerText = 'Inscription';
+                    document.getElementById('authSubmitBtn').onclick = () => {
+                        const pseudo = pseudoInput.value.trim();
+                        const email = emailInput.value.trim();
+                        if (!pseudo || !email) { alert('Veuillez remplir tous les champs'); return; }
+                        const users = JSON.parse(localStorage.getItem('tazbot_users') || '[]');
+                        if (users.find(u => u.pseudo === pseudo)) { alert('Ce pseudo existe déjà. Connectez-vous.'); return; }
+                        users.push({ pseudo, email });
+                        localStorage.setItem('tazbot_users', JSON.stringify(users));
+                        saveUser({ pseudo, email });
+                        modal.style.display = 'none';
+                        alert('Inscription réussie !');
+                    };
+                } else {
+                    title.innerText = 'Connexion';
+                    document.getElementById('authSubmitBtn').onclick = () => {
+                        const pseudo = pseudoInput.value.trim();
+                        const email = emailInput.value.trim();
+                        const users = JSON.parse(localStorage.getItem('tazbot_users') || '[]');
+                        const user = users.find(u => u.pseudo === pseudo && u.email === email);
+                        if (user) {
+                            saveUser(user);
+                            modal.style.display = 'none';
+                            alert('Connecté !');
+                        } else {
+                            alert('Pseudo ou email incorrect');
+                        }
+                    };
+                }
+                modal.style.display = 'flex';
+            }
+
+            document.getElementById('closeAuthModal')?.addEventListener('click', () => {
+                document.getElementById('authModal').style.display = 'none';
+            });
+            window.addEventListener('click', (e) => {
+                const modal = document.getElementById('authModal');
+                if (e.target === modal) modal.style.display = 'none';
+            });
+
+            loadUser();
+
+            // ================= RESTE DU CODE (expertise, cours, historique, swipe, bip, etc.) =================
             // ---------- ÉCRAN DE CHARGEMENT ----------
             const loadingScreen = document.getElementById('loadingScreen');
             const mainContent = document.getElementById('mainContent');
@@ -743,18 +868,7 @@
                 }, 300);
             }
 
-            // Nouveau message d'accueil
-            const welcomeHTML = `
-                <div class="welcome-text">
-                    <strong>Bonjour !</strong><br>
-                    Bienvenue dans le Chapelet Tazzz Bot.<br><br>
-                    <strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>
-                    - Procurez-vous un vrai chapelet.<br>
-                    - Glissez à gauche ou à droite pour feuilleter les 5 dizaines d’un jour.<br>
-                    - À la 5e dizaine, validez votre journée en cliquant sur la case clignotante.<br>
-                    - Cliquez sur <strong>“Suivant”</strong> pour passer au jour suivant.
-                </div>
-            `;
+            const welcomeHTML = `<div class="welcome-text"><strong>Bonjour !</strong><br><br><strong>Bienvenue dans le Chapelet Tazzz Bot.</strong><br><br><strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>- Procurez-vous un vrai chapelet.<br>- Glissez à gauche ou à droite pour feuilleter les 5 dizaines d’un jour.<br>- À la 5e dizaine, validez votre journée en cliquant sur la case clignotante.<br>- Cliquez sur <strong>“Suivant”</strong> pour passer au jour suivant.</div>`;
 
             function afficherPage() {
                 const contentDiv = document.getElementById('jourContent');
@@ -1170,13 +1284,6 @@
             showExpertise();
             createChapitresUI();
 
-            document.getElementById('loginBtn').addEventListener('click', () => {
-                alert("🔐 La fonctionnalité de connexion sera disponible prochainement.");
-            });
-            document.getElementById('registerBtn').addEventListener('click', () => {
-                alert("📝 La fonctionnalité d'inscription sera disponible prochainement.");
-            });
-
             // ---------- HISTORIQUE ACCORDÉON ----------
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
@@ -1253,6 +1360,7 @@
             document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display = 'flex'; });
             document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
             window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
+            document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 Abonnement à venir."));
 
             let currentExpertiseInterval = null;
             function startExpertiseProgressBar() {
