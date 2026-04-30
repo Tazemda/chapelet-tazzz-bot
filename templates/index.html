@@ -48,9 +48,27 @@
         }
         h1 { text-align: center; font-size: 1.5rem; margin-bottom: 0px; letter-spacing: 1px; }
         .subtitle { text-align: center; font-size: 0.9rem; opacity: 0.8; margin-bottom: 30px; margin-top: 5px; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .history-link, .home-header { background: #2c3e4e; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
-        .history-link:hover, .home-header:hover { background: #e67e22; }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .history-link, .home-header, .auth-btn {
+            background: #2c3e4e;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+            border: none;
+            color: white;
+            font-family: inherit;
+        }
+        .history-link:hover, .home-header:hover, .auth-btn:hover {
+            background: #e67e22;
+        }
         .mode-selector { display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
         .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
@@ -185,7 +203,7 @@
             font-weight: bold;
             color: #f1c40f;
             cursor: pointer;
-            display: none; /* caché par défaut, sera affiché via JS */
+            display: none;
         }
         .blink-text { animation: blinkText 1s infinite; }
         @keyframes blinkText { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
@@ -218,27 +236,27 @@
         .segment.disabled { cursor: not-allowed; opacity: 0.4; pointer-events: none; }
         .action-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
         .action-buttons button { background: #2c3e4e; margin-top: 0; padding: 6px 18px; font-size: 0.8rem; }
+        .audio-player-bar {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e2b3c;
+            border-radius: 40px;
+            padding: 8px 16px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            z-index: 2000;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .audio-player-bar button { background: #2c3e4e; border: none; color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 1rem; cursor: pointer; margin: 0; padding: 0; }
+        .audio-player-bar button:hover { background: #e67e22; }
+        .audio-player-bar input[type="range"] { width: 160px; margin: 0 5px; cursor: pointer; }
         .footer { text-align: center; margin-top: 25px; font-size: 0.7rem; opacity: 0.7; }
         .copyright { font-size: 0.65rem; margin-top: 8px; }
-        .auth-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            margin-top: 10px;
-        }
-        .auth-btn {
-            background: #2c3e4e;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            transition: 0.2s;
-            white-space: nowrap;
-            border: none;
-            color: white;
-            font-family: inherit;
-        }
-        .auth-btn:hover { background: #e67e22; }
         .modal {
             display: none;
             position: fixed;
@@ -380,12 +398,18 @@
 
     <div id="mainContent" style="display: none;">
         <div class="container">
+            <div class="top-bar">
+                <div style="display: flex; gap: 10px;">
+                    <span class="history-link" id="historyLink">📜 Historique</span>
+                    <span class="home-header" id="homeHeader">🏠 Accueil</span>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="auth-btn" id="loginBtn">🔐 Connexion</button>
+                    <button class="auth-btn" id="registerBtn">📝 S'inscrire</button>
+                </div>
+            </div>
             <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
             <div class="subtitle">Transformez votre structure mentale</div>
-            <div class="top-bar">
-                <span class="history-link" id="historyLink">📜 Historique</span>
-                <span class="home-header" id="homeHeader">🏠 Accueil</span>
-            </div>
             <div class="mode-selector">
                 <button id="btnExpertise" class="mode-btn active">📚 Expertise en 7 jours</button>
                 <button id="btnCoursToggle" class="mode-btn">📘 Mes cours en 6 jours ▶</button>
@@ -457,10 +481,6 @@
             </div>
             <div class="footer">
                 <div class="copyright">Plasticité cérébrale & répétition rythmée.<br>© Dr Tazzz</div>
-                <div class="auth-buttons">
-                    <button class="auth-btn" id="loginBtn">🔐 Connexion</button>
-                    <button class="auth-btn" id="registerBtn">📝 S'inscrire</button>
-                </div>
             </div>
         </div>
     </div>
@@ -1059,12 +1079,11 @@
             function resetCours() {
                 localStorage.removeItem('cours_temp');
                 chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
-                createChapitresUI(); // recrée l'interface avec des champs vides
+                createChapitresUI();
             }
 
             document.getElementById('resetCoursBtn').addEventListener('click', resetCours);
 
-            // Plier/Déplier tous les chapitres
             let tousPlies = false;
             document.getElementById('toggleChapitresBtn').addEventListener('click', () => {
                 tousPlies = !tousPlies;
@@ -1142,7 +1161,7 @@
             showExpertise();
             createChapitresUI();
 
-            // Ajout des alertes pour Connexion / Inscription
+            // Alertes pour Connexion / Inscription
             document.getElementById('loginBtn').addEventListener('click', () => {
                 alert("🔐 La fonctionnalité de connexion sera disponible prochainement.");
             });
@@ -1301,4 +1320,5 @@
         })();
     </script>
 </body>
+</html>
 </html>
