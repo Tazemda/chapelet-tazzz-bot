@@ -13,7 +13,10 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
-RESEND_API_KEY = os.environ.get("RESEND_API_KEY")  # Pour l'envoi d'email
+
+# ================= ⚠️ À MODIFIER : insère ta vraie clé Resend ici =================
+RESEND_API_KEY = "re_ta_cle_api_ici"   # ← remplace par ta clé (commence par re_)
+# ========================================================================
 
 # ================= BASE DE DONNÉES UTILISATEURS =================
 def init_users_db():
@@ -34,10 +37,11 @@ init_users_db()
 
 def send_confirmation_email(email, pseudo, token):
     confirm_url = url_for('confirm_email', token=token, _external=True)
-    if not RESEND_API_KEY:
-        # Mode développement : afficher le lien dans la console
-        print(f"\n=== LIEN DE CONFIRMATION (mode dev) ===\n{confirm_url}\n====================================\n")
-        return True
+    
+    if not RESEND_API_KEY or RESEND_API_KEY == "re_ta_cle_api_ici":
+        print(f"\n=== LIEN DE CONFIRMATION (clé manquante) ===\n{confirm_url}\n==========================================\n")
+        return True, confirm_url
+    
     try:
         html = f"""
         <h2>Bienvenue {pseudo} !</h2>
@@ -54,12 +58,17 @@ def send_confirmation_email(email, pseudo, token):
                 "to": email,
                 "subject": "Confirmation d'inscription - Chapelet Tazzz Bot",
                 "html": html
-            }
+            },
+            timeout=10
         )
-        return resp.status_code == 200
+        if resp.status_code == 200:
+            return True, None
+        else:
+            print(f"Erreur Resend: {resp.status_code} - {resp.text}")
+            return False, None
     except Exception as e:
-        print(f"Erreur envoi email: {e}")
-        return False
+        print(f"Exception lors de l'envoi: {e}")
+        return False, None
 
 def login_required(f):
     @wraps(f)
@@ -69,7 +78,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# ================= FONCTIONS IA (inchangées) =================
+# ================= FONCTIONS IA =================
 def call_deepseek(prompt, max_tokens=3000):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API manquante")
@@ -215,15 +224,20 @@ def register():
                   (pseudo, email, password_hash, token, token_expiry, str(datetime.now())))
         conn.commit()
         conn.close()
-        if send_confirmation_email(email, pseudo, token):
-            return jsonify({'message': 'Inscription réussie. Vérifiez vos emails pour confirmer.'}), 201
+        
+        success, link = send_confirmation_email(email, pseudo, token)
+        if success:
+            response = {'message': 'Inscription réussie. Vérifiez vos emails pour confirmer.'}
+            if link:
+                response['confirmation_link'] = link
+            return jsonify(response), 201
         else:
             conn = sqlite3.connect('users.db')
             c = conn.cursor()
             c.execute("DELETE FROM users WHERE email = ?", (email,))
             conn.commit()
             conn.close()
-            return jsonify({'error': 'Erreur envoi email. Réessayez.'}), 500
+            return jsonify({'error': 'Erreur lors de l\'envoi de l\'email. Réessayez.'}), 500
     except sqlite3.IntegrityError:
         return jsonify({'error': 'Email ou pseudo déjà utilisé'}), 400
 
