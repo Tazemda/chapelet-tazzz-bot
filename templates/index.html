@@ -185,6 +185,7 @@
             font-weight: bold;
             color: #f1c40f;
             cursor: pointer;
+            display: none; /* caché par défaut, sera affiché via JS */
         }
         .blink-text { animation: blinkText 1s infinite; }
         @keyframes blinkText { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
@@ -396,7 +397,7 @@
                 <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, Prise de parole...">
                 <button id="startExpertise">✨ DÉMARRER L'EXPERTISE ✨</button>
                 <div id="jourContainer" style="display:none;">
-                    <div id="progressHeaderMsg" class="progress-header" style="display:none;">👉 cliquez ici pour valider cette journée !</div>
+                    <div id="progressHeaderMsg" class="progress-header">👉 cliquez ici pour valider cette journée !</div>
                     <div id="segmentsContainer" class="progress-segments"></div>
                     <div id="jourHeader" class="jour-header" style="display: none;">
                         <div id="prevDayTriangle" class="nav-triangle">◀</div>
@@ -553,21 +554,34 @@
                 blinkInterval = null;
                 document.querySelectorAll('.segment').forEach(seg => seg.classList.remove('blink-segment'));
                 const msgDiv = document.getElementById('progressHeaderMsg');
-                if (msgDiv) msgDiv.classList.remove('blink-text');
+                if (msgDiv) {
+                    msgDiv.classList.remove('blink-text');
+                    msgDiv.style.display = 'none';
+                }
             }
+
             function demarrerClignotement() {
                 arreterClignotement();
                 const dayIndex = currentPage - 1;
                 if (dayIndex < 0 || dayIndex >= currentNbJours) return;
+
                 const segments = document.querySelectorAll('.segment');
                 if (segments[dayIndex]) {
                     segments[dayIndex].classList.add('blink-segment');
-                    blinkInterval = setInterval(playBeep, 1000);
                 }
+
                 const msgDiv = document.getElementById('progressHeaderMsg');
-                if (msgDiv && currentPage > 0 && !currentProgression[currentPage-1]) {
+                if (msgDiv) {
+                    msgDiv.style.display = 'block';
                     msgDiv.classList.add('blink-text');
                 }
+
+                // Initialiser l'audio si nécessaire
+                if (!audioCtx) initAudio();
+
+                blinkInterval = setInterval(() => {
+                    playBeep();
+                }, 1000);
             }
 
             function decouperEnDizaines(contenuBrut) {
@@ -605,13 +619,7 @@
                 leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
                 rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
                 contentDiv.scrollTop = 0;
-                if (currentPage > 0 && currentDizaineIndex === 4 && !currentProgression[currentPage-1]) {
-                    demarrerClignotement();
-                } else {
-                    arreterClignotement();
-                    const msgDiv = document.getElementById('progressHeaderMsg');
-                    if (msgDiv) msgDiv.style.display = 'none';
-                }
+                updateValidationMessage();
             }
 
             function afficherBarreSegments() {
@@ -635,6 +643,7 @@
                     seg.innerHTML = `<div class="day-label">J${i+1}</div><div class="day-status">${currentProgression[i] ? '✓' : (currentJours[i+1] ? '📖' : '🔒')}</div>`;
                     container.appendChild(seg);
                 }
+                updateValidationMessage();
             }
 
             function updateValidationMessage() {
@@ -644,8 +653,14 @@
                     msgDiv.style.display = 'none';
                     arreterClignotement();
                 } else {
-                    msgDiv.style.display = 'block';
-                    if (currentDizaineIndex === 4) demarrerClignotement();
+                    // La journée n'est pas validée : on affiche le message seulement à la 5e dizaine
+                    if (currentDizaineIndex === 4) {
+                        msgDiv.style.display = 'block';
+                        demarrerClignotement();
+                    } else {
+                        msgDiv.style.display = 'none';
+                        arreterClignotement();
+                    }
                 }
             }
 
@@ -946,7 +961,6 @@
                         </div>
                     `;
                     container.appendChild(card);
-                    // On ne préremplit pas le textarea
                 }
                 attachEvents();
             }
@@ -1117,13 +1131,12 @@
                 btnCoursToggle.classList.add('active');
                 btnExpertise.classList.remove('active');
                 btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▼';
-                // Optionnel : réinitialiser les chapitres si nécessaire ? On ne le fait pas automatiquement.
             }
 
             btnExpertise.addEventListener('click', showExpertise);
             btnCoursToggle.addEventListener('click', showCours);
 
-            // Initialisation (expertise visible)
+            // Initialisation
             showExpertise();
             createChapitresUI();
 
