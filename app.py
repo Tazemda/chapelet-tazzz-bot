@@ -63,17 +63,25 @@ L'objectif général du jour {jour_num} est : {titre_objectif}.
 
 Commence par le titre : `## **JOUR {jour_num} : [TITRE PERTINENT EN MAJUSCULES, ADAPTÉ AU DOMAINE]**`
 
-Puis, EXACTEMENT 5 DIZAINES. Chaque dizaine doit suivre ce format (concis) :
+Puis, EXACTEMENT 5 DIZAINES. Chaque dizaine doit suivre ce format (concis). Ajoute une ligne vide après chaque section (A, B, C, D) pour la clarté.
 
 **DIZAINE X : CONCEPT : [nom du concept]**
 
 A) **Synthèse générale Méditation à lire en tenant un gros grain du chapelet** : exactement 8 phrases moyennement denses non numérotés (toutes les méditations, tous les jours) : définition + rôle + exemple court.
 
+[une ligne vide]
+
 B) A la place du **Notre Père**, écrire : RÉPÈTE 3 fois sans égrener le chapelet : une seule phrase, question centrale.
+
+[une ligne vide]
 
 C) A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois en égrenant 10 petits grains: exactement 6 phrases (toutes les méditations, tous les jours) synthétiques, numérotées et mémorisables.
 
+[une ligne vide]
+
 D) A la place du **Gloire au Père**, écrire : RÉPÈTE 3 fois sans égrener: "Le concept [nom] est consolidé."
+
+[une ligne vide]
 
 (même structure pour DIZAINE 2 à 5)
 
@@ -112,18 +120,26 @@ Voici le texte du chapitre :
 
 {texte_chapitre}
 
-Génère le contenu du **Jour {jour_num}** selon le format exact suivant :
+Génère le contenu du **Jour {jour_num}** selon le format exact suivant. Ajoute une ligne vide après chaque section (A, B, C, D) pour la clarté.
 
 ## **JOUR {jour_num} : [TITRE ADAPTÉ AU CHAPITRE]**
 
 **DIZAINE 1 : CONCEPT : [nom]**
 A) **Synthèse générale Méditation à lire en tenant un gros grain du chapelet** : exactement 8 phrases moyennement denses non numérotés (toutes les méditations, tous les jours) : définition + rôle + exemple court.
 
+[une ligne vide]
+
 B) A la place du **Notre Père**, écrire : RÉPÈTE 3 fois sans égrener le chapelet : une seule phrase, question centrale.
+
+[une ligne vide]
 
 C) A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois en égrenant 10 petits grains: exactement 6 phrases (toutes les méditations, tous les jours) synthétiques, numérotées et mémorisables.
 
+[une ligne vide]
+
 D) A la place du **Gloire au Père**, écrire : RÉPÈTE 3 fois sans égrener: "Le concept [nom] est consolidé."
+
+[une ligne vide]
 
 (même structure pour DIZAINE 2 à 5)
 
