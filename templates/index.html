@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Chapelet Tazzz Bot</title>
     <style>
-        /* ========== STYLES COMPLETS ========== */
         * { box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -49,8 +48,8 @@
         }
         h1 { text-align: center; font-size: 1.5rem; margin-bottom: 0px; letter-spacing: 1px; }
         .subtitle { text-align: center; font-size: 0.9rem; opacity: 0.8; margin-bottom: 30px; margin-top: 5px; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-        .history-link, .home-header { background: #2c3e4e; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; white-space: nowrap; border: none; color: white; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .history-link, .home-header { background: #2c3e4e; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
         .history-link:hover, .home-header:hover { background: #e67e22; }
         .mode-selector { display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
         .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
@@ -58,6 +57,7 @@
         .mode-panel { display: none; animation: fadeIn 0.3s ease; }
         .mode-panel.active-panel { display: block; }
         .cours-panel { margin-top: 15px; }
+        .chapitres-container { display: block; }
         input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 14px; border: none; background: #f0f0f0; font-size: 1rem; }
         button { background: #e67e22; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
         button:hover { background: #d35400; transform: scale(0.98); }
@@ -100,12 +100,66 @@
         .refresh-dizaine:hover { background: rgba(46, 204, 113, 0.6); transform: scale(1.05); color: white; }
         .refresh-dizaine.loading { animation: spin 1s linear infinite; pointer-events: none; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .jour-header { display: flex; align-items: center; justify-content: space-between; margin: 15px 0 10px; gap: 15px; }
-        .jour-title { font-size: 2rem; font-weight: bold; letter-spacing: 6px; color: #f1c40f; text-shadow: 0 0 8px rgba(0,0,0,0.6); background: rgba(0,0,0,0.3); border-radius: 40px; padding: 5px 20px; text-align: center; flex: 1; }
-        .nav-triangle { font-size: 2rem; background: rgba(230,126,34,0.3); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; user-select: none; }
+        .jour-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 15px 0 10px;
+            gap: 15px;
+        }
+        .jour-title {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 6px;
+            color: #f1c40f;
+            text-shadow: 0 0 8px rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.3);
+            border-radius: 40px;
+            padding: 5px 20px;
+            text-align: center;
+            flex: 1;
+        }
+        .nav-triangle {
+            font-size: 2rem;
+            background: rgba(230,126,34,0.3);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            user-select: none;
+        }
         .nav-triangle:hover { background: #e67e22; transform: scale(1.05); }
-        .dizaine-title { font-size: 1.3rem; font-weight: bold; color: #e67e22; margin-bottom: 15px; border-bottom: 2px solid #e67e22; display: inline-block; padding-right: 20px; }
-        .swipe-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; background-color: rgba(200,200,200,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; cursor: pointer; transition: 0.2s; z-index: 15; backdrop-filter: blur(4px); opacity: 0.3; }
+        .dizaine-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #e67e22;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e67e22;
+            display: inline-block;
+            padding-right: 20px;
+        }
+        .swipe-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            background-color: rgba(200,200,200,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            cursor: pointer;
+            transition: 0.2s;
+            z-index: 15;
+            backdrop-filter: blur(4px);
+            opacity: 0.3;
+        }
         .swipe-arrow:hover { opacity: 0.8; background-color: rgba(230,126,34,0.6); }
         .swipe-left { left: 5px; }
         .swipe-right { right: 5px; }
@@ -131,7 +185,7 @@
             font-weight: bold;
             color: #f1c40f;
             cursor: pointer;
-            display: none;
+            display: none; /* caché par défaut, sera affiché via JS */
         }
         .blink-text { animation: blinkText 1s infinite; }
         @keyframes blinkText { 0% { opacity: 1; } 50% { opacity: 0.2; } 100% { opacity: 1; } }
@@ -183,21 +237,13 @@
         .audio-player-bar button { background: #2c3e4e; border: none; color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 1rem; cursor: pointer; margin: 0; padding: 0; }
         .audio-player-bar button:hover { background: #e67e22; }
         .audio-player-bar input[type="range"] { width: 160px; margin: 0 5px; cursor: pointer; }
-        .footer-auth { text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(230,126,34,0.3); }
-        .auth-buttons { display: flex; gap: 15px; justify-content: center; margin-bottom: 10px; }
-        .auth-btn-small { background: #2c3e4e; border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 0.75rem; transition: 0.2s; }
-        .auth-btn-small:hover { background: #e67e22; }
-        .user-info-footer { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 10px; font-size: 0.8rem; }
-        .logout-btn-small { background: #aa2e1e; padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 0.7rem; }
-        .logout-btn-small:hover { background: #ff5c33; }
-        .copyright { font-size: 0.65rem; margin-top: 8px; opacity: 0.7; }
+        .footer { text-align: center; margin-top: 25px; font-size: 0.7rem; opacity: 0.7; }
+        .copyright { font-size: 0.65rem; margin-top: 8px; }
         .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0,0,0,0.85);
             z-index: 1000;
             justify-content: center;
@@ -205,48 +251,119 @@
         }
         .modal-content {
             background: #1e2b3c;
-            max-width: 400px;
+            max-width: 600px;
             width: 90%;
             border-radius: 24px;
-            padding: 25px;
+            padding: 20px;
             text-align: center;
+            max-height: 80%;
+            overflow-y: auto;
         }
-        .modal-content input { width: 100%; padding: 10px; margin: 10px 0; border-radius: 12px; border: none; }
-        .checkbox-group { text-align: left; margin: 15px 0; font-size: 0.75rem; display: flex; align-items: center; gap: 8px; }
-        .checkbox-group input { width: auto; margin: 0; }
-        .forgot-link { margin-top: 10px; font-size: 0.75rem; cursor: pointer; color: #e67e22; text-decoration: underline; }
-        .forgot-link:hover { color: #f39c12; }
         .history-category { margin-top: 20px; border-top: 1px solid #e67e22; padding-top: 10px; }
         .history-category h4 { color: #f1c40f; margin: 10px 0; cursor: pointer; display: inline-block; padding: 5px 10px; border-radius: 20px; background: rgba(0,0,0,0.3); }
         .history-category h4:hover { background: #e67e22; }
         .history-list { margin-top: 10px; transition: 0.2s; }
         .history-list.collapsed { display: none; }
-        .history-item { background: #2c3e4e; margin: 8px 0; padding: 10px; border-radius: 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .history-item {
+            background: #2c3e4e;
+            margin: 8px 0;
+            padding: 10px;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: 0.1s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
         .history-item:hover { background: #e67e22; }
         .history-item-text { flex: 1; text-align: left; }
-        .delete-history-item { background: #aa2e1e; border: none; color: white; border-radius: 30px; padding: 4px 12px; font-size: 0.7rem; cursor: pointer; margin-left: 10px; }
+        .delete-history-item {
+            background: #aa2e1e;
+            border: none;
+            color: white;
+            border-radius: 30px;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: 0.1s;
+        }
         .delete-history-item:hover { background: #ff5c33; transform: scale(0.95); }
         .badge-text { font-size: 0.8rem; color: #f39c12; margin-top: 5px; }
-        .progress-container { margin: 15px 0 10px; width: 100%; background-color: #2c3e4e; border-radius: 10px; overflow: hidden; height: 12px; }
+        .progress-container { margin: 15px 0 10px; width: 100%; background-color: #2c3e4e; border-radius: 10px; overflow: hidden; height: 12px; position: relative; }
         .progress-fill { width: 0%; height: 100%; background-color: #2ecc71; transition: width 0.2s ease; }
         .progress-percent { text-align: center; font-size: 0.7rem; margin-top: 4px; color: #2ecc71; }
-        .chapitre-card { background: rgba(0,0,0,0.3); border-radius: 16px; padding: 15px; margin-bottom: 20px; border-left: 4px solid #e67e22; }
-        .chapitre-header { display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
-        .chapitre-header strong { font-size: 1.2rem; color: #f1c40f; flex: 1; }
-        .toggle-chapitre { font-size: 1.2rem; transition: transform 0.2s; background: none; border: none; color: #e67e22; width: 30px; cursor: pointer; margin: 0; padding: 0; }
+        .chapitre-card {
+            background: rgba(0,0,0,0.3);
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #e67e22;
+        }
+        .chapitre-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .chapitre-header strong {
+            font-size: 1.2rem;
+            color: #f1c40f;
+            flex: 1;
+        }
+        .toggle-chapitre {
+            font-size: 1.2rem;
+            transition: transform 0.2s;
+            background: none;
+            border: none;
+            color: #e67e22;
+            width: 30px;
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+        }
         .toggle-chapitre:hover { background: none; transform: scale(1.1); }
         .chapitre-body { margin-top: 10px; }
         .chapitre-body.collapsed { display: none; }
-        .chapitre-status { font-size: 0.8rem; margin-top: 8px; color: #2ecc71; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .chapitre-status {
+            font-size: 0.8rem;
+            margin-top: 8px;
+            color: #2ecc71;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
         .error-status { color: #ff5555; animation: blinkError 0.8s infinite; font-weight: bold; }
         @keyframes blinkError { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-        .save-chapitre-btn, .refresh-chapitre-btn { background: #2c3e4e; padding: 5px 15px; margin-top: 5px; margin-right: 8px; font-size: 0.8rem; display: inline-block; }
+        .save-chapitre-btn, .refresh-chapitre-btn {
+            background: #2c3e4e;
+            padding: 5px 15px;
+            margin-top: 5px;
+            margin-right: 8px;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
         .refresh-chapitre-btn { background: #8e44ad; font-size: 1.2rem; padding: 5px 10px; }
-        .warning-limit { background: rgba(230,126,34,0.2); border-left: 3px solid #e67e22; padding: 5px 10px; margin: 10px 0; font-size: 0.8rem; border-radius: 6px; }
+        .warning-limit {
+            background: rgba(230,126,34,0.2);
+            border-left: 3px solid #e67e22;
+            padding: 5px 10px;
+            margin: 10px 0;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
         .custom-progress { width: 100%; background-color: #2c3e4e; border-radius: 20px; overflow: hidden; margin-top: 5px; }
         .custom-progress-bar { width: 0%; height: 6px; background-color: #3498db; transition: width 0.3s; }
         .progress-percent-text { font-size: 0.7rem; margin-left: 10px; }
-        .btn-toggle-chapitres { background: #8a2be2; margin-left: 10px; padding: 6px 15px; font-size: 0.8rem; }
+        .btn-toggle-chapitres {
+            background: #8a2be2;
+            margin-left: 10px;
+            padding: 6px 15px;
+            font-size: 0.8rem;
+        }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -274,6 +391,7 @@
                 <button id="btnCoursToggle" class="mode-btn">📘 Mes cours en 6 jours ▶</button>
             </div>
 
+            <!-- Panneau Expertise classique -->
             <div id="expertisePanel" class="mode-panel active-panel">
                 <p>🔬 Domaine à maîtriser :</p>
                 <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, Prise de parole...">
@@ -306,8 +424,9 @@
                     <div id="feedbackBox" class="feedback-box" style="display:none;">
                         <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
                         <div class="stars" id="starsEx">
-                            <span class="star" data-value="1">☆</span><span class="star" data-value="2">☆</span><span class="star" data-value="3">☆</span>
-                            <span class="star" data-value="4">☆</span><span class="star" data-value="5">☆</span>
+                            <span class="star" data-value="1">☆</span><span class="star" data-value="2">☆</span>
+                            <span class="star" data-value="3">☆</span><span class="star" data-value="4">☆</span>
+                            <span class="star" data-value="5">☆</span>
                         </div>
                         <textarea id="feedbackCommentEx" rows="2" placeholder="Vos remarques (facultatif)"></textarea>
                         <button id="submitFeedbackEx">Envoyer mon avis</button>
@@ -315,10 +434,11 @@
                 </div>
             </div>
 
+            <!-- Panneau Cours (6 chapitres) -->
             <div id="coursPanel" class="mode-panel">
                 <div class="warning-limit">
                     📚 Saisissez vos 6 chapitres (copier-coller puis enregistrer chaque chapitre).<br>
-                    ⚠️ Attention ! Pas plus de 8000 caractères par chapitre.
+                    ⚠️ Attention ! Pas plus de 8000 caractères par chapitre (vérifiable sur Word).
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <button id="toggleChapitresBtn" class="btn-toggle-chapitres">▼ Plier tous les chapitres</button>
@@ -333,9 +453,9 @@
 
             <div class="action-buttons">
                 <button id="shareButton">📤 Partager</button>
+                <button id="subscribeButton">🔒 S'abonner</button>
             </div>
-            <div class="footer-auth">
-                <div id="authFooter"></div>
+            <div class="footer">
                 <div class="copyright">Plasticité cérébrale & répétition rythmée.<br>© Dr Tazzz</div>
             </div>
         </div>
@@ -355,196 +475,9 @@
         </div>
     </div>
 
-    <div id="forgotModal" class="modal">
-        <div class="modal-content">
-            <h3>Mot de passe oublié</h3>
-            <input type="email" id="forgotEmail" placeholder="Votre email" required>
-            <button id="forgotSubmitBtn">Envoyer le lien</button>
-            <button id="closeForgotModal" style="background:#2c3e4e; margin-top:10px;">Fermer</button>
-        </div>
-    </div>
-
-    <div id="authModal" class="modal">
-        <div class="modal-content">
-            <h3 id="authModalTitle">Inscription</h3>
-            <input type="text" id="authPseudo" placeholder="Pseudo">
-            <input type="email" id="authEmail" placeholder="Email">
-            <input type="password" id="authPassword" placeholder="Mot de passe (min. 6 caractères)">
-            <input type="password" id="authPasswordConfirm" placeholder="Confirmer le mot de passe">
-            <div class="checkbox-group" id="authConsentGroup">
-                <input type="checkbox" id="authConsent">
-                <label>J'accepte la collecte et le stockage de mes données</label>
-            </div>
-            <button id="authSubmitBtn">Valider</button>
-            <div id="forgotLinkWrapper" style="margin-top:10px; display:none;"><span class="forgot-link" id="forgotPasswordLink">Mot de passe oublié ?</span></div>
-            <button id="closeAuthModal" style="background:#2c3e4e; margin-top:10px;">Fermer</button>
-        </div>
-    </div>
-
     <script>
         (function() {
-            // ================= AUTHENTIFICATION =================
-            let currentUser = null;
-            let pendingAction = null;
-            let pendingData = null;
-
-            async function checkAuth() {
-                try {
-                    const res = await fetch('/api/me');
-                    const data = await res.json();
-                    if (data.logged_in) {
-                        currentUser = { pseudo: data.pseudo };
-                    } else {
-                        currentUser = null;
-                    }
-                    updateAuthFooter();
-                    return currentUser !== null;
-                } catch(e) {
-                    console.error(e);
-                    currentUser = null;
-                    updateAuthFooter();
-                    return false;
-                }
-            }
-
-            function updateAuthFooter() {
-                const footer = document.getElementById('authFooter');
-                if (currentUser) {
-                    footer.innerHTML = `
-                        <div class="user-info-footer">
-                            <span>👤 ${currentUser.pseudo}</span>
-                            <span class="logout-btn-small" id="logoutBtnFooter">Déconnexion</span>
-                        </div>
-                    `;
-                    document.getElementById('logoutBtnFooter')?.addEventListener('click', logout);
-                    if (pendingAction) { pendingAction(pendingData); pendingAction = null; pendingData = null; }
-                } else {
-                    footer.innerHTML = `
-                        <div class="auth-buttons">
-                            <button class="auth-btn-small" id="registerBtnFooter">📝 S'inscrire</button>
-                            <button class="auth-btn-small" id="loginBtnFooter">🔑 Connexion</button>
-                        </div>
-                    `;
-                    document.getElementById('registerBtnFooter')?.addEventListener('click', () => openAuthModal('register'));
-                    document.getElementById('loginBtnFooter')?.addEventListener('click', () => openAuthModal('login'));
-                }
-            }
-
-            async function logout() {
-                await fetch('/api/logout', { method: 'POST' });
-                currentUser = null;
-                updateAuthFooter();
-            }
-
-            async function requireAuth(action, data) {
-                const loggedIn = await checkAuth();
-                if (loggedIn) {
-                    if (action) action(data);
-                } else {
-                    pendingAction = action;
-                    pendingData = data;
-                    openAuthModal('register');
-                }
-            }
-
-            function openAuthModal(mode) {
-                const modal = document.getElementById('authModal');
-                const title = document.getElementById('authModalTitle');
-                const pseudo = document.getElementById('authPseudo');
-                const email = document.getElementById('authEmail');
-                const pwd = document.getElementById('authPassword');
-                const pwdConfirm = document.getElementById('authPasswordConfirm');
-                const consentGroup = document.getElementById('authConsentGroup');
-                const forgotWrapper = document.getElementById('forgotLinkWrapper');
-                
-                pseudo.value = ''; email.value = ''; pwd.value = ''; pwdConfirm.value = '';
-                if (consentGroup) consentGroup.style.display = 'none';
-                
-                if (mode === 'register') {
-                    title.innerText = 'Inscription';
-                    pwdConfirm.style.display = 'block';
-                    if (consentGroup) consentGroup.style.display = 'flex';
-                    forgotWrapper.style.display = 'none';
-                    document.getElementById('authSubmitBtn').onclick = async () => {
-                        const pseudoVal = pseudo.value.trim();
-                        const emailVal = email.value.trim();
-                        const pwdVal = pwd.value;
-                        const pwdConfirmVal = pwdConfirm.value;
-                        const consent = document.getElementById('authConsent')?.checked;
-                        if (!pseudoVal || !emailVal || !pwdVal || !pwdConfirmVal) { alert('Tous les champs requis'); return; }
-                        if (pwdVal !== pwdConfirmVal) { alert('Mots de passe différents'); return; }
-                        if (!consent) { alert('Conditions non acceptées'); return; }
-                        if (pwdVal.length < 6) { alert('Mot de passe trop court'); return; }
-                        try {
-                            const res = await fetch('/api/register', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ pseudo: pseudoVal, email: emailVal, password: pwdVal, password_confirm: pwdConfirmVal })
-                            });
-                            const data = await res.json();
-                            if (res.ok) {
-                                alert('Inscription réussie ! Vérifiez vos emails pour confirmer.');
-                                modal.style.display = 'none';
-                            } else alert(data.error || 'Erreur');
-                        } catch(e) { alert('Erreur réseau'); }
-                    };
-                } else {
-                    title.innerText = 'Connexion';
-                    pwdConfirm.style.display = 'none';
-                    if (consentGroup) consentGroup.style.display = 'none';
-                    forgotWrapper.style.display = 'block';
-                    document.getElementById('authSubmitBtn').onclick = async () => {
-                        const emailVal = email.value.trim();
-                        const pwdVal = pwd.value;
-                        if (!emailVal || !pwdVal) { alert('Email et mot de passe requis'); return; }
-                        try {
-                            const res = await fetch('/api/login', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ email: emailVal, password: pwdVal })
-                            });
-                            const data = await res.json();
-                            if (res.ok) {
-                                currentUser = { pseudo: data.pseudo };
-                                updateAuthFooter();
-                                modal.style.display = 'none';
-                                alert('Connecté !');
-                                if (pendingAction) { pendingAction(pendingData); pendingAction = null; pendingData = null; }
-                            } else alert(data.error || 'Erreur de connexion');
-                        } catch(e) { alert('Erreur réseau'); }
-                    };
-                }
-                modal.style.display = 'flex';
-            }
-
-            document.getElementById('closeAuthModal')?.addEventListener('click', () => document.getElementById('authModal').style.display = 'none');
-            document.getElementById('forgotPasswordLink')?.addEventListener('click', () => {
-                document.getElementById('authModal').style.display = 'none';
-                const forgotModal = document.getElementById('forgotModal');
-                forgotModal.style.display = 'flex';
-                document.getElementById('forgotSubmitBtn').onclick = async () => {
-                    const email = document.getElementById('forgotEmail').value.trim();
-                    if (!email) { alert('Email requis'); return; }
-                    try {
-                        const res = await fetch('/api/forgot-password', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email })
-                        });
-                        const data = await res.json();
-                        alert(data.message || data.error);
-                        if (res.ok) forgotModal.style.display = 'none';
-                    } catch(e) { alert('Erreur réseau'); }
-                };
-            });
-            document.getElementById('closeForgotModal')?.addEventListener('click', () => document.getElementById('forgotModal').style.display = 'none');
-            window.addEventListener('click', (e) => {
-                if (e.target === document.getElementById('authModal')) document.getElementById('authModal').style.display = 'none';
-                if (e.target === document.getElementById('forgotModal')) document.getElementById('forgotModal').style.display = 'none';
-            });
-
-            // ================= FONCTIONS MÉTIER (expertise, cours) =================
-            // Écran de chargement
+            // ---------- ÉCRAN DE CHARGEMENT ----------
             const loadingScreen = document.getElementById('loadingScreen');
             const mainContent = document.getElementById('mainContent');
             const progressBar = document.getElementById('loadingProgressBar');
@@ -580,7 +513,7 @@
             }
             requestAnimationFrame(updateProgress);
 
-            // Audio bip
+            // ---------- AUDIO (bip) ----------
             let audioCtx = null;
             function initAudio() {
                 if (audioCtx) return;
@@ -605,26 +538,52 @@
                 osc.stop(now + 0.2);
             }
 
-            // État global expertise
-            let currentDomaine = '', currentProgression = [], currentJours = {}, currentDizaines = [], currentDizaineIndex = 0, currentPage = 0, blinkInterval = null, touchStartX = 0, touchEndX = 0, currentNbJours = 7;
+            // ---------- ÉTAT GLOBAL EXPERTISE ----------
+            let currentDomaine = '';
+            let currentProgression = [];
+            let currentJours = {};
+            let currentDizaines = [];
+            let currentDizaineIndex = 0;
+            let currentPage = 0;
+            let blinkInterval = null;
+            let touchStartX = 0, touchEndX = 0;
+            let currentNbJours = 7;
+
             function arreterClignotement() {
                 if (blinkInterval) clearInterval(blinkInterval);
                 blinkInterval = null;
                 document.querySelectorAll('.segment').forEach(seg => seg.classList.remove('blink-segment'));
                 const msgDiv = document.getElementById('progressHeaderMsg');
-                if (msgDiv) { msgDiv.classList.remove('blink-text'); msgDiv.style.display = 'none'; }
+                if (msgDiv) {
+                    msgDiv.classList.remove('blink-text');
+                    msgDiv.style.display = 'none';
+                }
             }
+
             function demarrerClignotement() {
                 arreterClignotement();
                 const dayIndex = currentPage - 1;
                 if (dayIndex < 0 || dayIndex >= currentNbJours) return;
+
                 const segments = document.querySelectorAll('.segment');
-                if (segments[dayIndex]) segments[dayIndex].classList.add('blink-segment');
+                if (segments[dayIndex]) {
+                    segments[dayIndex].classList.add('blink-segment');
+                }
+
                 const msgDiv = document.getElementById('progressHeaderMsg');
-                if (msgDiv) { msgDiv.style.display = 'block'; msgDiv.classList.add('blink-text'); }
+                if (msgDiv) {
+                    msgDiv.style.display = 'block';
+                    msgDiv.classList.add('blink-text');
+                }
+
+                // Initialiser l'audio si nécessaire
                 if (!audioCtx) initAudio();
-                blinkInterval = setInterval(playBeep, 1000);
+
+                blinkInterval = setInterval(() => {
+                    playBeep();
+                }, 1000);
             }
+
             function decouperEnDizaines(contenuBrut) {
                 if (!contenuBrut) return [];
                 const regex = /(?:DIZAINE\s+\d+\s*[–-]?\s*\**\s*)([^]*?)(?=(?:DIZAINE\s+\d+|$))/gi;
@@ -634,11 +593,16 @@
                 if (ps.length >= 5) return ps.slice(0,5);
                 return [contenuBrut];
             }
+
             function afficherDizaine(index, afficherMessage = false) {
                 const contentDiv = document.getElementById('jourContent');
                 const leftArrow = document.getElementById('swipeLeftArrow');
                 const rightArrow = document.getElementById('swipeRightArrow');
-                if (!currentDizaines.length) { contentDiv.innerHTML = '<em>Contenu non disponible.</em>'; leftArrow.style.display = 'none'; rightArrow.style.display = 'none'; return; }
+                if (!currentDizaines.length) {
+                    contentDiv.innerHTML = '<em>Contenu non disponible.</em>';
+                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
+                    return;
+                }
                 if (index < 0) index = 0;
                 if (index >= currentDizaines.length) {
                     if (afficherMessage && currentPage >= 1 && !currentProgression[currentPage-1]) {
@@ -649,13 +613,15 @@
                     return;
                 }
                 currentDizaineIndex = index;
-                const titre = `<div class="dizaine-title">📖 DIZAINE ${currentDizaineIndex+1} / 5</div>`;
+                const numero = currentDizaineIndex + 1;
+                const titre = `<div class="dizaine-title">📖 DIZAINE ${numero} / 5</div>`;
                 contentDiv.innerHTML = titre + currentDizaines[currentDizaineIndex].replace(/\n/g, '<br>');
                 leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
                 rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
                 contentDiv.scrollTop = 0;
                 updateValidationMessage();
             }
+
             function afficherBarreSegments() {
                 const container = document.getElementById('segmentsContainer');
                 if (!container) return;
@@ -679,6 +645,7 @@
                 }
                 updateValidationMessage();
             }
+
             function updateValidationMessage() {
                 const msgDiv = document.getElementById('progressHeaderMsg');
                 if (!msgDiv) return;
@@ -686,18 +653,28 @@
                     msgDiv.style.display = 'none';
                     arreterClignotement();
                 } else {
-                    if (currentDizaineIndex === 4) { msgDiv.style.display = 'block'; demarrerClignotement(); }
-                    else { msgDiv.style.display = 'none'; arreterClignotement(); }
+                    // La journée n'est pas validée : on affiche le message seulement à la 5e dizaine
+                    if (currentDizaineIndex === 4) {
+                        msgDiv.style.display = 'block';
+                        demarrerClignotement();
+                    } else {
+                        msgDiv.style.display = 'none';
+                        arreterClignotement();
+                    }
                 }
             }
+
             function naviguerVersJour(jourNum) {
                 if (jourNum >= 1 && jourNum <= currentNbJours && currentJours[jourNum]) {
                     currentPage = jourNum;
                     currentDizaines = decouperEnDizaines(currentJours[jourNum]);
                     currentDizaineIndex = 0;
                     afficherPage();
-                } else if (jourNum >= 1 && jourNum <= currentNbJours && !currentJours[jourNum]) alert(`Jour ${jourNum} non trouvé.`);
+                } else if (jourNum >= 1 && jourNum <= currentNbJours && !currentJours[jourNum]) {
+                    alert(`Jour ${jourNum} non trouvé. Générez-le d'abord.`);
+                }
             }
+
             function cocherSegment(idx) {
                 for (let i=0; i<idx; i++) if (!currentProgression[i]) { alert(`Validez d'abord le jour ${i+1}.`); return; }
                 if (!currentProgression[idx]) {
@@ -718,6 +695,7 @@
                     } else alert(`🎊 Bravo ! Jour ${idx+1}/${currentNbJours} validé.`);
                 }
             }
+
             function sauvegarderFormationCourante() {
                 let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
                 joursParDomaine[currentDomaine] = currentJours;
@@ -726,6 +704,7 @@
                 let entry = historique.find(h => h.domaine === currentDomaine);
                 if (entry) { entry.progression = currentProgression.slice(); entry.nbJours = currentNbJours; localStorage.setItem('historique', JSON.stringify(historique)); }
             }
+
             function chargerFormation(domaine, progression, jours, nbJours = 7) {
                 arreterClignotement();
                 currentDomaine = domaine;
@@ -737,9 +716,14 @@
                 document.getElementById('jourContainer').style.display = 'block';
                 document.getElementById('startExpertise').style.display = 'none';
                 afficherBarreSegments();
-                setTimeout(() => { const intro = document.getElementById('jourContent').innerText; if (intro) playAudioChunks(intro, true); }, 300);
+                setTimeout(() => {
+                    const intro = document.getElementById('jourContent').innerText;
+                    if (intro) playAudioChunks(intro, true);
+                }, 300);
             }
-            const welcomeHTML = `<div class="welcome-text"><strong>Bonjour !</strong><br><br><strong>Bienvenue dans le Chapelet Tazzz Bot.</strong><br><br><strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>- Procurez-vous un vrai chapelet.<br>- Glissez à gauche ou à droite pour feuilleter les 5 dizaines d’un jour.<br>- À la 5e dizaine, validez votre journée en cliquant sur la case clignotante.<br>- Cliquez sur <strong>“Suivant”</strong> pour passer au jour suivant.</div>`;
+
+            const welcomeHTML = `<div class="welcome-text"><strong>Bonjour ! Bienvenue dans le Chapelet Tazzz Bot.</strong><br><br><strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>- Procurez-vous un vrai chapelet.<br>- Glissez à gauche/droite pour feuilleter les 5 dizaines d’un jour.<br>- À la 5e dizaine, validez en cliquant sur la case clignotante.<br>- Cliquez sur <strong>“Suivant”</strong> pour passer au jour suivant.</div>`;
+
             function afficherPage() {
                 const contentDiv = document.getElementById('jourContent');
                 const daySpan = document.getElementById('dayCounter');
@@ -754,6 +738,7 @@
                 const rightArrow = document.getElementById('swipeRightArrow');
                 const refreshBtn = document.getElementById('refreshDizaineBtn');
                 arreterClignotement();
+
                 if (currentPage === 0) {
                     jourHeader.style.display = 'none';
                     contentDiv.innerHTML = welcomeHTML;
@@ -761,7 +746,8 @@
                     prevBtn.disabled = true; nextBtn.disabled = false;
                     feedbackBox.style.display = 'none';
                     welcomeBtn.style.display = 'flex'; dayAudioBtn.style.display = 'none';
-                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none'; refreshBtn.style.display = 'none';
+                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
+                    refreshBtn.style.display = 'none';
                     welcomeBtn.onclick = () => { const intro = document.getElementById('jourContent').innerText; if (intro) playAudioChunks(intro, true); };
                 } else {
                     jourHeader.style.display = 'flex';
@@ -789,6 +775,7 @@
                 }
                 updateValidationMessage();
             }
+
             function chargerJour(jourNum) {
                 if (currentExpertiseInterval) clearInterval(currentExpertiseInterval);
                 currentExpertiseInterval = startExpertiseProgressBar();
@@ -815,6 +802,7 @@
                     afficherBarreSegments();
                 });
             }
+
             async function regenererDizaine() {
                 if (!currentPage || currentPage === 0) return;
                 const refreshBtn = document.getElementById('refreshDizaineBtn');
@@ -840,7 +828,9 @@
                 } catch (err) { alert("Erreur: " + err.message); }
                 finally { refreshBtn.classList.remove('loading'); refreshBtn.innerHTML = '⟳'; }
             }
-            function doStartExpertise() {
+
+            document.getElementById('startExpertise').addEventListener('click', () => {
+                initAudio();
                 const domaine = document.getElementById('domaine').value.trim();
                 if (!domaine) { alert('Saisissez un domaine'); return; }
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
@@ -854,11 +844,102 @@
                 joursParDomaine[domaine] = {};
                 localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
                 chargerFormation(domaine, entry.progression.slice(), {}, 7);
+            });
+
+            document.getElementById('prevDay').addEventListener('click', () => { if (currentPage > 1) { currentPage--; afficherPage(); } });
+            document.getElementById('nextDay').addEventListener('click', () => {
+                if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
+                if (currentPage < currentNbJours) {
+                    if (!currentProgression[currentPage-1] && currentJours[currentPage]) {
+                        alert("Validez d'abord cette journée.");
+                        document.getElementById('progressHeaderMsg')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                    currentPage++; afficherPage();
+                }
+            });
+            document.getElementById('prevDayTriangle').addEventListener('click', () => { if (currentPage > 1) { currentPage--; afficherPage(); } });
+            document.getElementById('nextDayTriangle').addEventListener('click', () => {
+                if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
+                if (currentPage < currentNbJours) {
+                    if (!currentProgression[currentPage-1] && currentJours[currentPage]) {
+                        alert("Validez d'abord cette journée.");
+                        document.getElementById('progressHeaderMsg')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                    currentPage++; afficherPage();
+                }
+            });
+            document.getElementById('refreshDizaineBtn').addEventListener('click', regenererDizaine);
+
+            const contentZone = document.getElementById('jourContent');
+            if (contentZone) {
+                contentZone.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+                contentZone.addEventListener('touchend', (e) => {
+                    if (currentPage === 0) return;
+                    touchEndX = e.changedTouches[0].clientX;
+                    const deltaX = touchEndX - touchStartX;
+                    if (Math.abs(deltaX) < 50) return;
+                    if (deltaX > 0 && currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1, false);
+                    else if (deltaX < 0 && currentDizaineIndex < currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, false);
+                    else if (deltaX < 0 && currentDizaineIndex === currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, true);
+                });
             }
-            // Gestion cours
+            document.getElementById('swipeLeftArrow').addEventListener('click', () => { if (currentPage !== 0 && currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1, false); });
+            document.getElementById('swipeRightArrow').addEventListener('click', () => {
+                if (currentPage !== 0) {
+                    if (currentDizaineIndex < currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, false);
+                    else if (currentDizaineIndex === currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, true);
+                }
+            });
+
+            let currentNoteEx = 0;
+            function refreshStars() { document.querySelectorAll('#starsEx .star').forEach((s,i) => { if (i < currentNoteEx) s.textContent='★'; else s.textContent='☆'; }); }
+            document.querySelectorAll('#starsEx .star').forEach(star => { star.addEventListener('click', () => { currentNoteEx = parseInt(star.dataset.value); refreshStars(); }); });
+            document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
+                if (currentNoteEx === 0) { alert('Choisissez une note'); return; }
+                const comment = document.getElementById('feedbackCommentEx').value.trim();
+                try { await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) }); alert('Merci !'); document.getElementById('feedbackBox').style.display = 'none'; } catch(e) { alert('Erreur réseau'); }
+            });
+
+            document.getElementById('homeHeader').addEventListener('click', () => {
+                currentDomaine = '';
+                document.getElementById('jourContainer').style.display = 'none';
+                document.getElementById('startExpertise').style.display = 'block';
+                document.getElementById('domaine').value = '';
+                document.getElementById('jourContent').innerHTML = '';
+                document.getElementById('swipeLeftArrow').style.display = 'none';
+                document.getElementById('swipeRightArrow').style.display = 'none';
+                document.getElementById('jourHeader').style.display = 'none';
+                document.getElementById('refreshDizaineBtn').style.display = 'none';
+                stopAudio();
+                arreterClignotement();
+                document.getElementById('btnExpertise').click();
+            });
+
+            function genererLienPartage() { const base = window.location.href.split('?')[0]; if (currentDomaine) return `${base}?expertise=${encodeURIComponent(currentDomaine)}`; return base; }
+            document.getElementById('shareButton').addEventListener('click', async () => {
+                const url = genererLienPartage();
+                let text = `🧠 Découvrez "${currentDomaine}" sur Chapelet Tazzz Bot !`;
+                if (navigator.share) { try { await navigator.share({ title: 'Chapelet Tazzz Bot', text, url }); } catch(e) {} }
+                else { try { await navigator.clipboard.writeText(text + ' ' + url); alert('Lien copié'); } catch(e) { alert('Erreur'); } }
+            });
+
+            function initFromUrl() {
+                const params = new URLSearchParams(window.location.search);
+                const expertise = params.get('expertise');
+                if (expertise) {
+                    document.getElementById('domaine').value = decodeURIComponent(expertise);
+                    setTimeout(() => { const btn = document.getElementById('startExpertise'); if (btn && btn.style.display !== 'none') btn.click(); }, 500);
+                }
+            }
+            initFromUrl();
+
+            // ================= MODE COURS (6 CHAPITRES) =================
             let chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
             let coursTemp = JSON.parse(localStorage.getItem('cours_temp')) || {};
             for (let i=1;i<=6;i++) if (coursTemp[i]) chapitresSauvegardes[i] = coursTemp[i];
+
             function createChapitresUI() {
                 const container = document.getElementById('chapitresList');
                 container.innerHTML = '';
@@ -868,7 +949,10 @@
                     card.className = 'chapitre-card';
                     card.id = `chapitre-card-${i}`;
                     card.innerHTML = `
-                        <div class="chapitre-header"><button class="toggle-chapitre" data-chapitre="${i}">${isCollapsed ? '▶' : '▼'}</button><strong>Chapitre ${i}</strong></div>
+                        <div class="chapitre-header">
+                            <button class="toggle-chapitre" data-chapitre="${i}">${isCollapsed ? '▶' : '▼'}</button>
+                            <strong>Chapitre ${i}</strong>
+                        </div>
                         <div class="chapitre-body ${isCollapsed ? 'collapsed' : ''}">
                             <textarea rows="6" class="chapitre-text" data-chapitre="${i}" placeholder="Collez le texte du chapitre..."></textarea>
                             <button class="save-chapitre-btn" data-chapitre="${i}">📎 Enregistrer</button>
@@ -879,13 +963,23 @@
                     container.appendChild(card);
                 }
                 attachEvents();
-                for (let i=1;i<=6;i++) if (chapitresSauvegardes[i]) document.getElementById(`status-chapitre-${i}`).innerHTML = '✅ Chapitre enregistré.';
             }
+
             function attachEvents() {
-                document.querySelectorAll('.save-chapitre-btn').forEach(btn => { btn.removeEventListener('click', saveHandler); btn.addEventListener('click', saveHandler); });
-                document.querySelectorAll('.refresh-chapitre-btn').forEach(btn => { btn.removeEventListener('click', refreshHandler); btn.addEventListener('click', refreshHandler); });
-                document.querySelectorAll('.toggle-chapitre').forEach(t => { t.removeEventListener('click', toggleHandler); t.addEventListener('click', toggleHandler); });
+                document.querySelectorAll('.save-chapitre-btn').forEach(btn => {
+                    btn.removeEventListener('click', saveHandler);
+                    btn.addEventListener('click', saveHandler);
+                });
+                document.querySelectorAll('.refresh-chapitre-btn').forEach(btn => {
+                    btn.removeEventListener('click', refreshHandler);
+                    btn.addEventListener('click', refreshHandler);
+                });
+                document.querySelectorAll('.toggle-chapitre').forEach(t => {
+                    t.removeEventListener('click', toggleHandler);
+                    t.addEventListener('click', toggleHandler);
+                });
             }
+
             async function saveHandler(e) {
                 const num = parseInt(e.currentTarget.dataset.chapitre);
                 const card = document.getElementById(`chapitre-card-${num}`);
@@ -914,6 +1008,7 @@
                     statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
                 }
             }
+
             async function refreshHandler(e) {
                 const num = parseInt(e.currentTarget.dataset.chapitre);
                 const card = document.getElementById(`chapitre-card-${num}`);
@@ -942,6 +1037,7 @@
                     statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
                 }
             }
+
             function toggleHandler(e) {
                 const num = parseInt(e.currentTarget.dataset.chapitre);
                 const card = document.getElementById(`chapitre-card-${num}`);
@@ -957,8 +1053,16 @@
                     localStorage.setItem(`chapitre-${num}-collapsed`, 'true');
                 }
             }
-            function resetCours() { localStorage.removeItem('cours_temp'); chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null}; createChapitresUI(); }
+
+            function resetCours() {
+                localStorage.removeItem('cours_temp');
+                chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
+                createChapitresUI(); // recrée l'interface avec des champs vides
+            }
+
             document.getElementById('resetCoursBtn').addEventListener('click', resetCours);
+
+            // Plier/Déplier tous les chapitres
             let tousPlies = false;
             document.getElementById('toggleChapitresBtn').addEventListener('click', () => {
                 tousPlies = !tousPlies;
@@ -979,7 +1083,8 @@
                 }
                 document.getElementById('toggleChapitresBtn').innerHTML = tousPlies ? '▶ Déplier tous' : '▼ Plier tous';
             });
-            function doGenerateCours() {
+
+            document.getElementById('submitCoursBtn').addEventListener('click', async () => {
                 const missing = [];
                 for (let i=1;i<=6;i++) if (!chapitresSauvegardes[i]) missing.push(i);
                 if (missing.length) { alert(`Chapitres manquants : ${missing.join(', ')}. Enregistrez-les d'abord.`); return; }
@@ -1004,107 +1109,38 @@
                 chargerFormation(titre, entry.progression.slice(), joursComplets, 6);
                 document.getElementById('btnExpertise').click();
                 statusDiv.style.display = 'none';
-            }
-            // Interception des actions protégées
-            document.getElementById('startExpertise').addEventListener('click', () => { requireAuth(doStartExpertise, null); });
-            document.getElementById('submitCoursBtn').addEventListener('click', () => { requireAuth(doGenerateCours, null); });
-            // Navigation jours
-            document.getElementById('prevDay').addEventListener('click', () => { if (currentPage > 1) { currentPage--; afficherPage(); } });
-            document.getElementById('nextDay').addEventListener('click', () => {
-                if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
-                if (currentPage < currentNbJours) {
-                    if (!currentProgression[currentPage-1] && currentJours[currentPage]) {
-                        alert("Validez d'abord cette journée.");
-                        document.getElementById('progressHeaderMsg')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        return;
-                    }
-                    currentPage++; afficherPage();
-                }
             });
-            document.getElementById('prevDayTriangle').addEventListener('click', () => { if (currentPage > 1) { currentPage--; afficherPage(); } });
-            document.getElementById('nextDayTriangle').addEventListener('click', () => {
-                if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
-                if (currentPage < currentNbJours) {
-                    if (!currentProgression[currentPage-1] && currentJours[currentPage]) {
-                        alert("Validez d'abord cette journée.");
-                        document.getElementById('progressHeaderMsg')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        return;
-                    }
-                    currentPage++; afficherPage();
-                }
-            });
-            document.getElementById('refreshDizaineBtn').addEventListener('click', regenererDizaine);
-            const contentZone2 = document.getElementById('jourContent');
-            if (contentZone2) {
-                contentZone2.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
-                contentZone2.addEventListener('touchend', (e) => {
-                    if (currentPage === 0) return;
-                    touchEndX = e.changedTouches[0].clientX;
-                    const deltaX = touchEndX - touchStartX;
-                    if (Math.abs(deltaX) < 50) return;
-                    if (deltaX > 0 && currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1, false);
-                    else if (deltaX < 0 && currentDizaineIndex < currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, false);
-                    else if (deltaX < 0 && currentDizaineIndex === currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, true);
-                });
-            }
-            document.getElementById('swipeLeftArrow').addEventListener('click', () => { if (currentPage !== 0 && currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1, false); });
-            document.getElementById('swipeRightArrow').addEventListener('click', () => {
-                if (currentPage !== 0) {
-                    if (currentDizaineIndex < currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, false);
-                    else if (currentDizaineIndex === currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, true);
-                }
-            });
-            // Feedback étoiles
-            let currentNoteEx = 0;
-            function refreshStars() { document.querySelectorAll('#starsEx .star').forEach((s,i) => { if (i < currentNoteEx) s.textContent='★'; else s.textContent='☆'; }); }
-            document.querySelectorAll('#starsEx .star').forEach(star => { star.addEventListener('click', () => { currentNoteEx = parseInt(star.dataset.value); refreshStars(); }); });
-            document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
-                if (currentNoteEx === 0) { alert('Choisissez une note'); return; }
-                const comment = document.getElementById('feedbackCommentEx').value.trim();
-                try { await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) }); alert('Merci !'); document.getElementById('feedbackBox').style.display = 'none'; } catch(e) { alert('Erreur réseau'); }
-            });
-            document.getElementById('homeHeader').addEventListener('click', () => {
-                currentDomaine = '';
-                document.getElementById('jourContainer').style.display = 'none';
-                document.getElementById('startExpertise').style.display = 'block';
-                document.getElementById('domaine').value = '';
-                document.getElementById('jourContent').innerHTML = '';
-                document.getElementById('swipeLeftArrow').style.display = 'none';
-                document.getElementById('swipeRightArrow').style.display = 'none';
-                document.getElementById('jourHeader').style.display = 'none';
-                document.getElementById('refreshDizaineBtn').style.display = 'none';
-                stopAudio();
-                arreterClignotement();
-                document.getElementById('btnExpertise').click();
-            });
-            function genererLienPartage() { const base = window.location.href.split('?')[0]; if (currentDomaine) return `${base}?expertise=${encodeURIComponent(currentDomaine)}`; return base; }
-            document.getElementById('shareButton').addEventListener('click', async () => {
-                const url = genererLienPartage();
-                let text = `🧠 Découvrez "${currentDomaine}" sur Chapelet Tazzz Bot !`;
-                if (navigator.share) { try { await navigator.share({ title: 'Chapelet Tazzz Bot', text, url }); } catch(e) {} }
-                else { try { await navigator.clipboard.writeText(text + ' ' + url); alert('Lien copié'); } catch(e) { alert('Erreur'); } }
-            });
-            function initFromUrl() {
-                const params = new URLSearchParams(window.location.search);
-                const expertise = params.get('expertise');
-                if (expertise) {
-                    document.getElementById('domaine').value = decodeURIComponent(expertise);
-                    setTimeout(() => { const btn = document.getElementById('startExpertise'); if (btn && btn.style.display !== 'none') btn.click(); }, 500);
-                }
-            }
-            initFromUrl();
-            // Gestion onglets
+
+            // Gestion de l'affichage exclusif entre Expertise et Cours
             const btnExpertise = document.getElementById('btnExpertise');
             const btnCoursToggle = document.getElementById('btnCoursToggle');
             const expertisePanel = document.getElementById('expertisePanel');
             const coursPanel = document.getElementById('coursPanel');
-            function showExpertise() { expertisePanel.classList.add('active-panel'); coursPanel.classList.remove('active-panel'); btnExpertise.classList.add('active'); btnCoursToggle.classList.remove('active'); btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▶'; }
-            function showCours() { coursPanel.classList.add('active-panel'); expertisePanel.classList.remove('active-panel'); btnCoursToggle.classList.add('active'); btnExpertise.classList.remove('active'); btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▼'; }
+
+            function showExpertise() {
+                expertisePanel.classList.add('active-panel');
+                coursPanel.classList.remove('active-panel');
+                btnExpertise.classList.add('active');
+                btnCoursToggle.classList.remove('active');
+                btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▶';
+            }
+
+            function showCours() {
+                coursPanel.classList.add('active-panel');
+                expertisePanel.classList.remove('active-panel');
+                btnCoursToggle.classList.add('active');
+                btnExpertise.classList.remove('active');
+                btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▼';
+            }
+
             btnExpertise.addEventListener('click', showExpertise);
             btnCoursToggle.addEventListener('click', showCours);
+
+            // Initialisation
             showExpertise();
             createChapitresUI();
-            // Historique
+
+            // ---------- HISTORIQUE ACCORDÉON ----------
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
             function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
@@ -1180,7 +1216,26 @@
             document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display = 'flex'; });
             document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
             window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
-            // Audio vocal
+            document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 Abonnement à venir."));
+
+            let currentExpertiseInterval = null;
+            function startExpertiseProgressBar() {
+                const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
+                if (!area) return null;
+                area.style.display = 'block';
+                let p=0;
+                const interval = setInterval(() => { if (p<90) { p+=2; if(p>90)p=90; fill.style.width = p+'%'; percentSpan.innerText = p+'%'; } }, 150);
+                return interval;
+            }
+            function stopExpertiseProgressBar(interval, complete) {
+                const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
+                if (interval) clearInterval(interval);
+                if (complete && fill) {
+                    fill.style.width = '100%'; if(percentSpan) percentSpan.innerText='100%';
+                    setTimeout(() => { if(area) area.style.display='none'; fill.style.width='0%'; if(percentSpan) percentSpan.innerText=''; }, 300);
+                } else { if(area) area.style.display='none'; if(fill) fill.style.width='0%'; if(percentSpan) percentSpan.innerText=''; }
+            }
+
             let frenchVoice = null;
             function initFrenchVoice() { if (!window.speechSynthesis) return; const voices = window.speechSynthesis.getVoices(); frenchVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Thomas') || v.name.includes('Amélie'))); if (!frenchVoice) frenchVoice = voices.find(v => v.lang === 'fr-FR'); }
             if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = initFrenchVoice; initFrenchVoice(); }
@@ -1227,32 +1282,14 @@
             playPauseBtn.addEventListener('click', () => { if (isPlaying) pauseAudio(); else resumeAudio(); });
             stopBtn.addEventListener('click', stopAudio);
             seekSlider.addEventListener('input', (e) => { if (currentAudioChunks.length) { const newIdx = parseInt(e.target.value); if (newIdx !== currentChunkIdx) { pauseAudio(); speakChunk(newIdx); } } });
-            let currentExpertiseInterval = null;
-            function startExpertiseProgressBar() {
-                const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
-                if (!area) return null;
-                area.style.display = 'block';
-                let p=0;
-                const interval = setInterval(() => { if (p<90) { p+=2; if(p>90)p=90; fill.style.width = p+'%'; percentSpan.innerText = p+'%'; } }, 150);
-                return interval;
-            }
-            function stopExpertiseProgressBar(interval, complete) {
-                const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
-                if (interval) clearInterval(interval);
-                if (complete && fill) {
-                    fill.style.width = '100%'; if(percentSpan) percentSpan.innerText='100%';
-                    setTimeout(() => { if(area) area.style.display='none'; fill.style.width='0%'; if(percentSpan) percentSpan.innerText=''; }, 300);
-                } else { if(area) area.style.display='none'; if(fill) fill.style.width='0%'; if(percentSpan) percentSpan.innerText=''; }
-            }
+
             function updateBadgeCounters() {
                 let badges = JSON.parse(localStorage.getItem('badges')) || [];
                 let count = badges.length;
                 ['badgeCountExpertise', 'badgeCountCours'].forEach(id => { const el = document.getElementById(id); if (el) { if (count > 0) { el.style.display = 'inline-block'; el.innerText = count + '🏅'; } else el.style.display = 'none'; } });
             }
             updateBadgeCounters();
-            checkAuth();
         })();
     </script>
 </body>
 </html>
-```
