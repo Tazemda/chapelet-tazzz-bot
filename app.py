@@ -5,6 +5,7 @@ from datetime import datetime
 from functools import wraps
 from flask import Flask, request, jsonify, render_template, session
 from werkzeug.security import generate_password_hash, check_password_hash
+import requests
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
@@ -34,7 +35,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# ================= FONCTIONS IA (inchangées) =================
+# ================= FONCTIONS IA =================
 def call_deepseek(prompt, max_tokens=3000):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API manquante")
@@ -182,14 +183,13 @@ def register():
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
-    identifier = data.get('identifier')  # email ou pseudo
+    identifier = data.get('identifier')
     password = data.get('password')
     if not identifier or not password:
         return jsonify({'error': 'Identifiant (email ou pseudo) et mot de passe requis'}), 400
     
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
-    # On cherche par email ou par pseudo
     c.execute("SELECT id, pseudo, email, password_hash FROM users WHERE email = ? OR pseudo = ?", (identifier, identifier))
     user = c.fetchone()
     conn.close()
@@ -210,7 +210,7 @@ def me():
         return jsonify({'logged_in': True, 'pseudo': session['user_pseudo']}), 200
     return jsonify({'logged_in': False}), 200
 
-# ================= ROUTES PROTÉGÉES (inchangées) =================
+# ================= ROUTES PROTÉGÉES =================
 @app.route('/generer_jour_expertise', methods=['POST'])
 @login_required
 def generer_jour_expertise_route():
