@@ -67,17 +67,15 @@ Puis, EXACTEMENT 5 DIZAINES. Chaque dizaine doit suivre ce format (concis) :
 
 **DIZAINE X : CONCEPT : [nom du concept]**
 
-A) **Synthèse générale Méditation à lire en tenant un gros grain du chapelet** : exactement 8 phrases moyennement denses non numérotés (toutes les méditations, tous les jours) : définition + rôle + exemple court.
+A) **Synthèse générale Méditation à lire en tenant un gros grain du chapelet** : Exactement 8 phrases denses (définition, rôle, exemple court).  
 
 B) A la place du **Notre Père**, écrire : RÉPÈTE 3 fois sans égrener le chapelet : une seule phrase, question centrale.
 
-C) A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois en égrenant 10 petits grains: exactement 6 phrases (toutes les méditations, tous les jours) synthétiques, numérotées et mémorisables.
+C) A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois en égrenant 10 petits grains: exactement 8 phrases légèrement denses numérotées.
 
 D) A la place du **Gloire au Père**, écrire : RÉPÈTE 3 fois sans égrener: "Le concept [nom] est consolidé."
 
-(même structure pour DIZAINE 2 à 5)
-
-Soigne la qualité. Ne dépasse pas 2500 tokens au total.
+Soigne la qualité. Ne dépasse pas 2800 tokens au total.
 """
 
 def generer_jour_expertise(domaine, jour_num):
@@ -117,13 +115,10 @@ Génère le contenu du **Jour {jour_num}** selon le format exact suivant :
 ## **JOUR {jour_num} : [TITRE ADAPTÉ AU CHAPITRE]**
 
 **DIZAINE 1 : CONCEPT : [nom]**
-A) **Synthèse générale Méditation à lire en tenant un gros grain du chapelet** : exactement 8 phrases moyennement denses non numérotés (toutes les méditations, tous les jours) : définition + rôle + exemple court.
-
-B) A la place du **Notre Père**, écrire : RÉPÈTE 3 fois sans égrener le chapelet : une seule phrase, question centrale.
-
-C) A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois en égrenant 10 petits grains: exactement 6 phrases (toutes les méditations, tous les jours) synthétiques, numérotées et mémorisables.
-
-D) A la place du **Gloire au Père**, écrire : RÉPÈTE 3 fois sans égrener: "Le concept [nom] est consolidé."
+A) **Méditation** : 8 phrases denses (définition, rôle, exemple court).
+B) **Notre Père** : une question centrale (RÉPÈTE 3 fois).
+C) **Je vous salue Marie** : 8 phrases numérotées, légèrement denses (RÉPÈTE 10 fois).
+D) **Gloire au Père** : "Le concept [nom] est consolidé." (RÉPÈTE 3 fois)
 
 (même structure pour DIZAINE 2 à 5)
 
@@ -180,4 +175,4 @@ def index():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port)
