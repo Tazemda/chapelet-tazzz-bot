@@ -35,9 +35,10 @@ def init_users_db():
 init_users_db()
 
 def send_email(to, subject, html_content):
-    """Envoie un email via Resend. Retourne True si réussi. Lève une exception si clé manquante."""
+    """Envoie un email via Resend. Retourne (success, link_or_error)."""
     if not RESEND_API_KEY:
-        raise Exception("Service d'envoi d'email non configuré (clé API Resend manquante).")
+        # Pas de clé, impossible d'envoyer
+        return False, "Clé API Resend manquante. Veuillez contacter l'administrateur."
     try:
         resp = requests.post(
             "https://api.resend.com/emails",
@@ -51,11 +52,11 @@ def send_email(to, subject, html_content):
             timeout=10
         )
         if resp.status_code == 200:
-            return True
+            return True, None
         else:
-            raise Exception(f"Erreur Resend: {resp.status_code} - {resp.text}")
+            return False, f"Resend error {resp.status_code}: {resp.text}"
     except Exception as e:
-        raise Exception(f"Erreur envoi email: {str(e)}")
+        return False, str(e)
 
 def send_confirmation_email(email, pseudo, token):
     confirm_url = url_for('confirm_email', token=token, _external=True)
@@ -71,12 +72,9 @@ def send_confirmation_email(email, pseudo, token):
 def send_reset_email(email, token):
     reset_url = url_for('reset_password_page', token=token, _external=True)
     html = f"""
-    <h2>Réinitialisation de votre mot de passe</h2>
-    <p>Vous avez demandé à réinitialiser votre mot de passe.</p>
-    <p>Cliquez sur le lien ci-dessous pour choisir un nouveau mot de passe :</p>
-    <a href="{reset_url}">Réinitialiser mon mot de passe</a>
-    <p>Ce lien expirera dans 1 heure.</p>
-    <p>Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</p>
+    <h2>Réinitialisation mot de passe</h2>
+    <p>Cliquez pour réinitialiser : <a href="{reset_url}">Réinitialiser</a></p>
+    <p>Lien valable 1 heure.</p>
     """
     return send_email(email, "Réinitialisation mot de passe - Chapelet Tazzz Bot", html)
 
@@ -88,7 +86,7 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
-# ================= FONCTIONS IA =================
+# ================= FONCTIONS IA (inchangées) =================
 def call_deepseek(prompt, max_tokens=3000):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API manquante")
@@ -105,8 +103,6 @@ def call_deepseek(prompt, max_tokens=3000):
             return resp.json()["choices"][0]["message"]["content"]
         else:
             raise Exception(f"API error {resp.status_code}: {resp.text[:500]}")
-    except requests.exceptions.Timeout:
-        raise Exception("L'API DeepSeek a mis trop de temps à répondre. Réessayez.")
     except Exception as e:
         raise Exception(f"Erreur API: {str(e)}")
 
@@ -207,7 +203,7 @@ def generer_jour_expertise(domaine, jour_num):
         print(f"Erreur jour {jour_num}: {e}")
         return f"JOUR {jour_num} – {titre_objectif.upper()} (version de secours)\n\n(erreur technique: {str(e)})"
 
-# ================= ROUTES D'AUTHENTIFICATION =================
+# ================= ROUTES D'AUTH =================
 @app.route('/api/register', methods=['POST'])
 def register():
     data = request.get_json()
@@ -235,18 +231,21 @@ def register():
         conn.commit()
         conn.close()
         
-        send_confirmation_email(email, pseudo, token)
-        return jsonify({'message': 'Inscription réussie. Vérifiez vos emails pour confirmer.'}), 201
+        success, err = send_confirmation_email(email, pseudo, token)
+        if success:
+            return jsonify({'message': 'Inscription réussie. Vérifiez vos emails pour confirmer.'}), 201
+        else:
+            # En cas d'échec, on supprime l'utilisateur et on renvoie le lien
+            conn = sqlite3.connect('users.db')
+            c = conn.cursor()
+            c.execute("DELETE FROM users WHERE email = ?", (email,))
+            conn.commit()
+            conn.close()
+            # Générer le lien pour que l'utilisateur puisse confirmer manuellement
+            confirm_url = url_for('confirm_email', token=token, _external=True)
+            return jsonify({'error': f"Erreur lors de l'envoi de l'email: {err}. Veuillez utiliser ce lien pour confirmer : {confirm_url}"}), 500
     except sqlite3.IntegrityError:
         return jsonify({'error': 'Email ou pseudo déjà utilisé'}), 400
-    except Exception as e:
-        # Si l'envoi d'email échoue, on supprime l'utilisateur
-        conn = sqlite3.connect('users.db')
-        c = conn.cursor()
-        c.execute("DELETE FROM users WHERE email = ?", (email,))
-        conn.commit()
-        conn.close()
-        return jsonify({'error': f"Erreur lors de l'envoi de l'email: {str(e)}"}), 500
 
 @app.route('/confirm/<token>')
 def confirm_email(token):
@@ -299,9 +298,6 @@ def me():
 # ================= MOT DE PASSE OUBLIÉ =================
 @app.route('/api/forgot-password', methods=['POST'])
 def forgot_password():
-    if not RESEND_API_KEY:
-        return jsonify({'error': "Le service d'envoi d'email n'est pas configuré. Contactez l'administrateur."}), 500
-    
     data = request.get_json()
     email = data.get('email')
     if not email:
@@ -313,7 +309,6 @@ def forgot_password():
     user = c.fetchone()
     if not user:
         conn.close()
-        # Pour des raisons de sécurité, on ne révèle pas si l'email existe
         return jsonify({'message': 'Si cet email existe et est confirmé, vous recevrez un lien de réinitialisation.'}), 200
     
     reset_token = secrets.token_urlsafe(32)
@@ -322,11 +317,12 @@ def forgot_password():
     conn.commit()
     conn.close()
     
-    try:
-        send_reset_email(email, reset_token)
+    success, err = send_reset_email(email, reset_token)
+    if success:
         return jsonify({'message': 'Un email de réinitialisation vous a été envoyé.'}), 200
-    except Exception as e:
-        return jsonify({'error': f"Erreur lors de l'envoi de l'email: {str(e)}"}), 500
+    else:
+        reset_url = url_for('reset_password_page', token=reset_token, _external=True)
+        return jsonify({'error': f"Erreur lors de l'envoi de l'email: {err}. Voici le lien de réinitialisation : {reset_url}"}), 500
 
 @app.route('/reset-password/<token>', methods=['GET'])
 def reset_password_page(token):
