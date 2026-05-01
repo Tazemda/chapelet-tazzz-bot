@@ -35,10 +35,9 @@ def init_users_db():
 init_users_db()
 
 def send_email(to, subject, html_content):
-    """Envoie un email via Resend (ou affiche le lien en console). Retourne True si l'envoi a réussi (ou simulé)."""
+    """Envoie un email via Resend. Retourne True si réussi. Lève une exception si clé manquante."""
     if not RESEND_API_KEY:
-        print(f"\n=== EMAIL (non envoyé, clé manquante) ===\nÀ: {to}\nSujet: {subject}\n{html_content}\n================================\n")
-        return True
+        raise Exception("Service d'envoi d'email non configuré (clé API Resend manquante).")
     try:
         resp = requests.post(
             "https://api.resend.com/emails",
@@ -51,10 +50,12 @@ def send_email(to, subject, html_content):
             },
             timeout=10
         )
-        return resp.status_code == 200
+        if resp.status_code == 200:
+            return True
+        else:
+            raise Exception(f"Erreur Resend: {resp.status_code} - {resp.text}")
     except Exception as e:
-        print(f"Erreur envoi email: {e}")
-        return False
+        raise Exception(f"Erreur envoi email: {str(e)}")
 
 def send_confirmation_email(email, pseudo, token):
     confirm_url = url_for('confirm_email', token=token, _external=True)
@@ -234,18 +235,18 @@ def register():
         conn.commit()
         conn.close()
         
-        if send_confirmation_email(email, pseudo, token):
-            return jsonify({'message': 'Inscription réussie. Vérifiez vos emails pour confirmer.'}), 201
-        else:
-            # En cas d'échec de l'envoi, on supprime l'utilisateur
-            conn = sqlite3.connect('users.db')
-            c = conn.cursor()
-            c.execute("DELETE FROM users WHERE email = ?", (email,))
-            conn.commit()
-            conn.close()
-            return jsonify({'error': 'Erreur lors de l\'envoi de l\'email. Réessayez.'}), 500
+        send_confirmation_email(email, pseudo, token)
+        return jsonify({'message': 'Inscription réussie. Vérifiez vos emails pour confirmer.'}), 201
     except sqlite3.IntegrityError:
         return jsonify({'error': 'Email ou pseudo déjà utilisé'}), 400
+    except Exception as e:
+        # Si l'envoi d'email échoue, on supprime l'utilisateur
+        conn = sqlite3.connect('users.db')
+        c = conn.cursor()
+        c.execute("DELETE FROM users WHERE email = ?", (email,))
+        conn.commit()
+        conn.close()
+        return jsonify({'error': f"Erreur lors de l'envoi de l'email: {str(e)}"}), 500
 
 @app.route('/confirm/<token>')
 def confirm_email(token):
@@ -298,6 +299,9 @@ def me():
 # ================= MOT DE PASSE OUBLIÉ =================
 @app.route('/api/forgot-password', methods=['POST'])
 def forgot_password():
+    if not RESEND_API_KEY:
+        return jsonify({'error': "Le service d'envoi d'email n'est pas configuré. Contactez l'administrateur."}), 500
+    
     data = request.get_json()
     email = data.get('email')
     if not email:
@@ -318,14 +322,14 @@ def forgot_password():
     conn.commit()
     conn.close()
     
-    if send_reset_email(email, reset_token):
+    try:
+        send_reset_email(email, reset_token)
         return jsonify({'message': 'Un email de réinitialisation vous a été envoyé.'}), 200
-    else:
-        return jsonify({'error': "Erreur lors de l'envoi de l'email. Réessayez."}), 500
+    except Exception as e:
+        return jsonify({'error': f"Erreur lors de l'envoi de l'email: {str(e)}"}), 500
 
 @app.route('/reset-password/<token>', methods=['GET'])
 def reset_password_page(token):
-    # Page HTML simple pour saisir le nouveau mot de passe
     return f"""
     <!DOCTYPE html>
     <html>
