@@ -11,7 +11,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-def call_deepseek(prompt, max_tokens=3500):
+def call_deepseek(prompt, max_tokens=3000):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API manquante")
     headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
@@ -146,53 +146,51 @@ def generer_chapitre_route():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ================= PRÉPARATION ENTRETIEN (4 JOURS) =================
-PROMPT_ENTRETIEN = """
-Tu es un coach d’entretien expert. Tu reçois le CV et l’offre d’emploi d’un candidat.
+# ================= ENTRETIEN D'EMBAUCHE (4 JOURS) =================
+PROMPT_ENTRETIEN_JOUR = """
+Tu es un expert en recrutement et en préparation aux entretiens d'embauche.
 
-CV : {cv}
-Offre : {offre}
+Tu reçois le texte du CV et du profil d'un candidat (ou une description de poste).  
+Transforme ces informations en un programme structuré de **4 jours** de préparation intensive à l'entretien.
 
-Génère le contenu complet du **Jour {jour_num}** d’un programme de préparation sur 4 jours.
+Voici le profil / CV du candidat :
 
-Le programme est structuré comme suit :
-- Jour 1 : Entretien RH (ouverture, motivation, comportementales)
-- Jour 2 : Entretien technique (compétences, situationnelles)
-- Jour 3 : Entretien final + négociation (motivation avancée, clôture, salaire)
-- Jour 4 : Simulation (questions dynamiques, évaluation, score, feedback)
+{texte_profil}
 
-Pour le Jour {jour_num}, génère exactement 5 dizaines selon le format suivant :
+Génère le contenu du **Jour {jour_num}** selon le format exact suivant :
 
-**DIZAINE X : [nom du concept]**
+## **JOUR {jour_num} : [TITRE ADAPTÉ À LA JOURNÉE]**
 
-A) **Méditation** : 6-8 phrases denses (définition du concept, son importance, exemple adapté au CV/offre)
+**DIZAINE 1 : CONCEPT : [nom du thème]**
+A) **Synthèse générale Méditation à lire en tenant un gros grain du chapelet** : exactement 8 phrases denses (définition de la compétence, son importance en entretien, exemples concrets).
+B) A la place du **Notre Père**, écrire : RÉPÈTE 3 fois sans égrener le chapelet : une seule phrase, question centrale.
+C) A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois en égrenant 10 petits grains: exactement 6 phrases numérotées, mémorisables, adaptées à l’entretien.
+D) A la place du **Gloire au Père**, écrire : RÉPÈTE 3 fois sans égrener: "Le concept [nom] est consolidé."
 
-B) **Notre Père** : une question centrale (RÉPÈTE 3 fois)
+(même structure pour DIZAINE 2 à 5)
 
-C) **Je vous salue Marie** : 6 phrases numérotées, synthétiques, mémorisables (RÉPÈTE 10 fois)
-
-D) **Gloire au Père** : "Le concept [nom] est consolidé." (RÉPÈTE 3 fois)
-
-Soigne la qualité, reste fidèle au CV et à l’offre. Ne dépasse pas 2500 tokens.
+Soigne la qualité. Reste fidèle au profil du candidat. Ne dépasse pas 2800 tokens.
 """
 
 @app.route('/generer_entretien', methods=['POST'])
 def generer_entretien_route():
     try:
         data = request.get_json()
-        cv = data.get('cv')
-        offre = data.get('offre')
-        jour = data.get('jour')
-        if not cv or not offre or not jour:
-            return jsonify({'error': 'CV, offre et jour requis'}), 400
-        prompt = PROMPT_ENTRETIEN.format(cv=cv, offre=offre, jour_num=jour)
-        contenu = call_deepseek(prompt, max_tokens=3500)
-        contenu = clean_markdown(contenu)
-        contenu = remove_markdown_chars(contenu)
-        return jsonify({'contenu': contenu})
+        texte_profil = data.get('texte_profil')
+        if not texte_profil:
+            return jsonify({'error': 'Profil du candidat requis'}), 400
+        jours = {}
+        for i in range(1, 5):  # 4 jours
+            prompt = PROMPT_ENTRETIEN_JOUR.format(texte_profil=texte_profil, jour_num=i)
+            contenu = call_deepseek(prompt, max_tokens=3000)
+            contenu = clean_markdown(contenu)
+            contenu = remove_markdown_chars(contenu)
+            jours[i] = contenu
+        return jsonify({'jours': jours})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ================= ROUTES COMMUNES =================
 @app.route('/generer_jour_expertise', methods=['POST'])
 def generer_jour_expertise_route():
     try:
