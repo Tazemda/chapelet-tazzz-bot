@@ -11,7 +11,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-def call_deepseek(prompt, max_tokens=3000):
+def call_deepseek(prompt, max_tokens=3500):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API manquante")
     headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
@@ -28,7 +28,7 @@ def call_deepseek(prompt, max_tokens=3000):
         else:
             raise Exception(f"API error {resp.status_code}: {resp.text[:500]}")
     except requests.exceptions.Timeout:
-        raise Exception("L'API DeepSeek a mis trop de temps à répondre. Réessayez avec un chapitre plus court.")
+        raise Exception("L'API DeepSeek a mis trop de temps à répondre. Réessayez avec un texte plus court.")
     except Exception as e:
         raise Exception(f"Erreur API: {str(e)}")
 
@@ -140,6 +140,53 @@ def generer_chapitre_route():
             return jsonify({'error': 'Texte et numéro requis'}), 400
         prompt = PROMPT_CHAPITRE_JOUR.format(texte_chapitre=texte, jour_num=num)
         contenu = call_deepseek(prompt, max_tokens=3000)
+        contenu = clean_markdown(contenu)
+        contenu = remove_markdown_chars(contenu)
+        return jsonify({'contenu': contenu})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ================= PRÉPARATION ENTRETIEN (4 JOURS) =================
+PROMPT_ENTRETIEN = """
+Tu es un coach d’entretien expert. Tu reçois le CV et l’offre d’emploi d’un candidat.
+
+CV : {cv}
+Offre : {offre}
+
+Génère le contenu complet du **Jour {jour_num}** d’un programme de préparation sur 4 jours.
+
+Le programme est structuré comme suit :
+- Jour 1 : Entretien RH (ouverture, motivation, comportementales)
+- Jour 2 : Entretien technique (compétences, situationnelles)
+- Jour 3 : Entretien final + négociation (motivation avancée, clôture, salaire)
+- Jour 4 : Simulation (questions dynamiques, évaluation, score, feedback)
+
+Pour le Jour {jour_num}, génère exactement 5 dizaines selon le format suivant :
+
+**DIZAINE X : [nom du concept]**
+
+A) **Méditation** : 6-8 phrases denses (définition du concept, son importance, exemple adapté au CV/offre)
+
+B) **Notre Père** : une question centrale (RÉPÈTE 3 fois)
+
+C) **Je vous salue Marie** : 6 phrases numérotées, synthétiques, mémorisables (RÉPÈTE 10 fois)
+
+D) **Gloire au Père** : "Le concept [nom] est consolidé." (RÉPÈTE 3 fois)
+
+Soigne la qualité, reste fidèle au CV et à l’offre. Ne dépasse pas 2500 tokens.
+"""
+
+@app.route('/generer_entretien', methods=['POST'])
+def generer_entretien_route():
+    try:
+        data = request.get_json()
+        cv = data.get('cv')
+        offre = data.get('offre')
+        jour = data.get('jour')
+        if not cv or not offre or not jour:
+            return jsonify({'error': 'CV, offre et jour requis'}), 400
+        prompt = PROMPT_ENTRETIEN.format(cv=cv, offre=offre, jour_num=jour)
+        contenu = call_deepseek(prompt, max_tokens=3500)
         contenu = clean_markdown(contenu)
         contenu = remove_markdown_chars(contenu)
         return jsonify({'contenu': contenu})
