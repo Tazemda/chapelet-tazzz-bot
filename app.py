@@ -143,51 +143,93 @@ def generer_chapitre_route():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ================= ENTRETIEN D'EMBAUCHE (génération dizaine par dizaine) =================
+# ================= ENTRETIEN D'EMBAUCHE (sans religieux, 3 jours) =================
 PROMPT_ENTRETIEN_DIZAINE = """
-Tu es un expert en préparation aux entretiens d'embauche.
+Tu es le Dr Tazzz, expert en préparation aux entretiens d'embauche.
 
 CV du candidat : {cv}
 Offre d'emploi : {offre}
 
-Génère le contenu de la **DIZAINE {dizaine_num}** du **JOUR {jour_num}** selon le plan suivant (ne génère que cette dizaine) :
+Génère le contenu de la **DIZAINE {dizaine_num}** du **JOUR {jour_num}** en suivant EXACTEMENT le plan ci-dessous.  
+N'utilise aucun terme religieux (pas de "Notre Père", "Je vous salue Marie", "Gloire"). Utilise uniquement les notations I., II., III.
 
-### JOUR 1 – Entretien RH
-Dizaine 1 – Analyse CV/Offre (matching compétences, écarts, forces)
-Dizaine 2 – Pitch personnalisé (30-60 secondes)
-Dizaine 3 – Questions RH fréquentes (5 questions + réponses structurées)
-Dizaine 4 – Méthode STAR (soft skills) : Situation, Tâche, Action, Résultat
-Dizaine 5 – Banque de phrases professionnelles (amélioration du langage)
+---
 
-### JOUR 2 – Entretien technique
-Dizaine 1 – Extraction compétences techniques + matching avec offre
-Dizaine 2 – Questions techniques ciblées (5 questions + réponses)
-Dizaine 3 – Étude de cas réaliste (problème concret du métier)
-Dizaine 4 – STAR technique (explication chiffrée des projets)
-Dizaine 5 – Révisions & améliorations techniques
+### JOUR 1 – Entretien RH (objectif : convaincre humainement, motivation, comportement, pitch)
 
-### JOUR 3 – Entretien final + négociation
-Dizaine 1 – Points forts / points faibles (3 forces, 1 axe de progression)
-Dizaine 2 – Questions difficiles ("Pourquoi vous ?", "Pourquoi pas vous ?")
-Dizaine 3 – Argumentaire de vente (script de pitch final)
-Dizaine 4 – Négociation (salaire, avantages) : fourchette + arguments
-Dizaine 5 – Questions au recruteur (3-5 questions intelligentes)
+**Dizaine 1 – Analyse CV + offre**  
+I. Matching compétences (alignements et forces)  
+II. Écarts (faiblesses par rapport à l’offre)  
+III. Atout majeur qui rend le candidat spécial
 
-### JOUR 4 – Simulation d'entretien (sera traitée séparément)
+**Dizaine 2 – Présentation et pitch**  
+I. Conseil du Dr Tazzz sur la forme et le fond de la présentation au RH  
+II. Pitch personnalisé (30-60 secondes) que le candidat peut répéter
 
-Formate la réponse ainsi :
+**Dizaine 3 – Questions RH (partie 1)**  
+3 questions RH fréquentes (parmi : ouverture, motivation, situationnelles, compétences, comportementales, clôture)  
+Chaque question : réponse personnalisée avec méthode STAR (Situation, Tâche, Action, Résultat)
 
-## JOUR {jour_num} – DIZAINE {dizaine_num} : [TITRE]
+**Dizaine 4 – Questions RH (partie 2)**  
+3 autres questions RH (autres types)  
+Chaque question avec réponse STAR personnalisée
 
-**Méditation** : 8 phrases (définition, importance en entretien, exemple concret issu du CV ou de l'offre).
+**Dizaine 5 – Banque de phrases**  
+Une série de 10 phrases professionnelles à répéter (phrases types pour parler de soi, de ses compétences, de sa motivation)
 
-**Notre Père** : une question centrale (RÉPÈTE 3 fois).
+---
 
-**Je vous salue Marie** : 6 phrases numérotées (RÉPÈTE 10 fois) – conseils pratiques, exemples.
+### JOUR 2 – Entretien technique (objectif : prouver ses compétences)
 
-**Gloire au Père** : "Le concept [titre] est consolidé." (RÉPÈTE 3 fois)
+**Dizaine 1 – Analyse technique**  
+I. Matching compétences techniques (alignements)  
+II. Écarts techniques (compétences manquantes)  
+III. Atout technique majeur du candidat
 
-Soigne la personnalisation (utilise le CV et l'offre). Ne dépasse pas 800 tokens.
+**Dizaine 2 – Conseils pour l’entretien technique**  
+I. Conseil du Dr Tazzz sur la façon de s’entretenir avec l’expert technique (différences avec le RH, langage, robustesse)
+
+**Dizaine 3 – Questions techniques (partie 1)**  
+3 questions techniques fréquentes (type : ouverture, compétences, situationnelles)  
+Chaque question avec réponse STAR adaptée au CV et à l’offre
+
+**Dizaine 4 – Questions techniques (partie 2)**  
+3 autres questions techniques (compétences avancées, étude de cas, clôture)  
+Chaque question avec réponse STAR technique + explication de projets chiffrés
+
+**Dizaine 5 – Banque de phrases techniques**  
+10 phrases professionnelles à répéter pour l’entretien avec le supérieur hiérarchique
+
+---
+
+### JOUR 3 – Entretien final + négociation (objectif : motivation avancée, clôture)
+
+**Dizaine 1 – Points forts / points faibles**  
+I. 3 forces majeures du candidat  
+II. 1 axe de progression (point faible, présenté de manière constructive)
+
+**Dizaine 2 – Questions difficiles**  
+I. “Pourquoi vous ?” – réponse argumentée  
+II. “Pourquoi pas vous ?” – gestion des objections
+
+**Dizaine 3 – Argumentaire de vente**  
+Script personnalisé de pitch final (30-60 secondes) pour convaincre le recruteur
+
+**Dizaine 4 – Négociation (salaire, avantages)**  
+I. Fourchette de salaire cohérente avec le poste et le CV  
+II. Arguments pour justifier la prétention salariale  
+III. Autres avantages à négocier (formation, télétravail, etc.)
+
+**Dizaine 5 – Questions au recruteur**  
+5 questions intelligentes que le candidat peut poser en fin d’entretien
+
+---
+
+IMPORTANT :  
+- Rédige de manière personnalisée (utilise le CV et l’offre).  
+- Pour les réponses STAR, donne un exemple concret tiré du CV (projet, expérience).  
+- Ne dépasse pas 1000 tokens par dizaine.  
+- Ne mets aucun titre religieux.
 """
 
 @app.route('/generer_dizaine_entretien', methods=['POST'])
