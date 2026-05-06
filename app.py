@@ -28,7 +28,7 @@ def call_deepseek(prompt, max_tokens=3000):
         else:
             raise Exception(f"API error {resp.status_code}: {resp.text[:500]}")
     except requests.exceptions.Timeout:
-        raise Exception("L'API DeepSeek a mis trop de temps à répondre. Réessayez avec un texte plus court.")
+        raise Exception("L'API DeepSeek a mis trop de temps à répondre. Réessayez.")
     except Exception as e:
         raise Exception(f"Erreur API: {str(e)}")
 
@@ -103,27 +103,24 @@ def generer_jour_expertise(domaine, jour_num):
         print(f"Erreur jour {jour_num}: {e}")
         return f"JOUR {jour_num} – {titre_objectif.upper()} (version de secours)\n\n(erreur technique: {str(e)})"
 
-# ================= COURS (6 CHAPITRES, 6 JOURS) =================
+# ================= COURS (6 CHAPITRES) =================
 PROMPT_CHAPITRE_JOUR = """
-Tu es un expert pédagogique. Tu reçois le texte d'un chapitre (environ 3 pages A4).
-Transforme ce chapitre en un contenu structuré pour une journée d'étude (5 dizaines).
+Tu es un expert pédagogique. Tu reçois le texte d'un chapitre.
+Transforme ce chapitre en contenu structuré pour une journée d'étude (5 dizaines).
 
 Voici le texte du chapitre :
 
 {texte_chapitre}
 
-Génère le contenu du **Jour {jour_num}** selon le format exact suivant :
+Génère le contenu du **Jour {jour_num}** (5 dizaines) selon le format exact suivant :
 
 ## **JOUR {jour_num} : [TITRE ADAPTÉ AU CHAPITRE]**
 
 **DIZAINE 1 : CONCEPT : [nom]**
-A) **Synthèse générale Méditation à lire en tenant un gros grain du chapelet** : exactement 8 phrases moyennement denses non numérotés (toutes les méditations, tous les jours) : définition + rôle + exemple court.
-
-B) A la place du **Notre Père**, écrire : RÉPÈTE 3 fois sans égrener le chapelet : une seule phrase, question centrale.
-
-C) A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois en égrenant 10 petits grains: exactement 6 phrases (toutes les méditations, tous les jours) synthétiques, numérotées et mémorisables.
-
-D) A la place du **Gloire au Père**, écrire : RÉPÈTE 3 fois sans égrener: "Le concept [nom] est consolidé."
+A) **Méditation** : 8 phrases (définition, rôle, exemple court).
+B) **Notre Père** : une question centrale (RÉPÈTE 3 fois).
+C) **Je vous salue Marie** : 6 phrases numérotées (RÉPÈTE 10 fois).
+D) **Gloire au Père** : "Le concept [nom] est consolidé." (RÉPÈTE 3 fois)
 
 (même structure pour DIZAINE 2 à 5)
 
@@ -146,47 +143,68 @@ def generer_chapitre_route():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ================= ENTRETIEN D'EMBAUCHE (4 JOURS) =================
-PROMPT_ENTRETIEN_JOUR = """
-Tu es un expert en recrutement et en préparation aux entretiens d'embauche.
+# ================= ENTRETIEN (4 jours) =================
+PROMPT_ENTRETIEN = """
+Tu es un coach expert en préparation aux entretiens d'embauche.
 
-Tu reçois le texte du CV et du profil d'un candidat (ou une description de poste).  
-Transforme ces informations en un programme structuré de **4 jours** de préparation intensive à l'entretien.
+Le candidat fournit son CV et une offre d'emploi.  
+Génère un programme personnalisé de **4 jours** (5 dizaines par jour) selon le plan suivant :
 
-Voici le profil / CV du candidat :
+### JOUR 1 – Entretien RH (motivation, comportement, pitch)
+Dizaine 1 – Analyse CV+Offre : matching compétences, écarts, forces.
+Dizaine 2 – Pitch personnalisé : 30-60 secondes, version améliorable.
+Dizaine 3 – Questions RH fréquentes : 5 questions + réponses structurées.
+Dizaine 4 – Méthode STAR (soft skills) : Situation, Tâche, Action, Résultat.
+Dizaine 5 – Banque de phrases pro : amélioration du langage, reformulation.
 
-{texte_profil}
+### JOUR 2 – Entretien technique (compétences, mises en situation)
+Dizaine 1 – Extraction compétences techniques + matching avec offre.
+Dizaine 2 – Questions techniques ciblées : 5 questions + réponses.
+Dizaine 3 – Étude de cas réaliste : problème concret du métier.
+Dizaine 4 – STAR technique (projets) : explication chiffrée des réalisations.
+Dizaine 5 – Révisions & améliorations techniques.
 
-Génère le contenu du **Jour {jour_num}** selon le format exact suivant :
+### JOUR 3 – Entretien final + négociation (motivation avancée, clôture)
+Dizaine 1 – Points forts / points faibles : 3 forces, 1 axe de progression.
+Dizaine 2 – Questions difficiles : “Pourquoi vous ?”, “Pourquoi pas vous ?”…
+Dizaine 3 – Argumentaire de vente : script de pitch final.
+Dizaine 4 – Négociation (salaire, avantages) : fourchette + arguments.
+Dizaine 5 – Questions au recruteur : 3-5 questions intelligentes.
 
-## **JOUR {jour_num} : [TITRE ADAPTÉ À LA JOURNÉE]**
+### JOUR 4 – Simulation réaliste (avec questions dynamiques)
+Dizaine 1 – Questions RH simulation (motivation, pitch)
+Dizaine 2 – Questions techniques simulation
+Dizaine 3 – Questions comportementales STAR simulation
+Dizaine 4 – Objections & négociation simulation
+Dizaine 5 – Bilan : score global (sur 20), points forts, axes d’amélioration, conseils.
 
-**DIZAINE 1 : CONCEPT : [nom du thème]**
-A) **Synthèse générale Méditation à lire en tenant un gros grain du chapelet** : exactement 8 phrases denses (définition de la compétence, son importance en entretien, exemples concrets).
-B) A la place du **Notre Père**, écrire : RÉPÈTE 3 fois sans égrener le chapelet : une seule phrase, question centrale.
-C) A la place du **Je vous salue Marie**, écrire : RÉPÈTE 10 fois en égrenant 10 petits grains: exactement 6 phrases numérotées, mémorisables, adaptées à l’entretien.
-D) A la place du **Gloire au Père**, écrire : RÉPÈTE 3 fois sans égrener: "Le concept [nom] est consolidé."
+Chaque dizaine doit suivre le format :
 
-(même structure pour DIZAINE 2 à 5)
+**DIZAINE X : [titre]**
+A) **Méditation** : 8 phrases (définition, importance en entretien, exemple concret issu du CV ou de l’offre).
+B) **Notre Père** : une question centrale (RÉPÈTE 3 fois).
+C) **Je vous salue Marie** : 6 phrases numérotées (RÉPÈTE 10 fois) – conseils pratiques, exemples.
+D) **Gloire au Père** : "Le concept [titre] est consolidé." (RÉPÈTE 3 fois)
 
-Soigne la qualité. Reste fidèle au profil du candidat. Ne dépasse pas 2800 tokens.
+Soigne la personnalisation : utilise le CV et l’offre pour adapter chaque exemple.  
+Ne dépasse pas 3500 tokens au total.
 """
 
 @app.route('/generer_entretien', methods=['POST'])
 def generer_entretien_route():
     try:
         data = request.get_json()
-        texte_profil = data.get('texte_profil')
-        if not texte_profil:
-            return jsonify({'error': 'Profil du candidat requis'}), 400
-        jours = {}
-        for i in range(1, 5):  # 4 jours
-            prompt = PROMPT_ENTRETIEN_JOUR.format(texte_profil=texte_profil, jour_num=i)
-            contenu = call_deepseek(prompt, max_tokens=3000)
-            contenu = clean_markdown(contenu)
-            contenu = remove_markdown_chars(contenu)
-            jours[i] = contenu
-        return jsonify({'jours': jours})
+        cv = data.get('cv')
+        offre = data.get('offre')
+        if not cv or not offre:
+            return jsonify({'error': 'CV et offre requis'}), 400
+        prompt = PROMPT_ENTRETIEN.format(cv=cv, offre=offre)
+        contenu = call_deepseek(prompt, max_tokens=3500)
+        contenu = clean_markdown(contenu)
+        contenu = remove_markdown_chars(contenu)
+        # Découper le contenu en 4 jours (on suppose que l'API génère les 4 jours à la suite)
+        # Pour simplifier, on retourne le texte complet ; l'interface le découpera (on peut aussi découper ici)
+        return jsonify({'contenu': contenu})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
