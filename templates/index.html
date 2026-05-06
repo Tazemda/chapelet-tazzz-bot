@@ -56,7 +56,6 @@
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
         .mode-panel { display: none; animation: fadeIn 0.3s ease; }
         .mode-panel.active-panel { display: block; }
-        .cours-panel, .entretien-panel { margin-top: 15px; }
         input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 14px; border: none; background: #f0f0f0; font-size: 1rem; }
         button { background: #e67e22; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
         button:hover { background: #d35400; transform: scale(0.98); }
@@ -119,10 +118,10 @@
             flex: 1;
         }
         .nav-triangle {
-            font-size: 1.8rem;
+            font-size: 2rem;
             background: rgba(230,126,34,0.3);
-            width: 48px;
-            height: 48px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -170,6 +169,8 @@
             h1 { font-size: 1.2rem; }
             .refresh-dizaine { width: 32px; height: 32px; font-size: 1.2rem; bottom: 10px; right: 10px; }
         }
+        .audio-welcome { position: absolute; top: 15px; left: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
+        .audio-welcome:hover { background: #e67e22; }
         .audio-day { position: absolute; top: 15px; right: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
         .audio-day:hover { background: #e67e22; }
         .nav-buttons { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; }
@@ -386,10 +387,10 @@
             <div class="mode-selector">
                 <button id="btnExpertise" class="mode-btn active">📚 Expertise en 7 jours</button>
                 <button id="btnCoursToggle" class="mode-btn">📘 Mes cours en 6 jours ▶</button>
-                <button id="btnEntretienToggle" class="mode-btn">🎙️ Entretien (4 jours) ▶</button>
+                <button id="btnEntretienToggle" class="mode-btn">💼 Entretien d'embauche (4j) ▶</button>
             </div>
 
-            <!-- Panneau Expertise -->
+            <!-- Panneau Expertise classique -->
             <div id="expertisePanel" class="mode-panel active-panel">
                 <p>🔬 Domaine à maîtriser :</p>
                 <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, Prise de parole...">
@@ -406,6 +407,7 @@
                         <div id="jourContent" class="result"></div>
                         <div id="swipeLeftArrow" class="swipe-arrow swipe-left" style="display: none;">◀</div>
                         <div id="swipeRightArrow" class="swipe-arrow swipe-right" style="display: none;">▶</div>
+                        <button id="audioWelcomeBtn" class="audio-welcome" style="display:none;">🔊</button>
                         <button id="audioDayBtn" class="audio-day" style="display:none;">🔊</button>
                         <div id="refreshDizaineBtn" class="refresh-dizaine" style="display: none;">⟳</div>
                     </div>
@@ -431,11 +433,11 @@
                 </div>
             </div>
 
-            <!-- Panneau Cours -->
+            <!-- Panneau Cours (6 chapitres) -->
             <div id="coursPanel" class="mode-panel">
                 <div class="warning-limit">
                     📚 Saisissez vos 6 chapitres (copier-coller puis enregistrer chaque chapitre).<br>
-                    ⚠️ Attention ! Pas plus de 8000 caractères par chapitre.
+                    ⚠️ Attention ! Pas plus de 8000 caractères par chapitre (vérifiable sur Word).
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <button id="toggleChapitresBtn" class="btn-toggle-chapitres">▼ Plier tous les chapitres</button>
@@ -448,42 +450,22 @@
                 <div id="coursResult" class="result" style="display:none;"></div>
             </div>
 
-            <!-- Panneau Entretien -->
+            <!-- Panneau Entretien d'embauche (4 jours) -->
             <div id="entretienPanel" class="mode-panel">
                 <div class="warning-limit">
-                    🎙️ Préparez votre entretien en 4 jours.<br>
-                    Collez votre CV (détaillé) et l’offre d’emploi.
+                    💼 Préparez votre entretien d'embauche en 4 jours.<br>
+                    Collez votre CV, le descriptif du poste, ou les informations sur le candidat.<br>
+                    ⚠️ Attention ! Pas plus de 8000 caractères.
                 </div>
-                <p>📄 Votre CV :</p>
-                <textarea id="cv" rows="10" placeholder="Collez votre CV détaillé..."></textarea>
-                <p>📋 Offre d’emploi :</p>
-                <textarea id="offre" rows="8" placeholder="Collez l’offre d’emploi..."></textarea>
-                <button id="startEntretien">✨ GÉNÉRER LA PRÉPARATION (4 JOURS) ✨</button>
-                <div id="entretienContainer" style="display:none;">
-                    <div id="progressHeaderMsgEntretien" class="progress-header">👉 cliquez ici pour valider cette journée !</div>
-                    <div id="segmentsContainerEntretien" class="progress-segments"></div>
-                    <div id="entretienHeader" class="jour-header" style="display: none;">
-                        <div id="prevDayEntretien" class="nav-triangle">◀</div>
-                        <div id="entretienTitle" class="jour-title"></div>
-                        <div id="nextDayEntretien" class="nav-triangle">▶</div>
-                    </div>
-                    <div id="entretienContentContainer" style="position: relative;">
-                        <div id="entretienContent" class="result"></div>
-                        <div id="swipeLeftArrowEntretien" class="swipe-arrow swipe-left" style="display: none;">◀</div>
-                        <div id="swipeRightArrowEntretien" class="swipe-arrow swipe-right" style="display: none;">▶</div>
-                        <button id="audioDayEntretien" class="audio-day" style="display:none;">🔊</button>
-                        <div id="refreshDizaineEntretien" class="refresh-dizaine" style="display: none;">⟳</div>
-                    </div>
-                    <div class="nav-buttons">
-                        <button id="prevDayEntretienBtn" disabled>◀ Précédent</button>
-                        <span id="dayCounterEntretien">Jour 1 / 4</span>
-                        <button id="nextDayEntretienBtn">Suivant ▶</button>
-                    </div>
-                    <div id="entretienProgressArea" class="progress-container" style="display:none;">
-                        <div class="progress-fill" id="entretienProgressFill"></div>
-                        <div class="progress-percent" id="entretienProgressPercent"></div>
-                    </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <button id="toggleEntretienChapitresBtn" class="btn-toggle-chapitres">▼ Plier tous les chapitres</button>
+                    <button id="resetEntretienBtn" style="background: #2c3e4e;">🔄 Nouvelle préparation</button>
                 </div>
+                <div id="entretienChapitresList" style="margin-top: 15px;"></div>
+                <div style="display: flex; justify-content: center; margin-top: 20px;">
+                    <button id="submitEntretienBtn" style="background: #8a2be2;">✨ GÉNÉRER LE PROGRAMME (4 JOURS) ✨</button>
+                </div>
+                <div id="entretienResult" class="result" style="display:none;"></div>
             </div>
 
             <div class="action-buttons">
@@ -550,7 +532,6 @@
 
             // ---------- AUDIO (bip) ----------
             let audioCtx = null;
-            let frenchVoice = null;
             function initAudio() {
                 if (audioCtx) return;
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -574,13 +555,937 @@
                 osc.stop(now + 0.2);
             }
 
-            // Fonctions audio vocal (TTS)
-            function initFrenchVoice() {
-                if (!window.speechSynthesis) return;
-                const voices = window.speechSynthesis.getVoices();
-                frenchVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Thomas') || v.name.includes('Amélie')));
-                if (!frenchVoice) frenchVoice = voices.find(v => v.lang === 'fr-FR');
+            // ---------- ÉTAT GLOBAL EXPERTISE ----------
+            let currentDomaine = '';
+            let currentProgression = [];
+            let currentJours = {};
+            let currentDizaines = [];
+            let currentDizaineIndex = 0;
+            let currentPage = 0;
+            let blinkInterval = null;
+            let touchStartX = 0, touchEndX = 0;
+            let currentNbJours = 7;
+
+            function arreterClignotement() {
+                if (blinkInterval) clearInterval(blinkInterval);
+                blinkInterval = null;
+                document.querySelectorAll('.segment').forEach(seg => seg.classList.remove('blink-segment'));
+                const msgDiv = document.getElementById('progressHeaderMsg');
+                if (msgDiv) {
+                    msgDiv.classList.remove('blink-text');
+                    msgDiv.style.display = 'none';
+                }
             }
+
+            function demarrerClignotement() {
+                arreterClignotement();
+                const dayIndex = currentPage - 1;
+                if (dayIndex < 0 || dayIndex >= currentNbJours) return;
+
+                const segments = document.querySelectorAll('.segment');
+                if (segments[dayIndex]) {
+                    segments[dayIndex].classList.add('blink-segment');
+                }
+
+                const msgDiv = document.getElementById('progressHeaderMsg');
+                if (msgDiv) {
+                    msgDiv.style.display = 'block';
+                    msgDiv.classList.add('blink-text');
+                }
+
+                if (!audioCtx) initAudio();
+
+                blinkInterval = setInterval(() => {
+                    playBeep();
+                }, 1000);
+            }
+
+            function decouperEnDizaines(contenuBrut) {
+                if (!contenuBrut) return [];
+                const regex = /(?:DIZAINE\s+\d+\s*[–-]?\s*\**\s*)([^]*?)(?=(?:DIZAINE\s+\d+|$))/gi;
+                let matches = [...contenuBrut.matchAll(regex)];
+                if (matches.length >= 5) return matches.slice(0,5).map(m => m[1].trim());
+                let ps = contenuBrut.split(/\n\s*\n/);
+                if (ps.length >= 5) return ps.slice(0,5);
+                return [contenuBrut];
+            }
+
+            function afficherDizaine(index, afficherMessage = false) {
+                const contentDiv = document.getElementById('jourContent');
+                const leftArrow = document.getElementById('swipeLeftArrow');
+                const rightArrow = document.getElementById('swipeRightArrow');
+                if (!currentDizaines.length) {
+                    contentDiv.innerHTML = '<em>Contenu non disponible.</em>';
+                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
+                    return;
+                }
+                if (index < 0) index = 0;
+                if (index >= currentDizaines.length) {
+                    if (afficherMessage && currentPage >= 1 && !currentProgression[currentPage-1]) {
+                        const msgDiv = document.getElementById('progressHeaderMsg');
+                        if (msgDiv) { msgDiv.style.display = 'block'; demarrerClignotement(); }
+                        alert("📿 Vous avez terminé les 5 dizaines ! N'oubliez pas de valider cette journée.");
+                    }
+                    return;
+                }
+                currentDizaineIndex = index;
+                const numero = currentDizaineIndex + 1;
+                const titre = `<div class="dizaine-title">📖 DIZAINE ${numero} / 5</div>`;
+                contentDiv.innerHTML = titre + currentDizaines[currentDizaineIndex].replace(/\n/g, '<br>');
+                leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
+                rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
+                contentDiv.scrollTop = 0;
+                updateValidationMessage();
+            }
+
+            function afficherBarreSegments() {
+                const container = document.getElementById('segmentsContainer');
+                if (!container) return;
+                container.innerHTML = '';
+                for (let i = 0; i < currentNbJours; i++) {
+                    const seg = document.createElement('div');
+                    seg.className = 'segment';
+                    if (currentProgression[i]) {
+                        seg.classList.add('completed');
+                        seg.onclick = (function(idx){ return () => naviguerVersJour(idx+1); })(i);
+                    } else {
+                        if (!currentProgression[i] && !currentJours[i+1]) seg.classList.add('disabled');
+                        if (currentJours[i+1] && !currentProgression[i]) seg.classList.add('loaded');
+                        seg.onclick = (function(idx){ return () => {
+                            if (!currentProgression[idx] && !currentJours[idx+1]) alert(`Générez d'abord le jour ${idx+1}.`);
+                            else cocherSegment(idx);
+                        }; })(i);
+                    }
+                    seg.innerHTML = `<div class="day-label">J${i+1}</div><div class="day-status">${currentProgression[i] ? '✓' : (currentJours[i+1] ? '📖' : '🔒')}</div>`;
+                    container.appendChild(seg);
+                }
+                updateValidationMessage();
+            }
+
+            function updateValidationMessage() {
+                const msgDiv = document.getElementById('progressHeaderMsg');
+                if (!msgDiv) return;
+                if (currentPage === 0 || !currentJours[currentPage] || currentProgression[currentPage-1]) {
+                    msgDiv.style.display = 'none';
+                    arreterClignotement();
+                } else {
+                    if (currentDizaineIndex === 4) {
+                        msgDiv.style.display = 'block';
+                        demarrerClignotement();
+                    } else {
+                        msgDiv.style.display = 'none';
+                        arreterClignotement();
+                    }
+                }
+            }
+
+            function naviguerVersJour(jourNum) {
+                if (jourNum >= 1 && jourNum <= currentNbJours && currentJours[jourNum]) {
+                    currentPage = jourNum;
+                    currentDizaines = decouperEnDizaines(currentJours[jourNum]);
+                    currentDizaineIndex = 0;
+                    afficherPage();
+                } else if (jourNum >= 1 && jourNum <= currentNbJours && !currentJours[jourNum]) {
+                    alert(`Jour ${jourNum} non trouvé. Générez-le d'abord.`);
+                }
+            }
+
+            function cocherSegment(idx) {
+                for (let i=0; i<idx; i++) if (!currentProgression[i]) { alert(`Validez d'abord le jour ${i+1}.`); return; }
+                if (!currentProgression[idx]) {
+                    currentProgression[idx] = true;
+                    sauvegarderFormationCourante();
+                    afficherBarreSegments();
+                    if (idx+1 === currentNbJours) {
+                        alert(`🎉 Félicitations ! Formation achevée. Badge débloqué.`);
+                        let badges = JSON.parse(localStorage.getItem('badges')) || [];
+                        const badge = `🏅 Expert en ${currentDomaine}`;
+                        if (!badges.includes(badge)) badges.push(badge);
+                        localStorage.setItem('badges', JSON.stringify(badges));
+                        updateBadgeCounters();
+                        let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                        let entry = historique.find(h => h.domaine === currentDomaine);
+                        if (entry) entry.dateFin = new Date().toISOString();
+                        localStorage.setItem('historique', JSON.stringify(historique));
+                    } else alert(`🎊 Bravo ! Jour ${idx+1}/${currentNbJours} validé.`);
+                }
+            }
+
+            function sauvegarderFormationCourante() {
+                let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                joursParDomaine[currentDomaine] = currentJours;
+                localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
+                let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                let entry = historique.find(h => h.domaine === currentDomaine);
+                if (entry) { entry.progression = currentProgression.slice(); entry.nbJours = currentNbJours; localStorage.setItem('historique', JSON.stringify(historique)); }
+            }
+
+            function chargerFormation(domaine, progression, jours, nbJours = 7) {
+                arreterClignotement();
+                currentDomaine = domaine;
+                currentNbJours = nbJours;
+                currentProgression = progression.length === nbJours ? progression.slice() : Array(nbJours).fill(false);
+                currentJours = JSON.parse(JSON.stringify(jours));
+                currentPage = 0;
+                afficherPage();
+                document.getElementById('jourContainer').style.display = 'block';
+                document.getElementById('startExpertise').style.display = 'none';
+                afficherBarreSegments();
+                setTimeout(() => {
+                    const intro = document.getElementById('jourContent').innerText;
+                    if (intro) playAudioChunks(intro, true);
+                }, 300);
+            }
+
+            const welcomeHTML = `<div class="welcome-text"><strong>Bonjour ! Bienvenue dans le Chapelet Tazzz Bot.</strong><br><br><strong>COMMENT UTILISER LE CHAPELET TAZZZ BOT ?</strong><br><br>- Procurez-vous un vrai chapelet.<br>- Glissez à gauche/droite pour feuilleter les 5 dizaines d’un jour.<br>- À la 5e dizaine, validez en cliquant sur la case clignotante.<br>- Cliquez sur <strong>“Suivant”</strong> pour passer au jour suivant.</div>`;
+
+            function afficherPage() {
+                const contentDiv = document.getElementById('jourContent');
+                const daySpan = document.getElementById('dayCounter');
+                const prevBtn = document.getElementById('prevDay');
+                const nextBtn = document.getElementById('nextDay');
+                const feedbackBox = document.getElementById('feedbackBox');
+                const welcomeBtn = document.getElementById('audioWelcomeBtn');
+                const dayAudioBtn = document.getElementById('audioDayBtn');
+                const jourHeader = document.getElementById('jourHeader');
+                const jourTitleSpan = document.getElementById('jourTitle');
+                const leftArrow = document.getElementById('swipeLeftArrow');
+                const rightArrow = document.getElementById('swipeRightArrow');
+                const refreshBtn = document.getElementById('refreshDizaineBtn');
+                arreterClignotement();
+
+                if (currentPage === 0) {
+                    jourHeader.style.display = 'none';
+                    contentDiv.innerHTML = welcomeHTML;
+                    daySpan.innerText = 'Intro / 8';
+                    prevBtn.disabled = true; nextBtn.disabled = false;
+                    feedbackBox.style.display = 'none';
+                    welcomeBtn.style.display = 'flex'; dayAudioBtn.style.display = 'none';
+                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
+                    refreshBtn.style.display = 'none';
+                    welcomeBtn.onclick = () => { const intro = document.getElementById('jourContent').innerText; if (intro) playAudioChunks(intro, true); };
+                } else {
+                    jourHeader.style.display = 'flex';
+                    jourTitleSpan.innerText = `📆 JOUR ${currentPage}`;
+                    welcomeBtn.style.display = 'none';
+                    if (currentJours[currentPage]) {
+                        currentDizaines = decouperEnDizaines(currentJours[currentPage]);
+                        currentDizaineIndex = 0;
+                        afficherDizaine(0);
+                        daySpan.innerText = `Jour ${currentPage} / ${currentNbJours}`;
+                        prevBtn.disabled = (currentPage === 1);
+                        nextBtn.disabled = (currentPage === currentNbJours);
+                        feedbackBox.style.display = 'block';
+                        dayAudioBtn.style.display = 'flex';
+                        dayAudioBtn.onclick = () => { const full = currentJours[currentPage]; if (full) playAudioChunks(full, true); };
+                        afficherBarreSegments();
+                        leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
+                        rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
+                        refreshBtn.style.display = 'flex';
+                    } else {
+                        contentDiv.innerHTML = '<em>Chargement du jour...</em>';
+                        refreshBtn.style.display = 'none';
+                        chargerJour(currentPage);
+                    }
+                }
+                updateValidationMessage();
+            }
+
+            function chargerJour(jourNum) {
+                if (currentExpertiseInterval) clearInterval(currentExpertiseInterval);
+                currentExpertiseInterval = startExpertiseProgressBar();
+                fetch('/generer_jour_expertise', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ domaine: currentDomaine, jour: jourNum })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) throw new Error(data.error);
+                    currentJours[jourNum] = data.contenu;
+                    sauvegarderFormationCourante();
+                    stopExpertiseProgressBar(currentExpertiseInterval, true);
+                    afficherPage();
+                    afficherBarreSegments();
+                })
+                .catch(err => {
+                    console.error(err);
+                    stopExpertiseProgressBar(currentExpertiseInterval, false);
+                    currentJours[jourNum] = `<strong>⚠️ Erreur: ${err.message}</strong>`;
+                    sauvegarderFormationCourante();
+                    afficherPage();
+                    afficherBarreSegments();
+                });
+            }
+
+            async function regenererDizaine() {
+                if (!currentPage || currentPage === 0) return;
+                const refreshBtn = document.getElementById('refreshDizaineBtn');
+                refreshBtn.classList.add('loading');
+                refreshBtn.innerHTML = '⏳';
+                try {
+                    const response = await fetch('/generer_jour_expertise', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ domaine: currentDomaine, jour: currentPage })
+                    });
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                    currentJours[currentPage] = data.contenu;
+                    sauvegarderFormationCourante();
+                    const nouvellesDizaines = decouperEnDizaines(data.contenu);
+                    if (nouvellesDizaines.length >= 5) {
+                        currentDizaines = nouvellesDizaines;
+                        if (currentDizaineIndex >= currentDizaines.length) currentDizaineIndex = currentDizaines.length - 1;
+                        afficherDizaine(currentDizaineIndex);
+                    } else afficherPage();
+                    alert("✓ Dizaine régénérée.");
+                } catch (err) { alert("Erreur: " + err.message); }
+                finally { refreshBtn.classList.remove('loading'); refreshBtn.innerHTML = '⟳'; }
+            }
+
+            document.getElementById('startExpertise').addEventListener('click', () => {
+                initAudio();
+                const domaine = document.getElementById('domaine').value.trim();
+                if (!domaine) { alert('Saisissez un domaine'); return; }
+                let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                let entry = historique.find(h => h.domaine === domaine);
+                if (!entry) {
+                    entry = { domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: Array(7).fill(false), shared: false, type: 'expertise', nbJours: 7 };
+                    historique.push(entry);
+                    localStorage.setItem('historique', JSON.stringify(historique));
+                }
+                let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                joursParDomaine[domaine] = {};
+                localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
+                chargerFormation(domaine, entry.progression.slice(), {}, 7);
+            });
+
+            document.getElementById('prevDay').addEventListener('click', () => { if (currentPage > 1) { currentPage--; afficherPage(); } });
+            document.getElementById('nextDay').addEventListener('click', () => {
+                if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
+                if (currentPage < currentNbJours) {
+                    if (!currentProgression[currentPage-1] && currentJours[currentPage]) {
+                        alert("Validez d'abord cette journée.");
+                        document.getElementById('progressHeaderMsg')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                    currentPage++; afficherPage();
+                }
+            });
+            document.getElementById('prevDayTriangle').addEventListener('click', () => { if (currentPage > 1) { currentPage--; afficherPage(); } });
+            document.getElementById('nextDayTriangle').addEventListener('click', () => {
+                if (currentPage === 0) { currentPage = 1; afficherPage(); return; }
+                if (currentPage < currentNbJours) {
+                    if (!currentProgression[currentPage-1] && currentJours[currentPage]) {
+                        alert("Validez d'abord cette journée.");
+                        document.getElementById('progressHeaderMsg')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                    currentPage++; afficherPage();
+                }
+            });
+            document.getElementById('refreshDizaineBtn').addEventListener('click', regenererDizaine);
+
+            const contentZone = document.getElementById('jourContent');
+            if (contentZone) {
+                contentZone.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; });
+                contentZone.addEventListener('touchend', (e) => {
+                    if (currentPage === 0) return;
+                    touchEndX = e.changedTouches[0].clientX;
+                    const deltaX = touchEndX - touchStartX;
+                    if (Math.abs(deltaX) < 50) return;
+                    if (deltaX > 0 && currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1, false);
+                    else if (deltaX < 0 && currentDizaineIndex < currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, false);
+                    else if (deltaX < 0 && currentDizaineIndex === currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, true);
+                });
+            }
+            document.getElementById('swipeLeftArrow').addEventListener('click', () => { if (currentPage !== 0 && currentDizaineIndex > 0) afficherDizaine(currentDizaineIndex - 1, false); });
+            document.getElementById('swipeRightArrow').addEventListener('click', () => {
+                if (currentPage !== 0) {
+                    if (currentDizaineIndex < currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, false);
+                    else if (currentDizaineIndex === currentDizaines.length - 1) afficherDizaine(currentDizaineIndex + 1, true);
+                }
+            });
+
+            let currentNoteEx = 0;
+            function refreshStars() { document.querySelectorAll('#starsEx .star').forEach((s,i) => { if (i < currentNoteEx) s.textContent='★'; else s.textContent='☆'; }); }
+            document.querySelectorAll('#starsEx .star').forEach(star => { star.addEventListener('click', () => { currentNoteEx = parseInt(star.dataset.value); refreshStars(); }); });
+            document.getElementById('submitFeedbackEx').addEventListener('click', async () => {
+                if (currentNoteEx === 0) { alert('Choisissez une note'); return; }
+                const comment = document.getElementById('feedbackCommentEx').value.trim();
+                try { await fetch('/feedback', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note: currentNoteEx, commentaire: comment }) }); alert('Merci !'); document.getElementById('feedbackBox').style.display = 'none'; } catch(e) { alert('Erreur réseau'); }
+            });
+
+            document.getElementById('homeHeader').addEventListener('click', () => {
+                currentDomaine = '';
+                document.getElementById('jourContainer').style.display = 'none';
+                document.getElementById('startExpertise').style.display = 'block';
+                document.getElementById('domaine').value = '';
+                document.getElementById('jourContent').innerHTML = '';
+                document.getElementById('swipeLeftArrow').style.display = 'none';
+                document.getElementById('swipeRightArrow').style.display = 'none';
+                document.getElementById('jourHeader').style.display = 'none';
+                document.getElementById('refreshDizaineBtn').style.display = 'none';
+                stopAudio();
+                arreterClignotement();
+                document.getElementById('btnExpertise').click();
+            });
+
+            function genererLienPartage() { const base = window.location.href.split('?')[0]; if (currentDomaine) return `${base}?expertise=${encodeURIComponent(currentDomaine)}`; return base; }
+            document.getElementById('shareButton').addEventListener('click', async () => {
+                const url = genererLienPartage();
+                let text = `🧠 Découvrez "${currentDomaine}" sur Chapelet Tazzz Bot !`;
+                if (navigator.share) { try { await navigator.share({ title: 'Chapelet Tazzz Bot', text, url }); } catch(e) {} }
+                else { try { await navigator.clipboard.writeText(text + ' ' + url); alert('Lien copié'); } catch(e) { alert('Erreur'); } }
+            });
+
+            function initFromUrl() {
+                const params = new URLSearchParams(window.location.search);
+                const expertise = params.get('expertise');
+                if (expertise) {
+                    document.getElementById('domaine').value = decodeURIComponent(expertise);
+                    setTimeout(() => { const btn = document.getElementById('startExpertise'); if (btn && btn.style.display !== 'none') btn.click(); }, 500);
+                }
+            }
+            initFromUrl();
+
+            // ================= MODE COURS (6 CHAPITRES) =================
+            let chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
+            let coursTemp = JSON.parse(localStorage.getItem('cours_temp')) || {};
+            for (let i=1;i<=6;i++) if (coursTemp[i]) chapitresSauvegardes[i] = coursTemp[i];
+
+            function createChapitresUI() {
+                const container = document.getElementById('chapitresList');
+                container.innerHTML = '';
+                for (let i=1;i<=6;i++) {
+                    const isCollapsed = localStorage.getItem(`chapitre-${i}-collapsed`) === 'true';
+                    const card = document.createElement('div');
+                    card.className = 'chapitre-card';
+                    card.id = `chapitre-card-${i}`;
+                    card.innerHTML = `
+                        <div class="chapitre-header">
+                            <button class="toggle-chapitre" data-chapitre="${i}">${isCollapsed ? '▶' : '▼'}</button>
+                            <strong>Chapitre ${i}</strong>
+                        </div>
+                        <div class="chapitre-body ${isCollapsed ? 'collapsed' : ''}">
+                            <textarea rows="6" class="chapitre-text" data-chapitre="${i}" placeholder="Collez le texte du chapitre..."></textarea>
+                            <button class="save-chapitre-btn" data-chapitre="${i}">📎 Enregistrer</button>
+                            <button class="refresh-chapitre-btn" data-chapitre="${i}">⟳</button>
+                            <div class="chapitre-status" id="status-chapitre-${i}"></div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+                attachEvents();
+            }
+
+            function attachEvents() {
+                document.querySelectorAll('.save-chapitre-btn').forEach(btn => {
+                    btn.removeEventListener('click', saveHandler);
+                    btn.addEventListener('click', saveHandler);
+                });
+                document.querySelectorAll('.refresh-chapitre-btn').forEach(btn => {
+                    btn.removeEventListener('click', refreshHandler);
+                    btn.addEventListener('click', refreshHandler);
+                });
+                document.querySelectorAll('.toggle-chapitre').forEach(t => {
+                    t.removeEventListener('click', toggleHandler);
+                    t.addEventListener('click', toggleHandler);
+                });
+            }
+
+            async function saveHandler(e) {
+                const num = parseInt(e.currentTarget.dataset.chapitre);
+                const card = document.getElementById(`chapitre-card-${num}`);
+                const texte = card.querySelector('.chapitre-text').value.trim();
+                if (!texte) { alert(`Collez le texte du chapitre ${num}.`); return; }
+                const statusDiv = document.getElementById(`status-chapitre-${num}`);
+                const progDiv = document.createElement('div'); progDiv.className = 'custom-progress'; progDiv.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
+                statusDiv.innerHTML = ''; statusDiv.appendChild(progDiv);
+                let percent = 0;
+                const bar = progDiv.querySelector('.custom-progress-bar');
+                const pct = progDiv.querySelector('.progress-percent-text');
+                const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
+                try {
+                    const res = await fetch('/generer_chapitre', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ texte, num }) });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error);
+                    chapitresSauvegardes[num] = data.contenu;
+                    let temp = JSON.parse(localStorage.getItem('cours_temp')) || {};
+                    temp[num] = data.contenu;
+                    localStorage.setItem('cours_temp', JSON.stringify(temp));
+                    clearInterval(interval);
+                    bar.style.width = '100%'; pct.innerText = '100%';
+                    setTimeout(() => { statusDiv.innerHTML = '✅ Chapitre enregistré.'; }, 500);
+                } catch(err) {
+                    clearInterval(interval);
+                    statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
+                }
+            }
+
+            async function refreshHandler(e) {
+                const num = parseInt(e.currentTarget.dataset.chapitre);
+                const card = document.getElementById(`chapitre-card-${num}`);
+                const texte = card.querySelector('.chapitre-text').value.trim();
+                if (!texte) { alert(`Collez le texte du chapitre ${num}.`); return; }
+                const statusDiv = document.getElementById(`status-chapitre-${num}`);
+                const progDiv = document.createElement('div'); progDiv.className = 'custom-progress'; progDiv.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
+                statusDiv.innerHTML = ''; statusDiv.appendChild(progDiv);
+                let percent = 0;
+                const bar = progDiv.querySelector('.custom-progress-bar');
+                const pct = progDiv.querySelector('.progress-percent-text');
+                const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
+                try {
+                    const res = await fetch('/generer_chapitre', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ texte, num }) });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error);
+                    chapitresSauvegardes[num] = data.contenu;
+                    let temp = JSON.parse(localStorage.getItem('cours_temp')) || {};
+                    temp[num] = data.contenu;
+                    localStorage.setItem('cours_temp', JSON.stringify(temp));
+                    clearInterval(interval);
+                    bar.style.width = '100%'; pct.innerText = '100%';
+                    setTimeout(() => { statusDiv.innerHTML = '✅ Chapitre regénéré.'; }, 500);
+                } catch(err) {
+                    clearInterval(interval);
+                    statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
+                }
+            }
+
+            function toggleHandler(e) {
+                const num = parseInt(e.currentTarget.dataset.chapitre);
+                const card = document.getElementById(`chapitre-card-${num}`);
+                const body = card.querySelector('.chapitre-body');
+                const isCollapsed = body.classList.contains('collapsed');
+                if (isCollapsed) {
+                    body.classList.remove('collapsed');
+                    e.currentTarget.textContent = '▼';
+                    localStorage.setItem(`chapitre-${num}-collapsed`, 'false');
+                } else {
+                    body.classList.add('collapsed');
+                    e.currentTarget.textContent = '▶';
+                    localStorage.setItem(`chapitre-${num}-collapsed`, 'true');
+                }
+            }
+
+            function resetCours() {
+                localStorage.removeItem('cours_temp');
+                chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
+                createChapitresUI();
+            }
+
+            document.getElementById('resetCoursBtn').addEventListener('click', resetCours);
+
+            let tousPlies = false;
+            document.getElementById('toggleChapitresBtn').addEventListener('click', () => {
+                tousPlies = !tousPlies;
+                for (let i=1;i<=6;i++) {
+                    const card = document.getElementById(`chapitre-card-${i}`);
+                    if (!card) continue;
+                    const body = card.querySelector('.chapitre-body');
+                    const toggle = card.querySelector('.toggle-chapitre');
+                    if (tousPlies) {
+                        body.classList.add('collapsed');
+                        if (toggle) toggle.textContent = '▶';
+                        localStorage.setItem(`chapitre-${i}-collapsed`, 'true');
+                    } else {
+                        body.classList.remove('collapsed');
+                        if (toggle) toggle.textContent = '▼';
+                        localStorage.setItem(`chapitre-${i}-collapsed`, 'false');
+                    }
+                }
+                document.getElementById('toggleChapitresBtn').innerHTML = tousPlies ? '▶ Déplier tous' : '▼ Plier tous';
+            });
+
+            document.getElementById('submitCoursBtn').addEventListener('click', async () => {
+                const missing = [];
+                for (let i=1;i<=6;i++) if (!chapitresSauvegardes[i]) missing.push(i);
+                if (missing.length) { alert(`Chapitres manquants : ${missing.join(', ')}. Enregistrez-les d'abord.`); return; }
+                const titre = prompt("Nom de votre section (ex: Maths Terminale) :", "Mes cours (6 chapitres)");
+                if (!titre) return;
+                const statusDiv = document.getElementById('coursResult');
+                statusDiv.innerHTML = '<div class="progress-container"><div class="progress-fill" style="width:0%"></div><div class="progress-percent">Génération...</div></div>';
+                statusDiv.style.display = 'block';
+                let joursComplets = {};
+                for (let i=1;i<=6;i++) joursComplets[i] = chapitresSauvegardes[i];
+                let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                let entry = historique.find(h => h.domaine === titre);
+                if (!entry) {
+                    entry = { domaine: titre, dateDebut: new Date().toISOString(), dateFin: null, progression: Array(6).fill(false), shared: false, type: 'cours', nbJours: 6 };
+                    historique.push(entry);
+                    localStorage.setItem('historique', JSON.stringify(historique));
+                }
+                let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                joursParDomaine[titre] = joursComplets;
+                localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
+                localStorage.removeItem('cours_temp');
+                chargerFormation(titre, entry.progression.slice(), joursComplets, 6);
+                document.getElementById('btnExpertise').click();
+                statusDiv.style.display = 'none';
+            });
+
+            // ================= MODE ENTRETIEN (4 jours) =================
+            let entretienSauvegardes = {1:null,2:null,3:null,4:null};
+            let entretienTemp = JSON.parse(localStorage.getItem('entretien_temp')) || {};
+            for (let i=1;i<=4;i++) if (entretienTemp[i]) entretienSauvegardes[i] = entretienTemp[i];
+
+            function createEntretienUI() {
+                const container = document.getElementById('entretienChapitresList');
+                container.innerHTML = '';
+                for (let i=1;i<=4;i++) {
+                    const isCollapsed = localStorage.getItem(`entretien-${i}-collapsed`) === 'true';
+                    const card = document.createElement('div');
+                    card.className = 'chapitre-card';
+                    card.id = `entretien-card-${i}`;
+                    card.innerHTML = `
+                        <div class="chapitre-header">
+                            <button class="toggle-chapitre" data-chapitre="${i}">${isCollapsed ? '▶' : '▼'}</button>
+                            <strong>Jour ${i}</strong>
+                        </div>
+                        <div class="chapitre-body ${isCollapsed ? 'collapsed' : ''}">
+                            <textarea rows="6" class="entretien-text" data-chapitre="${i}" placeholder="Partie de la préparation..."></textarea>
+                            <button class="save-entretien-btn" data-chapitre="${i}">📎 Enregistrer cette partie</button>
+                            <button class="refresh-entretien-btn" data-chapitre="${i}">⟳</button>
+                            <div class="chapitre-status" id="status-entretien-${i}"></div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                }
+                attachEntretienEvents();
+            }
+
+            function attachEntretienEvents() {
+                document.querySelectorAll('.save-entretien-btn').forEach(btn => {
+                    btn.removeEventListener('click', saveEntretienHandler);
+                    btn.addEventListener('click', saveEntretienHandler);
+                });
+                document.querySelectorAll('.refresh-entretien-btn').forEach(btn => {
+                    btn.removeEventListener('click', refreshEntretienHandler);
+                    btn.addEventListener('click', refreshEntretienHandler);
+                });
+                document.querySelectorAll('#entretienChapitresList .toggle-chapitre').forEach(t => {
+                    t.removeEventListener('click', toggleEntretienHandler);
+                    t.addEventListener('click', toggleEntretienHandler);
+                });
+            }
+
+            async function saveEntretienHandler(e) {
+                const num = parseInt(e.currentTarget.dataset.chapitre);
+                const card = document.getElementById(`entretien-card-${num}`);
+                const texte = card.querySelector('.entretien-text').value.trim();
+                if (!texte) { alert(`Veuillez remplir le contenu du jour ${num}.`); return; }
+                const statusDiv = document.getElementById(`status-entretien-${num}`);
+                const progDiv = document.createElement('div'); progDiv.className = 'custom-progress'; progDiv.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
+                statusDiv.innerHTML = ''; statusDiv.appendChild(progDiv);
+                let percent = 0;
+                const bar = progDiv.querySelector('.custom-progress-bar');
+                const pct = progDiv.querySelector('.progress-percent-text');
+                const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
+                try {
+                    const res = await fetch('/generer_entretien', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ texte_profil: texte })
+                    });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error);
+                    // data.jours contient les 4 jours générés
+                    for (let i=1;i<=4;i++) {
+                        if (data.jours[i]) {
+                            entretienSauvegardes[i] = data.jours[i];
+                            let temp = JSON.parse(localStorage.getItem('entretien_temp')) || {};
+                            temp[i] = data.jours[i];
+                            localStorage.setItem('entretien_temp', JSON.stringify(temp));
+                        }
+                    }
+                    clearInterval(interval);
+                    bar.style.width = '100%'; pct.innerText = '100%';
+                    setTimeout(() => { statusDiv.innerHTML = '✅ Programme (4 jours) enregistré.'; }, 500);
+                } catch(err) {
+                    clearInterval(interval);
+                    statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
+                }
+            }
+
+            async function refreshEntretienHandler(e) {
+                const num = parseInt(e.currentTarget.dataset.chapitre);
+                const card = document.getElementById(`entretien-card-${num}`);
+                const texte = card.querySelector('.entretien-text').value.trim();
+                if (!texte) { alert(`Veuillez remplir le contenu du jour ${num}.`); return; }
+                const statusDiv = document.getElementById(`status-entretien-${num}`);
+                const progDiv = document.createElement('div'); progDiv.className = 'custom-progress'; progDiv.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
+                statusDiv.innerHTML = ''; statusDiv.appendChild(progDiv);
+                let percent = 0;
+                const bar = progDiv.querySelector('.custom-progress-bar');
+                const pct = progDiv.querySelector('.progress-percent-text');
+                const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
+                try {
+                    const res = await fetch('/generer_entretien', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ texte_profil: texte })
+                    });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error);
+                    for (let i=1;i<=4;i++) {
+                        if (data.jours[i]) {
+                            entretienSauvegardes[i] = data.jours[i];
+                            let temp = JSON.parse(localStorage.getItem('entretien_temp')) || {};
+                            temp[i] = data.jours[i];
+                            localStorage.setItem('entretien_temp', JSON.stringify(temp));
+                        }
+                    }
+                    clearInterval(interval);
+                    bar.style.width = '100%'; pct.innerText = '100%';
+                    setTimeout(() => { statusDiv.innerHTML = '✅ Programme regénéré.'; }, 500);
+                } catch(err) {
+                    clearInterval(interval);
+                    statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
+                }
+            }
+
+            function toggleEntretienHandler(e) {
+                const num = parseInt(e.currentTarget.dataset.chapitre);
+                const card = document.getElementById(`entretien-card-${num}`);
+                const body = card.querySelector('.chapitre-body');
+                const isCollapsed = body.classList.contains('collapsed');
+                if (isCollapsed) {
+                    body.classList.remove('collapsed');
+                    e.currentTarget.textContent = '▼';
+                    localStorage.setItem(`entretien-${num}-collapsed`, 'false');
+                } else {
+                    body.classList.add('collapsed');
+                    e.currentTarget.textContent = '▶';
+                    localStorage.setItem(`entretien-${num}-collapsed`, 'true');
+                }
+            }
+
+            function resetEntretien() {
+                localStorage.removeItem('entretien_temp');
+                entretienSauvegardes = {1:null,2:null,3:null,4:null};
+                createEntretienUI();
+            }
+
+            document.getElementById('resetEntretienBtn').addEventListener('click', resetEntretien);
+
+            let tousEntretienPlies = false;
+            document.getElementById('toggleEntretienChapitresBtn').addEventListener('click', () => {
+                tousEntretienPlies = !tousEntretienPlies;
+                for (let i=1;i<=4;i++) {
+                    const card = document.getElementById(`entretien-card-${i}`);
+                    if (!card) continue;
+                    const body = card.querySelector('.chapitre-body');
+                    const toggle = card.querySelector('.toggle-chapitre');
+                    if (tousEntretienPlies) {
+                        body.classList.add('collapsed');
+                        if (toggle) toggle.textContent = '▶';
+                        localStorage.setItem(`entretien-${i}-collapsed`, 'true');
+                    } else {
+                        body.classList.remove('collapsed');
+                        if (toggle) toggle.textContent = '▼';
+                        localStorage.setItem(`entretien-${i}-collapsed`, 'false');
+                    }
+                }
+                document.getElementById('toggleEntretienChapitresBtn').innerHTML = tousEntretienPlies ? '▶ Déplier tous' : '▼ Plier tous';
+            });
+
+            document.getElementById('submitEntretienBtn').addEventListener('click', async () => {
+                const missing = [];
+                for (let i=1;i<=4;i++) if (!entretienSauvegardes[i]) missing.push(i);
+                if (missing.length) { alert(`Jours manquants : ${missing.join(', ')}. Enregistrez d'abord le programme.`); return; }
+                const titre = prompt("Nom de votre préparation (ex: Entretien Poste X) :", "Préparation entretien");
+                if (!titre) return;
+                const statusDiv = document.getElementById('entretienResult');
+                statusDiv.innerHTML = '<div class="progress-container"><div class="progress-fill" style="width:0%"></div><div class="progress-percent">Préparation...</div></div>';
+                statusDiv.style.display = 'block';
+                let joursComplets = {};
+                for (let i=1;i<=4;i++) joursComplets[i] = entretienSauvegardes[i];
+                let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                let entry = historique.find(h => h.domaine === titre);
+                if (!entry) {
+                    entry = { domaine: titre, dateDebut: new Date().toISOString(), dateFin: null, progression: Array(4).fill(false), shared: false, type: 'entretien', nbJours: 4 };
+                    historique.push(entry);
+                    localStorage.setItem('historique', JSON.stringify(historique));
+                }
+                let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                joursParDomaine[titre] = joursComplets;
+                localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
+                localStorage.removeItem('entretien_temp');
+                chargerFormation(titre, entry.progression.slice(), joursComplets, 4);
+                document.getElementById('btnExpertise').click();
+                statusDiv.style.display = 'none';
+            });
+
+            // Gestion de l'affichage exclusif entre les trois modes
+            const btnExpertise = document.getElementById('btnExpertise');
+            const btnCoursToggle = document.getElementById('btnCoursToggle');
+            const btnEntretienToggle = document.getElementById('btnEntretienToggle');
+            const expertisePanel = document.getElementById('expertisePanel');
+            const coursPanel = document.getElementById('coursPanel');
+            const entretienPanel = document.getElementById('entretienPanel');
+
+            function showExpertise() {
+                expertisePanel.classList.add('active-panel');
+                coursPanel.classList.remove('active-panel');
+                entretienPanel.classList.remove('active-panel');
+                btnExpertise.classList.add('active');
+                btnCoursToggle.classList.remove('active');
+                btnEntretienToggle.classList.remove('active');
+                btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▶';
+                btnEntretienToggle.textContent = '💼 Entretien d\'embauche (4j) ▶';
+            }
+
+            function showCours() {
+                coursPanel.classList.add('active-panel');
+                expertisePanel.classList.remove('active-panel');
+                entretienPanel.classList.remove('active-panel');
+                btnCoursToggle.classList.add('active');
+                btnExpertise.classList.remove('active');
+                btnEntretienToggle.classList.remove('active');
+                btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▼';
+                btnEntretienToggle.textContent = '💼 Entretien d\'embauche (4j) ▶';
+            }
+
+            function showEntretien() {
+                entretienPanel.classList.add('active-panel');
+                expertisePanel.classList.remove('active-panel');
+                coursPanel.classList.remove('active-panel');
+                btnEntretienToggle.classList.add('active');
+                btnExpertise.classList.remove('active');
+                btnCoursToggle.classList.remove('active');
+                btnEntretienToggle.textContent = '💼 Entretien d\'embauche (4j) ▼';
+                btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▶';
+            }
+
+            btnExpertise.addEventListener('click', showExpertise);
+            btnCoursToggle.addEventListener('click', showCours);
+            btnEntretienToggle.addEventListener('click', showEntretien);
+
+            showExpertise();
+            createChapitresUI();
+            createEntretienUI();
+
+            // ---------- HISTORIQUE ACCORDÉON (adapté pour les 3 types) ----------
+            const historyModal = document.getElementById('historyModal');
+            const historyList = document.getElementById('historyList');
+            function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
+            function supprimerEntree(index) {
+                let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                if (confirm('Supprimer définitivement ?')) {
+                    const item = historique[index];
+                    if (item.progression && item.progression.filter(v=>v).length === item.nbJours) {
+                        let badges = JSON.parse(localStorage.getItem('badges')) || [];
+                        badges = badges.filter(b => b !== `🏅 Expert en ${item.domaine}`);
+                        localStorage.setItem('badges', JSON.stringify(badges));
+                        updateBadgeCounters();
+                    }
+                    let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                    delete joursParDomaine[item.domaine];
+                    localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
+                    historique.splice(index,1);
+                    localStorage.setItem('historique', JSON.stringify(historique));
+                    afficherHistorique();
+                }
+            }
+            function toggleCat(catId) { document.getElementById(catId)?.classList.toggle('collapsed'); }
+            function afficherHistorique() {
+                let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                const expertises = historique.filter(h => h.type === 'expertise');
+                const cours = historique.filter(h => h.type === 'cours');
+                const entretiens = historique.filter(h => h.type === 'entretien');
+                historyList.innerHTML = '';
+                if (expertises.length) {
+                    const divCat = document.createElement('div'); divCat.className = 'history-category';
+                    const catId = 'hist-expertises';
+                    divCat.innerHTML = `<h4 onclick="toggleCat('${catId}')">📚 Expertises (${expertises.length})</h4><div id="${catId}" class="history-list">`;
+                    const listDiv = divCat.querySelector(`#${catId}`);
+                    expertises.forEach((item, idx) => {
+                        const completed = item.progression.filter(v=>v).length;
+                        const total = item.nbJours || 7;
+                        const div = document.createElement('div'); div.className = 'history-item';
+                        div.innerHTML = `<div class="history-item-text"><strong>${item.domaine}</strong> (${completed}/${total}) – Début: ${formatDate(item.dateDebut)}${completed===total ? `<div class="badge-text">🏅 Expert en ${item.domaine}</div>` : ''}</div><button class="delete-history-item">🗑️</button>`;
+                        div.querySelector('.history-item-text').onclick = () => {
+                            let saved = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                            chargerFormation(item.domaine, item.progression.slice(), saved[item.domaine] || {}, total);
+                            historyModal.style.display = 'none';
+                            document.getElementById('btnExpertise').click();
+                        };
+                        div.querySelector('.delete-history-item').onclick = (e) => { e.stopPropagation(); supprimerEntree(idx); };
+                        listDiv.appendChild(div);
+                    });
+                    historyList.appendChild(divCat);
+                }
+                if (cours.length) {
+                    const divCat = document.createElement('div'); divCat.className = 'history-category';
+                    const catId = 'hist-cours';
+                    divCat.innerHTML = `<h4 onclick="toggleCat('${catId}')">📘 Cours (${cours.length})</h4><div id="${catId}" class="history-list">`;
+                    const listDiv = divCat.querySelector(`#${catId}`);
+                    cours.forEach((item, idx) => {
+                        const completed = item.progression.filter(v=>v).length;
+                        const total = item.nbJours || 6;
+                        const div = document.createElement('div'); div.className = 'history-item';
+                        div.innerHTML = `<div class="history-item-text"><strong>${item.domaine}</strong> (${completed}/${total}) – Début: ${formatDate(item.dateDebut)}${completed===total ? `<div class="badge-text">🏅 Expert en ${item.domaine}</div>` : ''}</div><button class="delete-history-item">🗑️</button>`;
+                        div.querySelector('.history-item-text').onclick = () => {
+                            let saved = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                            chargerFormation(item.domaine, item.progression.slice(), saved[item.domaine] || {}, total);
+                            historyModal.style.display = 'none';
+                            document.getElementById('btnExpertise').click();
+                        };
+                        div.querySelector('.delete-history-item').onclick = (e) => { e.stopPropagation(); supprimerEntree(idx); };
+                        listDiv.appendChild(div);
+                    });
+                    historyList.appendChild(divCat);
+                }
+                if (entretiens.length) {
+                    const divCat = document.createElement('div'); divCat.className = 'history-category';
+                    const catId = 'hist-entretiens';
+                    divCat.innerHTML = `<h4 onclick="toggleCat('${catId}')">💼 Entretiens (${entretiens.length})</h4><div id="${catId}" class="history-list">`;
+                    const listDiv = divCat.querySelector(`#${catId}`);
+                    entretiens.forEach((item, idx) => {
+                        const completed = item.progression.filter(v=>v).length;
+                        const total = item.nbJours || 4;
+                        const div = document.createElement('div'); div.className = 'history-item';
+                        div.innerHTML = `<div class="history-item-text"><strong>${item.domaine}</strong> (${completed}/${total}) – Début: ${formatDate(item.dateDebut)}${completed===total ? `<div class="badge-text">🏅 Expert en ${item.domaine}</div>` : ''}</div><button class="delete-history-item">🗑️</button>`;
+                        div.querySelector('.history-item-text').onclick = () => {
+                            let saved = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                            chargerFormation(item.domaine, item.progression.slice(), saved[item.domaine] || {}, total);
+                            historyModal.style.display = 'none';
+                            document.getElementById('btnExpertise').click();
+                        };
+                        div.querySelector('.delete-history-item').onclick = (e) => { e.stopPropagation(); supprimerEntree(idx); };
+                        listDiv.appendChild(div);
+                    });
+                    historyList.appendChild(divCat);
+                }
+                if (!historique.length) historyList.innerHTML = '<p>Aucune formation.</p>';
+                window.toggleCat = toggleCat;
+            }
+            document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display = 'flex'; });
+            document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
+            window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
+            document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 Abonnement à venir."));
+
+            let currentExpertiseInterval = null;
+            function startExpertiseProgressBar() {
+                const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
+                if (!area) return null;
+                area.style.display = 'block';
+                let p=0;
+                const interval = setInterval(() => { if (p<90) { p+=2; if(p>90)p=90; fill.style.width = p+'%'; percentSpan.innerText = p+'%'; } }, 150);
+                return interval;
+            }
+            function stopExpertiseProgressBar(interval, complete) {
+                const area = document.getElementById('expertiseProgressArea'), fill = document.getElementById('expertiseProgressFill'), percentSpan = document.getElementById('expertiseProgressPercent');
+                if (interval) clearInterval(interval);
+                if (complete && fill) {
+                    fill.style.width = '100%'; if(percentSpan) percentSpan.innerText='100%';
+                    setTimeout(() => { if(area) area.style.display='none'; fill.style.width='0%'; if(percentSpan) percentSpan.innerText=''; }, 300);
+                } else { if(area) area.style.display='none'; if(fill) fill.style.width='0%'; if(percentSpan) percentSpan.innerText=''; }
+            }
+
+            let frenchVoice = null;
+            function initFrenchVoice() { if (!window.speechSynthesis) return; const voices = window.speechSynthesis.getVoices(); frenchVoice = voices.find(v => v.lang === 'fr-FR' && (v.name.includes('Google') || v.name.includes('Samantha') || v.name.includes('Thomas') || v.name.includes('Amélie'))); if (!frenchVoice) frenchVoice = voices.find(v => v.lang === 'fr-FR'); }
             if (window.speechSynthesis) { window.speechSynthesis.onvoiceschanged = initFrenchVoice; initFrenchVoice(); }
             function cleanText(t) { return t ? t.replace(/\*\*/g,'').replace(/\*/g,'').replace(/#/g,'').replace(/`/g,'').replace(/_/g,'').replace(/\[([^\]]+)\]\([^\)]+\)/g,'$1').trim() : ''; }
             function splitTextIntoChunks(text, maxLen=1800) {
@@ -626,579 +1531,12 @@
             stopBtn.addEventListener('click', stopAudio);
             seekSlider.addEventListener('input', (e) => { if (currentAudioChunks.length) { const newIdx = parseInt(e.target.value); if (newIdx !== currentChunkIdx) { pauseAudio(); speakChunk(newIdx); } } });
 
-            // ---------- FONCTIONS UTILITAIRES ----------
-            function decouperEnDizaines(contenuBrut) {
-                if (!contenuBrut) return [];
-                const regex = /(?:DIZAINE\s+\d+\s*[–-]?\s*\**\s*)([^]*?)(?=(?:DIZAINE\s+\d+|$))/gi;
-                let matches = [...contenuBrut.matchAll(regex)];
-                if (matches.length >= 5) return matches.slice(0,5).map(m => m[1].trim());
-                let ps = contenuBrut.split(/\n\s*\n/);
-                if (ps.length >= 5) return ps.slice(0,5);
-                return [contenuBrut];
+            function updateBadgeCounters() {
+                let badges = JSON.parse(localStorage.getItem('badges')) || [];
+                let count = badges.length;
+                ['badgeCountExpertise', 'badgeCountCours', 'badgeCountEntretien'].forEach(id => { const el = document.getElementById(id); if (el) { if (count > 0) { el.style.display = 'inline-block'; el.innerText = count + '🏅'; } else el.style.display = 'none'; } });
             }
-
-            // ================= MODE EXPERTISE (7 jours) =================
-            let currentDomaine = '';
-            let currentProgression = [];
-            let currentJours = {};
-            let currentDizaines = [];
-            let currentDizaineIndex = 0;
-            let currentPage = 0;
-            let currentNbJours = 7;
-            let blinkInterval = null;
-            let touchStartX = 0, touchEndX = 0;
-
-            function arreterClignotement() {
-                if (blinkInterval) clearInterval(blinkInterval);
-                blinkInterval = null;
-                document.querySelectorAll('.segment').forEach(seg => seg.classList.remove('blink-segment'));
-                const msgDiv = document.getElementById('progressHeaderMsg');
-                if (msgDiv) msgDiv.classList.remove('blink-text');
-            }
-            function demarrerClignotement() {
-                arreterClignotement();
-                const dayIndex = currentPage - 1;
-                if (dayIndex < 0 || dayIndex >= currentNbJours) return;
-                const segments = document.querySelectorAll('.segment');
-                if (segments[dayIndex]) segments[dayIndex].classList.add('blink-segment');
-                const msgDiv = document.getElementById('progressHeaderMsg');
-                if (msgDiv && currentPage > 0 && !currentProgression[currentPage-1]) {
-                    msgDiv.style.display = 'block';
-                    msgDiv.classList.add('blink-text');
-                }
-                if (!audioCtx) initAudio();
-                blinkInterval = setInterval(() => playBeep(), 1000);
-            }
-
-            function afficherDizaine(index, afficherMessage = false) {
-                const contentDiv = document.getElementById('jourContent');
-                const leftArrow = document.getElementById('swipeLeftArrow');
-                const rightArrow = document.getElementById('swipeRightArrow');
-                if (!currentDizaines.length) {
-                    contentDiv.innerHTML = '<em>Contenu non disponible.</em>';
-                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
-                    return;
-                }
-                if (index < 0) index = 0;
-                if (index >= currentDizaines.length) {
-                    if (afficherMessage && currentPage >= 1 && !currentProgression[currentPage-1]) {
-                        const msgDiv = document.getElementById('progressHeaderMsg');
-                        if (msgDiv) { msgDiv.style.display = 'block'; demarrerClignotement(); }
-                        alert("📿 Vous avez terminé les 5 dizaines ! N'oubliez pas de valider cette journée.");
-                    }
-                    return;
-                }
-                currentDizaineIndex = index;
-                const numero = currentDizaineIndex + 1;
-                const titre = `<div class="dizaine-title">📖 DIZAINE ${numero} / 5</div>`;
-                contentDiv.innerHTML = titre + currentDizaines[currentDizaineIndex].replace(/\n/g, '<br>');
-                leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
-                rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
-                contentDiv.scrollTop = 0;
-                const msgDiv = document.getElementById('progressHeaderMsg');
-                if (currentPage > 0 && currentDizaineIndex === 4 && !currentProgression[currentPage-1]) {
-                    msgDiv.style.display = 'block';
-                    demarrerClignotement();
-                } else {
-                    msgDiv.style.display = 'none';
-                    arreterClignotement();
-                }
-            }
-
-            function afficherBarreSegments(containerId, progression, nbJours, clickHandler) {
-                const container = document.getElementById(containerId);
-                if (!container) return;
-                container.innerHTML = '';
-                for (let i = 0; i < nbJours; i++) {
-                    const seg = document.createElement('div');
-                    seg.className = 'segment';
-                    if (progression[i]) {
-                        seg.classList.add('completed');
-                        seg.onclick = (function(idx){ return () => clickHandler(idx+1); })(i);
-                    } else {
-                        seg.onclick = (function(idx){ return () => clickHandler(idx+1); })(i);
-                    }
-                    seg.innerHTML = `<div class="day-label">J${i+1}</div><div class="day-status">${progression[i] ? '✓' : '🔒'}</div>`;
-                    container.appendChild(seg);
-                }
-            }
-
-            function sauvegarderFormation(key, jours, progression, nbJours) {
-                let formations = JSON.parse(localStorage.getItem(key)) || {};
-                formations[currentDomaine] = { jours, progression, nbJours };
-                localStorage.setItem(key, JSON.stringify(formations));
-            }
-            function chargerFormation(key, domaine, callback) {
-                let formations = JSON.parse(localStorage.getItem(key)) || {};
-                if (formations[domaine]) {
-                    callback(formations[domaine].jours, formations[domaine].progression, formations[domaine].nbJours);
-                }
-            }
-
-            // Expertise spécifique
-            function chargerExpertise(domaine, progression, jours, nbJours = 7) {
-                currentDomaine = domaine;
-                currentNbJours = nbJours;
-                currentProgression = progression.length === nbJours ? progression.slice() : Array(nbJours).fill(false);
-                currentJours = JSON.parse(JSON.stringify(jours));
-                currentPage = 0;
-                afficherPage();
-                document.getElementById('jourContainer').style.display = 'block';
-                document.getElementById('startExpertise').style.display = 'none';
-                afficherBarreSegments('segmentsContainer', currentProgression, currentNbJours, naviguerVersJour);
-            }
-
-            function naviguerVersJour(jourNum) {
-                if (jourNum >= 1 && jourNum <= currentNbJours && currentJours[jourNum]) {
-                    currentPage = jourNum;
-                    currentDizaines = decouperEnDizaines(currentJours[jourNum]);
-                    currentDizaineIndex = 0;
-                    afficherPage();
-                }
-            }
-
-            function afficherPage() {
-                const contentDiv = document.getElementById('jourContent');
-                const daySpan = document.getElementById('dayCounter');
-                const prevBtn = document.getElementById('prevDay');
-                const nextBtn = document.getElementById('nextDay');
-                const feedbackBox = document.getElementById('feedbackBox');
-                const jourHeader = document.getElementById('jourHeader');
-                const jourTitleSpan = document.getElementById('jourTitle');
-                const leftArrow = document.getElementById('swipeLeftArrow');
-                const rightArrow = document.getElementById('swipeRightArrow');
-                const refreshBtn = document.getElementById('refreshDizaineBtn');
-                arreterClignotement();
-
-                if (currentPage === 0) {
-                    jourHeader.style.display = 'none';
-                    contentDiv.innerHTML = welcomeHTML;
-                    daySpan.innerText = 'Intro / 8';
-                    prevBtn.disabled = true; nextBtn.disabled = false;
-                    feedbackBox.style.display = 'none';
-                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
-                    refreshBtn.style.display = 'none';
-                } else {
-                    jourHeader.style.display = 'flex';
-                    jourTitleSpan.innerText = `📆 JOUR ${currentPage}`;
-                    if (currentJours[currentPage]) {
-                        currentDizaines = decouperEnDizaines(currentJours[currentPage]);
-                        currentDizaineIndex = 0;
-                        afficherDizaine(0);
-                        daySpan.innerText = `Jour ${currentPage} / ${currentNbJours}`;
-                        prevBtn.disabled = (currentPage === 1);
-                        nextBtn.disabled = (currentPage === currentNbJours);
-                        feedbackBox.style.display = 'block';
-                        leftArrow.style.display = (currentDizaineIndex > 0) ? 'flex' : 'none';
-                        rightArrow.style.display = (currentDizaineIndex < currentDizaines.length - 1) ? 'flex' : 'none';
-                        refreshBtn.style.display = 'flex';
-                    } else {
-                        contentDiv.innerHTML = '<em>Chargement du jour...</em>';
-                        chargerJour(currentPage);
-                    }
-                }
-            }
-
-            async function chargerJour(jourNum) {
-                const response = await fetch('/generer_jour_expertise', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ domaine: currentDomaine, jour: jourNum })
-                });
-                const data = await response.json();
-                if (data.error) throw new Error(data.error);
-                currentJours[jourNum] = data.contenu;
-                sauvegarderFormationCourante();
-                afficherPage();
-            }
-
-            function sauvegarderFormationCourante() {
-                let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
-                joursParDomaine[currentDomaine] = currentJours;
-                localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
-                let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                let entry = historique.find(h => h.domaine === currentDomaine);
-                if (entry) { entry.progression = currentProgression.slice(); localStorage.setItem('historique', JSON.stringify(historique)); }
-            }
-
-            document.getElementById('startExpertise').addEventListener('click', async () => {
-                const domaine = document.getElementById('domaine').value.trim();
-                if (!domaine) { alert('Saisissez un domaine'); return; }
-                currentDomaine = domaine;
-                currentProgression = [false, false, false, false, false, false, false];
-                currentJours = {};
-                chargerExpertise(domaine, currentProgression, {}, 7);
-            });
-
-            // ================= MODE COURS (6 chapitres) =================
-            let chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
-            let coursTemp = JSON.parse(localStorage.getItem('cours_temp')) || {};
-            for (let i=1;i<=6;i++) if (coursTemp[i]) chapitresSauvegardes[i] = coursTemp[i];
-
-            function createChapitresUI() {
-                const container = document.getElementById('chapitresList');
-                container.innerHTML = '';
-                for (let i=1;i<=6;i++) {
-                    const isCollapsed = localStorage.getItem(`chapitre-${i}-collapsed`) === 'true';
-                    const card = document.createElement('div');
-                    card.className = 'chapitre-card';
-                    card.id = `chapitre-card-${i}`;
-                    card.innerHTML = `
-                        <div class="chapitre-header">
-                            <button class="toggle-chapitre" data-chapitre="${i}">${isCollapsed ? '▶' : '▼'}</button>
-                            <strong>Chapitre ${i}</strong>
-                        </div>
-                        <div class="chapitre-body ${isCollapsed ? 'collapsed' : ''}">
-                            <textarea rows="6" class="chapitre-text" data-chapitre="${i}" placeholder="Collez le texte du chapitre..."></textarea>
-                            <button class="save-chapitre-btn" data-chapitre="${i}">📎 Enregistrer</button>
-                            <button class="refresh-chapitre-btn" data-chapitre="${i}">⟳</button>
-                            <div class="chapitre-status" id="status-chapitre-${i}"></div>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                }
-                attachCoursEvents();
-            }
-
-            function attachCoursEvents() {
-                document.querySelectorAll('.save-chapitre-btn').forEach(btn => btn.addEventListener('click', saveCoursHandler));
-                document.querySelectorAll('.refresh-chapitre-btn').forEach(btn => btn.addEventListener('click', refreshCoursHandler));
-                document.querySelectorAll('.toggle-chapitre').forEach(t => t.addEventListener('click', toggleCoursHandler));
-            }
-
-            async function saveCoursHandler(e) {
-                const num = parseInt(e.currentTarget.dataset.chapitre);
-                const texte = document.getElementById(`chapitre-card-${num}`).querySelector('.chapitre-text').value.trim();
-                if (!texte) { alert(`Collez le texte du chapitre ${num}.`); return; }
-                const statusDiv = document.getElementById(`status-chapitre-${num}`);
-                const progDiv = document.createElement('div'); progDiv.className = 'custom-progress'; progDiv.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
-                statusDiv.innerHTML = ''; statusDiv.appendChild(progDiv);
-                let percent = 0;
-                const bar = progDiv.querySelector('.custom-progress-bar');
-                const pct = progDiv.querySelector('.progress-percent-text');
-                const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
-                try {
-                    const res = await fetch('/generer_chapitre', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ texte, num }) });
-                    const data = await res.json();
-                    if (data.error) throw new Error(data.error);
-                    chapitresSauvegardes[num] = data.contenu;
-                    let temp = JSON.parse(localStorage.getItem('cours_temp')) || {};
-                    temp[num] = data.contenu;
-                    localStorage.setItem('cours_temp', JSON.stringify(temp));
-                    clearInterval(interval);
-                    bar.style.width = '100%'; pct.innerText = '100%';
-                    setTimeout(() => { statusDiv.innerHTML = '✅ Chapitre enregistré.'; }, 500);
-                } catch(err) {
-                    clearInterval(interval);
-                    statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
-                }
-            }
-
-            async function refreshCoursHandler(e) {
-                const num = parseInt(e.currentTarget.dataset.chapitre);
-                const texte = document.getElementById(`chapitre-card-${num}`).querySelector('.chapitre-text').value.trim();
-                if (!texte) { alert(`Collez le texte du chapitre ${num}.`); return; }
-                const statusDiv = document.getElementById(`status-chapitre-${num}`);
-                const progDiv = document.createElement('div'); progDiv.className = 'custom-progress'; progDiv.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
-                statusDiv.innerHTML = ''; statusDiv.appendChild(progDiv);
-                let percent = 0;
-                const bar = progDiv.querySelector('.custom-progress-bar');
-                const pct = progDiv.querySelector('.progress-percent-text');
-                const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
-                try {
-                    const res = await fetch('/generer_chapitre', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ texte, num }) });
-                    const data = await res.json();
-                    if (data.error) throw new Error(data.error);
-                    chapitresSauvegardes[num] = data.contenu;
-                    let temp = JSON.parse(localStorage.getItem('cours_temp')) || {};
-                    temp[num] = data.contenu;
-                    localStorage.setItem('cours_temp', JSON.stringify(temp));
-                    clearInterval(interval);
-                    bar.style.width = '100%'; pct.innerText = '100%';
-                    setTimeout(() => { statusDiv.innerHTML = '✅ Chapitre regénéré.'; }, 500);
-                } catch(err) {
-                    clearInterval(interval);
-                    statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
-                }
-            }
-
-            function toggleCoursHandler(e) {
-                const num = parseInt(e.currentTarget.dataset.chapitre);
-                const card = document.getElementById(`chapitre-card-${num}`);
-                const body = card.querySelector('.chapitre-body');
-                const toggle = card.querySelector('.toggle-chapitre');
-                const isCollapsed = body.classList.contains('collapsed');
-                if (isCollapsed) {
-                    body.classList.remove('collapsed');
-                    toggle.textContent = '▼';
-                    localStorage.setItem(`chapitre-${num}-collapsed`, 'false');
-                } else {
-                    body.classList.add('collapsed');
-                    toggle.textContent = '▶';
-                    localStorage.setItem(`chapitre-${num}-collapsed`, 'true');
-                }
-            }
-
-            function resetCours() {
-                localStorage.removeItem('cours_temp');
-                chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
-                createChapitresUI();
-            }
-
-            document.getElementById('resetCoursBtn').addEventListener('click', resetCours);
-            let tousPlies = false;
-            document.getElementById('toggleChapitresBtn').addEventListener('click', () => {
-                tousPlies = !tousPlies;
-                for (let i=1;i<=6;i++) {
-                    const card = document.getElementById(`chapitre-card-${i}`);
-                    if (!card) continue;
-                    const body = card.querySelector('.chapitre-body');
-                    const toggle = card.querySelector('.toggle-chapitre');
-                    if (tousPlies) {
-                        body.classList.add('collapsed');
-                        if (toggle) toggle.textContent = '▶';
-                        localStorage.setItem(`chapitre-${i}-collapsed`, 'true');
-                    } else {
-                        body.classList.remove('collapsed');
-                        if (toggle) toggle.textContent = '▼';
-                        localStorage.setItem(`chapitre-${i}-collapsed`, 'false');
-                    }
-                }
-                document.getElementById('toggleChapitresBtn').innerHTML = tousPlies ? '▶ Déplier tous' : '▼ Plier tous';
-            });
-
-            document.getElementById('submitCoursBtn').addEventListener('click', async () => {
-                const missing = [];
-                for (let i=1;i<=6;i++) if (!chapitresSauvegardes[i]) missing.push(i);
-                if (missing.length) { alert(`Chapitres manquants : ${missing.join(', ')}.`); return; }
-                const titre = prompt("Nom de votre section :", "Mes cours (6 chapitres)");
-                if (!titre) return;
-                const joursComplets = {};
-                for (let i=1;i<=6;i++) joursComplets[i] = chapitresSauvegardes[i];
-                let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                let entry = historique.find(h => h.domaine === titre);
-                if (!entry) {
-                    entry = { domaine: titre, dateDebut: new Date().toISOString(), dateFin: null, progression: Array(6).fill(false), shared: false, type: 'cours', nbJours: 6 };
-                    historique.push(entry);
-                    localStorage.setItem('historique', JSON.stringify(historique));
-                }
-                let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
-                joursParDomaine[titre] = joursComplets;
-                localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
-                localStorage.removeItem('cours_temp');
-                chargerExpertise(titre, entry.progression.slice(), joursComplets, 6);
-                document.getElementById('btnExpertise').click();
-            });
-
-            // ================= MODE ENTRETIEN (4 jours) =================
-            let currentEntretienJours = {};
-            let currentEntretienProgression = [false, false, false, false];
-            let currentEntretienPage = 0;
-            let currentEntretienDizaines = [];
-            let currentEntretienDizaineIndex = 0;
-            let currentEntretienDomaine = '';
-            let currentEntretienNbJours = 4;
-            let entretienBlinkInterval = null;
-
-            function afficherDizaineEntretien(index, afficherMessage = false) {
-                const contentDiv = document.getElementById('entretienContent');
-                const leftArrow = document.getElementById('swipeLeftArrowEntretien');
-                const rightArrow = document.getElementById('swipeRightArrowEntretien');
-                if (!currentEntretienDizaines.length) {
-                    contentDiv.innerHTML = '<em>Contenu non disponible.</em>';
-                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
-                    return;
-                }
-                if (index < 0) index = 0;
-                if (index >= currentEntretienDizaines.length) {
-                    if (afficherMessage && currentEntretienPage >= 1 && !currentEntretienProgression[currentEntretienPage-1]) {
-                        const msgDiv = document.getElementById('progressHeaderMsgEntretien');
-                        if (msgDiv) { msgDiv.style.display = 'block'; demarrerClignotementEntretien(); }
-                        alert("📿 Vous avez terminé les 5 dizaines ! N'oubliez pas de valider cette journée.");
-                    }
-                    return;
-                }
-                currentEntretienDizaineIndex = index;
-                const numero = currentEntretienDizaineIndex + 1;
-                const titre = `<div class="dizaine-title">📖 DIZAINE ${numero} / 5</div>`;
-                contentDiv.innerHTML = titre + currentEntretienDizaines[currentEntretienDizaineIndex].replace(/\n/g, '<br>');
-                leftArrow.style.display = (currentEntretienDizaineIndex > 0) ? 'flex' : 'none';
-                rightArrow.style.display = (currentEntretienDizaineIndex < currentEntretienDizaines.length - 1) ? 'flex' : 'none';
-                contentDiv.scrollTop = 0;
-                const msgDiv = document.getElementById('progressHeaderMsgEntretien');
-                if (currentEntretienPage > 0 && currentEntretienDizaineIndex === 4 && !currentEntretienProgression[currentEntretienPage-1]) {
-                    msgDiv.style.display = 'block';
-                    demarrerClignotementEntretien();
-                } else {
-                    msgDiv.style.display = 'none';
-                    arreterClignotementEntretien();
-                }
-            }
-
-            function arreterClignotementEntretien() {
-                if (entretienBlinkInterval) clearInterval(entretienBlinkInterval);
-                entretienBlinkInterval = null;
-                document.querySelectorAll('#segmentsContainerEntretien .segment').forEach(seg => seg.classList.remove('blink-segment'));
-                const msgDiv = document.getElementById('progressHeaderMsgEntretien');
-                if (msgDiv) msgDiv.classList.remove('blink-text');
-            }
-
-            function demarrerClignotementEntretien() {
-                arreterClignotementEntretien();
-                const dayIndex = currentEntretienPage - 1;
-                if (dayIndex < 0 || dayIndex >= currentEntretienNbJours) return;
-                const segments = document.querySelectorAll('#segmentsContainerEntretien .segment');
-                if (segments[dayIndex]) segments[dayIndex].classList.add('blink-segment');
-                const msgDiv = document.getElementById('progressHeaderMsgEntretien');
-                if (msgDiv && currentEntretienPage > 0 && !currentEntretienProgression[currentEntretienPage-1]) {
-                    msgDiv.style.display = 'block';
-                    msgDiv.classList.add('blink-text');
-                }
-                if (!audioCtx) initAudio();
-                entretienBlinkInterval = setInterval(() => playBeep(), 1000);
-            }
-
-            function afficherPageEntretien() {
-                const contentDiv = document.getElementById('entretienContent');
-                const daySpan = document.getElementById('dayCounterEntretien');
-                const prevBtn = document.getElementById('prevDayEntretienBtn');
-                const nextBtn = document.getElementById('nextDayEntretienBtn');
-                const jourHeader = document.getElementById('entretienHeader');
-                const jourTitleSpan = document.getElementById('entretienTitle');
-                const leftArrow = document.getElementById('swipeLeftArrowEntretien');
-                const rightArrow = document.getElementById('swipeRightArrowEntretien');
-                const refreshBtn = document.getElementById('refreshDizaineEntretien');
-                arreterClignotementEntretien();
-
-                if (currentEntretienPage === 0) {
-                    jourHeader.style.display = 'none';
-                    contentDiv.innerHTML = welcomeHTMLEntretien;
-                    daySpan.innerText = 'Intro / 5';
-                    prevBtn.disabled = true; nextBtn.disabled = false;
-                    leftArrow.style.display = 'none'; rightArrow.style.display = 'none';
-                    refreshBtn.style.display = 'none';
-                } else {
-                    jourHeader.style.display = 'flex';
-                    jourTitleSpan.innerText = `📆 JOUR ${currentEntretienPage}`;
-                    if (currentEntretienJours[currentEntretienPage]) {
-                        currentEntretienDizaines = decouperEnDizaines(currentEntretienJours[currentEntretienPage]);
-                        currentEntretienDizaineIndex = 0;
-                        afficherDizaineEntretien(0);
-                        daySpan.innerText = `Jour ${currentEntretienPage} / 4`;
-                        prevBtn.disabled = (currentEntretienPage === 1);
-                        nextBtn.disabled = (currentEntretienPage === 4);
-                        leftArrow.style.display = (currentEntretienDizaineIndex > 0) ? 'flex' : 'none';
-                        rightArrow.style.display = (currentEntretienDizaineIndex < currentEntretienDizaines.length - 1) ? 'flex' : 'none';
-                        refreshBtn.style.display = 'flex';
-                    } else {
-                        contentDiv.innerHTML = '<em>Chargement du jour...</em>';
-                        chargerJourEntretien(currentEntretienPage);
-                    }
-                }
-            }
-
-            async function chargerJourEntretien(jourNum) {
-                const response = await fetch('/generer_entretien', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ cv: document.getElementById('cv').value, offre: document.getElementById('offre').value, jour: jourNum })
-                });
-                const data = await response.json();
-                if (data.error) throw new Error(data.error);
-                currentEntretienJours[jourNum] = data.contenu;
-                sauvegarderEntretienCourant();
-                afficherPageEntretien();
-            }
-
-            function sauvegarderEntretienCourant() {
-                let entretiens = JSON.parse(localStorage.getItem('entretiens')) || {};
-                entretiens[currentEntretienDomaine] = { jours: currentEntretienJours, progression: currentEntretienProgression };
-                localStorage.setItem('entretiens', JSON.stringify(entretiens));
-                let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                let entry = historique.find(h => h.domaine === currentEntretienDomaine && h.type === 'entretien');
-                if (entry) { entry.progression = currentEntretienProgression.slice(); localStorage.setItem('historique', JSON.stringify(historique)); }
-            }
-
-            function chargerEntretien(domaine, jours, progression) {
-                currentEntretienDomaine = domaine;
-                currentEntretienJours = JSON.parse(JSON.stringify(jours));
-                currentEntretienProgression = progression.slice();
-                currentEntretienPage = 0;
-                afficherPageEntretien();
-                document.getElementById('entretienContainer').style.display = 'block';
-                document.getElementById('startEntretien').style.display = 'none';
-                afficherBarreSegments('segmentsContainerEntretien', currentEntretienProgression, 4, naviguerVersJourEntretien);
-            }
-
-            function naviguerVersJourEntretien(jourNum) {
-                if (jourNum >= 1 && jourNum <= 4 && currentEntretienJours[jourNum]) {
-                    currentEntretienPage = jourNum;
-                    afficherPageEntretien();
-                }
-            }
-
-            document.getElementById('startEntretien').addEventListener('click', async () => {
-                const cv = document.getElementById('cv').value.trim();
-                const offre = document.getElementById('offre').value.trim();
-                if (!cv || !offre) { alert('CV et offre requis'); return; }
-                const titre = "Préparation entretien";
-                currentEntretienDomaine = titre;
-                currentEntretienJours = {};
-                currentEntretienProgression = [false, false, false, false];
-                chargerEntretien(titre, {}, [false, false, false, false]);
-                for (let i = 1; i <= 4; i++) {
-                    const response = await fetch('/generer_entretien', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ cv, offre, jour: i })
-                    });
-                    const data = await response.json();
-                    if (data.error) throw new Error(data.error);
-                    currentEntretienJours[i] = data.contenu;
-                }
-                sauvegarderEntretienCourant();
-                afficherPageEntretien();
-            });
-
-            document.getElementById('prevDayEntretienBtn').addEventListener('click', () => { if (currentEntretienPage > 1) { currentEntretienPage--; afficherPageEntretien(); } });
-            document.getElementById('nextDayEntretienBtn').addEventListener('click', () => {
-                if (currentEntretienPage === 0) { currentEntretienPage = 1; afficherPageEntretien(); return; }
-                if (currentEntretienPage < 4) { currentEntretienPage++; afficherPageEntretien(); }
-            });
-            document.getElementById('prevDayEntretien').addEventListener('click', () => { if (currentEntretienPage > 1) { currentEntretienPage--; afficherPageEntretien(); } });
-            document.getElementById('nextDayEntretien').addEventListener('click', () => {
-                if (currentEntretienPage === 0) { currentEntretienPage = 1; afficherPageEntretien(); return; }
-                if (currentEntretienPage < 4) { currentEntretienPage++; afficherPageEntretien(); }
-            });
-
-            const welcomeHTMLEntretien = `<div class="welcome-text"><strong>Préparation à l’entretien (4 jours)</strong><br><br>Glissez à gauche/droite pour feuilleter les 5 dizaines d’un jour.<br>À la 5e dizaine, validez votre journée en cliquant sur la case clignotante.<br>Cliquez sur “Suivant” pour passer au jour suivant.<br><br><strong>Jour 4 : simulation orale</strong><br>Le bot posera des questions. Répondez par écrit ou via le microphone.</div>`;
-
-            // Gestion des onglets
-            document.getElementById('btnExpertise').addEventListener('click', () => {
-                document.getElementById('expertisePanel').classList.add('active-panel');
-                document.getElementById('coursPanel').classList.remove('active-panel');
-                document.getElementById('entretienPanel').classList.remove('active-panel');
-                document.getElementById('btnExpertise').classList.add('active');
-                document.getElementById('btnCoursToggle').classList.remove('active');
-                document.getElementById('btnEntretienToggle').classList.remove('active');
-            });
-            document.getElementById('btnCoursToggle').addEventListener('click', () => {
-                document.getElementById('coursPanel').classList.add('active-panel');
-                document.getElementById('expertisePanel').classList.remove('active-panel');
-                document.getElementById('entretienPanel').classList.remove('active-panel');
-                document.getElementById('btnCoursToggle').classList.add('active');
-                document.getElementById('btnExpertise').classList.remove('active');
-                document.getElementById('btnEntretienToggle').classList.remove('active');
-            });
-            document.getElementById('btnEntretienToggle').addEventListener('click', () => {
-                document.getElementById('entretienPanel').classList.add('active-panel');
-                document.getElementById('expertisePanel').classList.remove('active-panel');
-                document.getElementById('coursPanel').classList.remove('active-panel');
-                document.getElementById('btnEntretienToggle').classList.add('active');
-                document.getElementById('btnExpertise').classList.remove('active');
-                document.getElementById('btnCoursToggle').classList.remove('active');
-            });
-
-            createChapitresUI();
-            document.getElementById('homeHeader').addEventListener('click', () => { location.reload(); });
-            document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 Abonnement à venir."));
+            updateBadgeCounters();
         })();
     </script>
 </body>
