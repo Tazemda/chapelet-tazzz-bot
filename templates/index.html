@@ -173,6 +173,8 @@
         .audio-welcome:hover { background: #e67e22; }
         .audio-day { position: absolute; top: 15px; right: 15px; background: #2c3e4e; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
         .audio-day:hover { background: #e67e22; }
+        .audio-simulate { position: absolute; top: 15px; right: 70px; background: #8a2be2; border-radius: 50%; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; border: none; font-size: 1.2rem; }
+        .audio-simulate:hover { background: #aa55ff; }
         .nav-buttons { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; }
         .nav-buttons button { width: auto; margin: 0; padding: 8px 20px; font-size: 0.9rem; }
         .day-counter { font-size: 0.9rem; font-weight: bold; background: #2c3e4e; padding: 5px 12px; border-radius: 30px; }
@@ -235,6 +237,37 @@
         .audio-player-bar button { background: #2c3e4e; border: none; color: white; width: 34px; height: 34px; border-radius: 50%; font-size: 1rem; cursor: pointer; margin: 0; padding: 0; }
         .audio-player-bar button:hover { background: #e67e22; }
         .audio-player-bar input[type="range"] { width: 160px; margin: 0 5px; cursor: pointer; }
+        .simulation-panel {
+            background: #0b1620;
+            border-radius: 20px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 5px solid #aa55ff;
+        }
+        .simulation-question {
+            font-weight: bold;
+            color: #aa55ff;
+            margin-bottom: 10px;
+        }
+        .simulation-answer {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 14px;
+            border: none;
+            background: #1e2b3c;
+            color: white;
+        }
+        .mic-btn {
+            background: #2c3e4e;
+            padding: 8px 15px;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .mic-btn.recording { background: #e67e22; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
         .footer { text-align: center; margin-top: 25px; font-size: 0.7rem; opacity: 0.7; }
         .copyright { font-size: 0.65rem; margin-top: 8px; }
         .modal {
@@ -390,7 +423,7 @@
                 <button id="btnEntretienToggle" class="mode-btn">💼 Entretien d'embauche (4j) ▶</button>
             </div>
 
-            <!-- Panneau Expertise classique -->
+            <!-- Panneau Expertise -->
             <div id="expertisePanel" class="mode-panel active-panel">
                 <p>🔬 Domaine à maîtriser :</p>
                 <input type="text" id="domaine" placeholder="Ex: Recherche clinique, Python, Prise de parole...">
@@ -422,7 +455,7 @@
                     </div>
                     <div id="feedbackBox" class="feedback-box" style="display:none;">
                         <p>🌟 Ce chapelet vous a-t-il été utile ?</p>
-                        <div class="stars" id="starsEx">
+                        <div class="starsEx" id="starsEx">
                             <span class="star" data-value="1">☆</span><span class="star" data-value="2">☆</span>
                             <span class="star" data-value="3">☆</span><span class="star" data-value="4">☆</span>
                             <span class="star" data-value="5">☆</span>
@@ -433,11 +466,11 @@
                 </div>
             </div>
 
-            <!-- Panneau Cours (6 chapitres) -->
+            <!-- Panneau Cours -->
             <div id="coursPanel" class="mode-panel">
                 <div class="warning-limit">
                     📚 Saisissez vos 6 chapitres (copier-coller puis enregistrer chaque chapitre).<br>
-                    ⚠️ Attention ! Pas plus de 8000 caractères par chapitre (vérifiable sur Word).
+                    ⚠️ Attention ! Pas plus de 8000 caractères par chapitre.
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <button id="toggleChapitresBtn" class="btn-toggle-chapitres">▼ Plier tous les chapitres</button>
@@ -450,22 +483,33 @@
                 <div id="coursResult" class="result" style="display:none;"></div>
             </div>
 
-            <!-- Panneau Entretien d'embauche (4 jours) -->
+            <!-- Panneau Entretien d'embauche -->
             <div id="entretienPanel" class="mode-panel">
                 <div class="warning-limit">
                     💼 Préparez votre entretien d'embauche en 4 jours.<br>
-                    Collez votre CV, le descriptif du poste, ou les informations sur le candidat.<br>
-                    ⚠️ Attention ! Pas plus de 8000 caractères.
+                    Collez votre CV et l'offre d'emploi ci-dessous.<br>
+                    ⚠️ Attention ! Pas plus de 8000 caractères par champ.
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <button id="toggleEntretienChapitresBtn" class="btn-toggle-chapitres">▼ Plier tous les chapitres</button>
-                    <button id="resetEntretienBtn" style="background: #2c3e4e;">🔄 Nouvelle préparation</button>
+                <div style="margin-bottom: 15px;">
+                    <strong>📄 Votre CV :</strong>
+                    <textarea id="cvInput" rows="8" placeholder="Collez votre CV détaillé ici..."></textarea>
                 </div>
-                <div id="entretienChapitresList" style="margin-top: 15px;"></div>
-                <div style="display: flex; justify-content: center; margin-top: 20px;">
-                    <button id="submitEntretienBtn" style="background: #8a2be2;">✨ GÉNÉRER LE PROGRAMME (4 JOURS) ✨</button>
+                <div style="margin-bottom: 15px;">
+                    <strong>📢 Offre d'emploi :</strong>
+                    <textarea id="offreInput" rows="6" placeholder="Collez l'offre d'emploi ici..."></textarea>
+                </div>
+                <div style="display: flex; justify-content: center; margin-top: 10px;">
+                    <button id="generateEntretienBtn" style="background: #8a2be2;">✨ GÉNÉRER LA PRÉPARATION (4 JOURS) ✨</button>
                 </div>
                 <div id="entretienResult" class="result" style="display:none;"></div>
+                <div id="entretienSimulation" class="simulation-panel" style="display:none;">
+                    <h3>🎤 Simulation d'entretien (Jour 4)</h3>
+                    <div id="simulationQuestions"></div>
+                    <div style="margin-top: 15px;">
+                        <button id="nextQuestionBtn" style="display:none;">Question suivante</button>
+                        <button id="resetSimulationBtn" style="background:#2c3e4e;">Recommencer la simulation</button>
+                    </div>
+                </div>
             </div>
 
             <div class="action-buttons">
@@ -581,23 +625,15 @@
                 arreterClignotement();
                 const dayIndex = currentPage - 1;
                 if (dayIndex < 0 || dayIndex >= currentNbJours) return;
-
                 const segments = document.querySelectorAll('.segment');
-                if (segments[dayIndex]) {
-                    segments[dayIndex].classList.add('blink-segment');
-                }
-
+                if (segments[dayIndex]) segments[dayIndex].classList.add('blink-segment');
                 const msgDiv = document.getElementById('progressHeaderMsg');
                 if (msgDiv) {
                     msgDiv.style.display = 'block';
                     msgDiv.classList.add('blink-text');
                 }
-
                 if (!audioCtx) initAudio();
-
-                blinkInterval = setInterval(() => {
-                    playBeep();
-                }, 1000);
+                blinkInterval = setInterval(() => playBeep(), 1000);
             }
 
             function decouperEnDizaines(contenuBrut) {
@@ -1076,7 +1112,6 @@
             }
 
             document.getElementById('resetCoursBtn').addEventListener('click', resetCours);
-
             let tousPlies = false;
             document.getElementById('toggleChapitresBtn').addEventListener('click', () => {
                 tousPlies = !tousPlies;
@@ -1125,199 +1160,231 @@
                 statusDiv.style.display = 'none';
             });
 
-            // ================= MODE ENTRETIEN (4 jours) =================
-            let entretienSauvegardes = {1:null,2:null,3:null,4:null};
-            let entretienTemp = JSON.parse(localStorage.getItem('entretien_temp')) || {};
-            for (let i=1;i<=4;i++) if (entretienTemp[i]) entretienSauvegardes[i] = entretienTemp[i];
+            // ================= MODE ENTRETIEN =================
+            let currentEntretienJours = null; // stocke les 4 jours générés
+            let simulationQuestionsList = [];
+            let simulationCurrentIndex = 0;
+            let simulationScore = 0;
+            let recognition = null;
+            let synth = window.speechSynthesis;
 
-            function createEntretienUI() {
-                const container = document.getElementById('entretienChapitresList');
-                container.innerHTML = '';
-                for (let i=1;i<=4;i++) {
-                    const isCollapsed = localStorage.getItem(`entretien-${i}-collapsed`) === 'true';
-                    const card = document.createElement('div');
-                    card.className = 'chapitre-card';
-                    card.id = `entretien-card-${i}`;
-                    card.innerHTML = `
-                        <div class="chapitre-header">
-                            <button class="toggle-chapitre" data-chapitre="${i}">${isCollapsed ? '▶' : '▼'}</button>
-                            <strong>Jour ${i}</strong>
-                        </div>
-                        <div class="chapitre-body ${isCollapsed ? 'collapsed' : ''}">
-                            <textarea rows="6" class="entretien-text" data-chapitre="${i}" placeholder="Partie de la préparation..."></textarea>
-                            <button class="save-entretien-btn" data-chapitre="${i}">📎 Enregistrer cette partie</button>
-                            <button class="refresh-entretien-btn" data-chapitre="${i}">⟳</button>
-                            <div class="chapitre-status" id="status-entretien-${i}"></div>
+            function initSpeechRecognition() {
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    alert("Votre navigateur ne supporte pas la reconnaissance vocale. Utilisez Chrome ou Edge.");
+                    return null;
+                }
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recog = new SpeechRecognition();
+                recog.continuous = false;
+                recog.interimResults = false;
+                recog.lang = 'fr-FR';
+                return recog;
+            }
+
+            function startMicrophone(questionIndex) {
+                if (!recognition) {
+                    recognition = initSpeechRecognition();
+                    if (!recognition) return;
+                    recognition.onresult = (event) => {
+                        const transcript = event.results[0][0].transcript;
+                        const answerTextarea = document.getElementById(`simulation_answer_${questionIndex}`);
+                        if (answerTextarea) {
+                            answerTextarea.value = transcript;
+                        }
+                        document.querySelectorAll('.mic-btn').forEach(btn => btn.classList.remove('recording'));
+                    };
+                    recognition.onerror = () => {
+                        document.querySelectorAll('.mic-btn').forEach(btn => btn.classList.remove('recording'));
+                    };
+                    recognition.onend = () => {
+                        document.querySelectorAll('.mic-btn').forEach(btn => btn.classList.remove('recording'));
+                    };
+                }
+                try {
+                    recognition.start();
+                    document.querySelectorAll('.mic-btn').forEach(btn => btn.classList.add('recording'));
+                } catch(e) {}
+            }
+
+            function speakText(text) {
+                if (!synth) return;
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'fr-FR';
+                utterance.rate = 0.9;
+                synth.cancel();
+                synth.speak(utterance);
+            }
+
+            function displaySimulation() {
+                const simDiv = document.getElementById('entretienSimulation');
+                const questionsDiv = document.getElementById('simulationQuestions');
+                if (!currentEntretienJours || !currentEntretienJours[4]) {
+                    simDiv.style.display = 'none';
+                    return;
+                }
+                simDiv.style.display = 'block';
+                // Extraire les 5 dizaines du Jour 4 (supposées être des questions de simulation)
+                const jour4Content = currentEntretienJours[4];
+                const dizaines = decouperEnDizaines(jour4Content);
+                simulationQuestionsList = [];
+                for (let i=0; i<dizaines.length && i<5; i++) {
+                    simulationQuestionsList.push({
+                        title: `Question ${i+1}`,
+                        content: dizaines[i]
+                    });
+                }
+                if (simulationQuestionsList.length === 0) {
+                    questionsDiv.innerHTML = '<p>Contenu de simulation non disponible.</p>';
+                    return;
+                }
+                simulationCurrentIndex = 0;
+                simulationScore = 0;
+                renderSimulationQuestion(0);
+                document.getElementById('nextQuestionBtn').style.display = 'block';
+            }
+
+            function renderSimulationQuestion(index) {
+                const questionsDiv = document.getElementById('simulationQuestions');
+                if (index >= simulationQuestionsList.length) {
+                    // Fin de la simulation
+                    const avgScore = simulationScore / simulationQuestionsList.length;
+                    questionsDiv.innerHTML = `
+                        <div style="text-align:center;">
+                            <h3>✅ Simulation terminée !</h3>
+                            <p>Score moyen : ${avgScore.toFixed(1)} / 5</p>
+                            <p>${avgScore >= 4 ? 'Excellent !' : (avgScore >= 3 ? 'Bon, quelques axes d\'amélioration.' : 'À retravailler.')}</p>
+                            <button id="restartSimulationBtn" style="background:#8a2be2;">Recommencer la simulation</button>
                         </div>
                     `;
-                    container.appendChild(card);
-                }
-                attachEntretienEvents();
-            }
-
-            function attachEntretienEvents() {
-                document.querySelectorAll('.save-entretien-btn').forEach(btn => {
-                    btn.removeEventListener('click', saveEntretienHandler);
-                    btn.addEventListener('click', saveEntretienHandler);
-                });
-                document.querySelectorAll('.refresh-entretien-btn').forEach(btn => {
-                    btn.removeEventListener('click', refreshEntretienHandler);
-                    btn.addEventListener('click', refreshEntretienHandler);
-                });
-                document.querySelectorAll('#entretienChapitresList .toggle-chapitre').forEach(t => {
-                    t.removeEventListener('click', toggleEntretienHandler);
-                    t.addEventListener('click', toggleEntretienHandler);
-                });
-            }
-
-            async function saveEntretienHandler(e) {
-                const num = parseInt(e.currentTarget.dataset.chapitre);
-                const card = document.getElementById(`entretien-card-${num}`);
-                const texte = card.querySelector('.entretien-text').value.trim();
-                if (!texte) { alert(`Veuillez remplir le contenu du jour ${num}.`); return; }
-                const statusDiv = document.getElementById(`status-entretien-${num}`);
-                const progDiv = document.createElement('div'); progDiv.className = 'custom-progress'; progDiv.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
-                statusDiv.innerHTML = ''; statusDiv.appendChild(progDiv);
-                let percent = 0;
-                const bar = progDiv.querySelector('.custom-progress-bar');
-                const pct = progDiv.querySelector('.progress-percent-text');
-                const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
-                try {
-                    const res = await fetch('/generer_entretien', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ texte_profil: texte })
+                    document.getElementById('nextQuestionBtn').style.display = 'none';
+                    document.getElementById('restartSimulationBtn')?.addEventListener('click', () => {
+                        simulationCurrentIndex = 0;
+                        simulationScore = 0;
+                        renderSimulationQuestion(0);
+                        document.getElementById('nextQuestionBtn').style.display = 'block';
                     });
-                    const data = await res.json();
-                    if (data.error) throw new Error(data.error);
-                    // data.jours contient les 4 jours générés
-                    for (let i=1;i<=4;i++) {
-                        if (data.jours[i]) {
-                            entretienSauvegardes[i] = data.jours[i];
-                            let temp = JSON.parse(localStorage.getItem('entretien_temp')) || {};
-                            temp[i] = data.jours[i];
-                            localStorage.setItem('entretien_temp', JSON.stringify(temp));
-                        }
-                    }
-                    clearInterval(interval);
-                    bar.style.width = '100%'; pct.innerText = '100%';
-                    setTimeout(() => { statusDiv.innerHTML = '✅ Programme (4 jours) enregistré.'; }, 500);
-                } catch(err) {
-                    clearInterval(interval);
-                    statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
+                    return;
                 }
+                const q = simulationQuestionsList[index];
+                questionsDiv.innerHTML = `
+                    <div class="simulation-question">🎤 ${q.title}</div>
+                    <div class="simulation-question-content" style="margin-bottom:10px; background:#1e2b3c; padding:10px; border-radius:10px;">${q.content}</div>
+                    <textarea id="simulation_answer_${index}" rows="4" class="simulation-answer" placeholder="Votre réponse..."></textarea>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button class="mic-btn" data-qidx="${index}">🎙️ Répondre au micro</button>
+                        <button class="improve-answer-btn" data-qidx="${index}">✨ Améliorer ma réponse</button>
+                    </div>
+                    <div style="margin-top:10px;">
+                        <label>Auto-évaluation (1-5) : </label>
+                        <input type="number" id="simulation_score_${index}" min="1" max="5" step="1" value="3" style="width:70px;">
+                    </div>
+                `;
+                document.querySelector(`.mic-btn[data-qidx="${index}"]`).addEventListener('click', () => startMicrophone(index));
+                document.querySelector(`.improve-answer-btn[data-qidx="${index}"]`).addEventListener('click', async () => {
+                    const answerTa = document.getElementById(`simulation_answer_${index}`);
+                    const answer = answerTa.value.trim();
+                    if (!answer) { alert('Écrivez d’abord une réponse.'); return; }
+                    const improveBtn = document.querySelector(`.improve-answer-btn[data-qidx="${index}"]`);
+                    improveBtn.textContent = '⏳ Amélioration...';
+                    improveBtn.disabled = true;
+                    try {
+                        const res = await fetch('/generer_entretien', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ cv: "Réponse à améliorer", offre: answer })
+                        });
+                        const data = await res.json();
+                        if (data.error) throw new Error(data.error);
+                        answerTa.value = data.contenu.substring(0, 500);
+                    } catch(err) { alert('Erreur: ' + err.message); }
+                    finally { improveBtn.textContent = '✨ Améliorer ma réponse'; improveBtn.disabled = false; }
+                });
+                const scoreInput = document.getElementById(`simulation_score_${index}`);
+                const nextBtn = document.getElementById('nextQuestionBtn');
+                const oldNextClick = nextBtn.onclick;
+                nextBtn.onclick = () => {
+                    const scoreVal = parseInt(scoreInput.value) || 3;
+                    simulationScore += Math.min(5, Math.max(1, scoreVal));
+                    renderSimulationQuestion(index + 1);
+                };
             }
 
-            async function refreshEntretienHandler(e) {
-                const num = parseInt(e.currentTarget.dataset.chapitre);
-                const card = document.getElementById(`entretien-card-${num}`);
-                const texte = card.querySelector('.entretien-text').value.trim();
-                if (!texte) { alert(`Veuillez remplir le contenu du jour ${num}.`); return; }
-                const statusDiv = document.getElementById(`status-entretien-${num}`);
-                const progDiv = document.createElement('div'); progDiv.className = 'custom-progress'; progDiv.innerHTML = `<div class="custom-progress-bar" style="width:0%"></div><div class="progress-percent-text">0%</div>`;
-                statusDiv.innerHTML = ''; statusDiv.appendChild(progDiv);
-                let percent = 0;
-                const bar = progDiv.querySelector('.custom-progress-bar');
-                const pct = progDiv.querySelector('.progress-percent-text');
-                const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
-                try {
-                    const res = await fetch('/generer_entretien', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ texte_profil: texte })
-                    });
-                    const data = await res.json();
-                    if (data.error) throw new Error(data.error);
-                    for (let i=1;i<=4;i++) {
-                        if (data.jours[i]) {
-                            entretienSauvegardes[i] = data.jours[i];
-                            let temp = JSON.parse(localStorage.getItem('entretien_temp')) || {};
-                            temp[i] = data.jours[i];
-                            localStorage.setItem('entretien_temp', JSON.stringify(temp));
-                        }
-                    }
-                    clearInterval(interval);
-                    bar.style.width = '100%'; pct.innerText = '100%';
-                    setTimeout(() => { statusDiv.innerHTML = '✅ Programme regénéré.'; }, 500);
-                } catch(err) {
-                    clearInterval(interval);
-                    statusDiv.innerHTML = `<span class="error-status">❌ Erreur: ${err.message}. Utilisez ⟳.</span>`;
-                }
-            }
-
-            function toggleEntretienHandler(e) {
-                const num = parseInt(e.currentTarget.dataset.chapitre);
-                const card = document.getElementById(`entretien-card-${num}`);
-                const body = card.querySelector('.chapitre-body');
-                const isCollapsed = body.classList.contains('collapsed');
-                if (isCollapsed) {
-                    body.classList.remove('collapsed');
-                    e.currentTarget.textContent = '▼';
-                    localStorage.setItem(`entretien-${num}-collapsed`, 'false');
-                } else {
-                    body.classList.add('collapsed');
-                    e.currentTarget.textContent = '▶';
-                    localStorage.setItem(`entretien-${num}-collapsed`, 'true');
-                }
-            }
-
-            function resetEntretien() {
-                localStorage.removeItem('entretien_temp');
-                entretienSauvegardes = {1:null,2:null,3:null,4:null};
-                createEntretienUI();
-            }
-
-            document.getElementById('resetEntretienBtn').addEventListener('click', resetEntretien);
-
-            let tousEntretienPlies = false;
-            document.getElementById('toggleEntretienChapitresBtn').addEventListener('click', () => {
-                tousEntretienPlies = !tousEntretienPlies;
-                for (let i=1;i<=4;i++) {
-                    const card = document.getElementById(`entretien-card-${i}`);
-                    if (!card) continue;
-                    const body = card.querySelector('.chapitre-body');
-                    const toggle = card.querySelector('.toggle-chapitre');
-                    if (tousEntretienPlies) {
-                        body.classList.add('collapsed');
-                        if (toggle) toggle.textContent = '▶';
-                        localStorage.setItem(`entretien-${i}-collapsed`, 'true');
-                    } else {
-                        body.classList.remove('collapsed');
-                        if (toggle) toggle.textContent = '▼';
-                        localStorage.setItem(`entretien-${i}-collapsed`, 'false');
-                    }
-                }
-                document.getElementById('toggleEntretienChapitresBtn').innerHTML = tousEntretienPlies ? '▶ Déplier tous' : '▼ Plier tous';
-            });
-
-            document.getElementById('submitEntretienBtn').addEventListener('click', async () => {
-                const missing = [];
-                for (let i=1;i<=4;i++) if (!entretienSauvegardes[i]) missing.push(i);
-                if (missing.length) { alert(`Jours manquants : ${missing.join(', ')}. Enregistrez d'abord le programme.`); return; }
-                const titre = prompt("Nom de votre préparation (ex: Entretien Poste X) :", "Préparation entretien");
-                if (!titre) return;
+            document.getElementById('generateEntretienBtn').addEventListener('click', async () => {
+                const cv = document.getElementById('cvInput').value.trim();
+                const offre = document.getElementById('offreInput').value.trim();
+                if (!cv || !offre) { alert('Veuillez remplir le CV et l’offre d’emploi.'); return; }
                 const statusDiv = document.getElementById('entretienResult');
-                statusDiv.innerHTML = '<div class="progress-container"><div class="progress-fill" style="width:0%"></div><div class="progress-percent">Préparation...</div></div>';
+                statusDiv.innerHTML = '<div class="progress-container"><div class="progress-fill" style="width:0%"></div><div class="progress-percent">Génération de votre préparation (4 jours)...</div></div>';
                 statusDiv.style.display = 'block';
-                let joursComplets = {};
-                for (let i=1;i<=4;i++) joursComplets[i] = entretienSauvegardes[i];
-                let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                let entry = historique.find(h => h.domaine === titre);
-                if (!entry) {
-                    entry = { domaine: titre, dateDebut: new Date().toISOString(), dateFin: null, progression: Array(4).fill(false), shared: false, type: 'entretien', nbJours: 4 };
-                    historique.push(entry);
-                    localStorage.setItem('historique', JSON.stringify(historique));
+                const progInterval = setInterval(() => {
+                    const fill = statusDiv.querySelector('.progress-fill');
+                    if (fill) {
+                        let w = parseInt(fill.style.width) || 0;
+                        if (w < 90) fill.style.width = (w + 5) + '%';
+                    }
+                }, 200);
+                try {
+                    const res = await fetch('/generer_entretien', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cv, offre })
+                    });
+                    const data = await res.json();
+                    if (data.error) throw new Error(data.error);
+                    clearInterval(progInterval);
+                    statusDiv.innerHTML = `<div class="progress-container"><div class="progress-fill" style="width:100%"></div><div class="progress-percent">100%</div></div>`;
+                    setTimeout(() => { statusDiv.style.display = 'none'; }, 1000);
+                    // Découper le contenu en 4 jours (on suppose que l'API a généré les 4 jours à la suite)
+                    const fullContent = data.contenu;
+                    // On essaie de découper par "JOUR 1", "JOUR 2", etc.
+                    const jours = {};
+                    const jourRegex = /##\s*\**\s*JOUR\s+(\d+)\s*:?/gi;
+                    let match;
+                    let lastIndex = 0;
+                    let found = false;
+                    while ((match = jourRegex.exec(fullContent)) !== null) {
+                        found = true;
+                        const num = parseInt(match[1]);
+                        const start = match.index;
+                        if (lastIndex > 0 && lastIndex < start) {
+                            const prevNum = parseInt(jourRegexLastNum) || 1;
+                            jours[prevNum] = fullContent.substring(lastIndex, start).trim();
+                        }
+                        jourRegexLastNum = num;
+                        lastIndex = start;
+                    }
+                    if (found && lastIndex < fullContent.length) {
+                        jours[jourRegexLastNum] = fullContent.substring(lastIndex).trim();
+                    }
+                    if (!found) {
+                        // Fallback : on divise en 4 parties égales
+                        const parts = fullContent.split(/\n\s*\n\s*\n/);
+                        for (let i=0; i<4 && i<parts.length; i++) jours[i+1] = parts[i];
+                    }
+                    currentEntretienJours = jours;
+                    const titreCours = prompt("Nom de votre préparation (ex: Entretien Poste X) :", "Préparation entretien");
+                    if (!titreCours) return;
+                    let historique = JSON.parse(localStorage.getItem('historique')) || [];
+                    let entry = historique.find(h => h.domaine === titreCours);
+                    if (!entry) {
+                        entry = { domaine: titreCours, dateDebut: new Date().toISOString(), dateFin: null, progression: Array(4).fill(false), shared: false, type: 'entretien', nbJours: 4 };
+                        historique.push(entry);
+                        localStorage.setItem('historique', JSON.stringify(historique));
+                    }
+                    let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                    joursParDomaine[titreCours] = jours;
+                    localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
+                    chargerFormation(titreCours, entry.progression.slice(), jours, 4);
+                    document.getElementById('btnExpertise').click();
+                    // Stocker pour la simulation
+                    currentEntretienJours = jours;
+                } catch(err) {
+                    clearInterval(progInterval);
+                    statusDiv.innerHTML = `<div class="error-status">❌ Erreur: ${err.message}</div>`;
                 }
-                let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
-                joursParDomaine[titre] = joursComplets;
-                localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
-                localStorage.removeItem('entretien_temp');
-                chargerFormation(titre, entry.progression.slice(), joursComplets, 4);
-                document.getElementById('btnExpertise').click();
-                statusDiv.style.display = 'none';
             });
 
-            // Gestion de l'affichage exclusif entre les trois modes
+            // Gestion des onglets
             const btnExpertise = document.getElementById('btnExpertise');
             const btnCoursToggle = document.getElementById('btnCoursToggle');
             const btnEntretienToggle = document.getElementById('btnEntretienToggle');
@@ -1335,7 +1402,6 @@
                 btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▶';
                 btnEntretienToggle.textContent = '💼 Entretien d\'embauche (4j) ▶';
             }
-
             function showCours() {
                 coursPanel.classList.add('active-panel');
                 expertisePanel.classList.remove('active-panel');
@@ -1346,7 +1412,6 @@
                 btnCoursToggle.textContent = '📘 Mes cours en 6 jours ▼';
                 btnEntretienToggle.textContent = '💼 Entretien d\'embauche (4j) ▶';
             }
-
             function showEntretien() {
                 entretienPanel.classList.add('active-panel');
                 expertisePanel.classList.remove('active-panel');
@@ -1364,9 +1429,8 @@
 
             showExpertise();
             createChapitresUI();
-            createEntretienUI();
 
-            // ---------- HISTORIQUE ACCORDÉON (adapté pour les 3 types) ----------
+            // Historique (avec entretien)
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
             function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
@@ -1452,6 +1516,8 @@
                             chargerFormation(item.domaine, item.progression.slice(), saved[item.domaine] || {}, total);
                             historyModal.style.display = 'none';
                             document.getElementById('btnExpertise').click();
+                            // Stocker les jours pour la simulation
+                            if (saved[item.domaine]) currentEntretienJours = saved[item.domaine];
                         };
                         div.querySelector('.delete-history-item').onclick = (e) => { e.stopPropagation(); supprimerEntree(idx); };
                         listDiv.appendChild(div);
@@ -1537,6 +1603,16 @@
                 ['badgeCountExpertise', 'badgeCountCours', 'badgeCountEntretien'].forEach(id => { const el = document.getElementById(id); if (el) { if (count > 0) { el.style.display = 'inline-block'; el.innerText = count + '🏅'; } else el.style.display = 'none'; } });
             }
             updateBadgeCounters();
+
+            // Ajouter un écouteur pour afficher la simulation après chargement d'une formation entretien
+            const originalChargerFormation = chargerFormation;
+            window.chargerFormation = function(domaine, progression, jours, nbJours) {
+                originalChargerFormation(domaine, progression, jours, nbJours);
+                if (nbJours === 4 && jours && jours[4]) {
+                    currentEntretienJours = jours;
+                    setTimeout(() => displaySimulation(), 500);
+                }
+            };
         })();
     </script>
 </body>
