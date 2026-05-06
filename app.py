@@ -11,7 +11,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "tazbot-secret-key")
 DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY")
 DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
 
-def call_deepseek(prompt, max_tokens=3000):
+def call_deepseek(prompt, max_tokens=2000):
     if not DEEPSEEK_API_KEY:
         raise Exception("Clé API manquante")
     headers = {"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"}
@@ -143,67 +143,67 @@ def generer_chapitre_route():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ================= ENTRETIEN (4 jours) =================
-PROMPT_ENTRETIEN = """
-Tu es un coach expert en préparation aux entretiens d'embauche.
+# ================= ENTRETIEN D'EMBAUCHE (génération dizaine par dizaine) =================
+PROMPT_ENTRETIEN_DIZAINE = """
+Tu es un expert en préparation aux entretiens d'embauche.
 
-Le candidat fournit son CV et une offre d'emploi.  
-Génère un programme personnalisé de **4 jours** (5 dizaines par jour) selon le plan suivant :
+CV du candidat : {cv}
+Offre d'emploi : {offre}
 
-### JOUR 1 – Entretien RH (motivation, comportement, pitch)
-Dizaine 1 – Analyse CV+Offre : matching compétences, écarts, forces.
-Dizaine 2 – Pitch personnalisé : 30-60 secondes, version améliorable.
-Dizaine 3 – Questions RH fréquentes : 5 questions + réponses structurées.
-Dizaine 4 – Méthode STAR (soft skills) : Situation, Tâche, Action, Résultat.
-Dizaine 5 – Banque de phrases pro : amélioration du langage, reformulation.
+Génère le contenu de la **DIZAINE {dizaine_num}** du **JOUR {jour_num}** selon le plan suivant (ne génère que cette dizaine) :
 
-### JOUR 2 – Entretien technique (compétences, mises en situation)
-Dizaine 1 – Extraction compétences techniques + matching avec offre.
-Dizaine 2 – Questions techniques ciblées : 5 questions + réponses.
-Dizaine 3 – Étude de cas réaliste : problème concret du métier.
-Dizaine 4 – STAR technique (projets) : explication chiffrée des réalisations.
-Dizaine 5 – Révisions & améliorations techniques.
+### JOUR 1 – Entretien RH
+Dizaine 1 – Analyse CV/Offre (matching compétences, écarts, forces)
+Dizaine 2 – Pitch personnalisé (30-60 secondes)
+Dizaine 3 – Questions RH fréquentes (5 questions + réponses structurées)
+Dizaine 4 – Méthode STAR (soft skills) : Situation, Tâche, Action, Résultat
+Dizaine 5 – Banque de phrases professionnelles (amélioration du langage)
 
-### JOUR 3 – Entretien final + négociation (motivation avancée, clôture)
-Dizaine 1 – Points forts / points faibles : 3 forces, 1 axe de progression.
-Dizaine 2 – Questions difficiles : “Pourquoi vous ?”, “Pourquoi pas vous ?”…
-Dizaine 3 – Argumentaire de vente : script de pitch final.
-Dizaine 4 – Négociation (salaire, avantages) : fourchette + arguments.
-Dizaine 5 – Questions au recruteur : 3-5 questions intelligentes.
+### JOUR 2 – Entretien technique
+Dizaine 1 – Extraction compétences techniques + matching avec offre
+Dizaine 2 – Questions techniques ciblées (5 questions + réponses)
+Dizaine 3 – Étude de cas réaliste (problème concret du métier)
+Dizaine 4 – STAR technique (explication chiffrée des projets)
+Dizaine 5 – Révisions & améliorations techniques
 
-### JOUR 4 – Simulation réaliste (avec questions dynamiques)
-Dizaine 1 – Questions RH simulation (motivation, pitch)
-Dizaine 2 – Questions techniques simulation
-Dizaine 3 – Questions comportementales STAR simulation
-Dizaine 4 – Objections & négociation simulation
-Dizaine 5 – Bilan : score global (sur 20), points forts, axes d’amélioration, conseils.
+### JOUR 3 – Entretien final + négociation
+Dizaine 1 – Points forts / points faibles (3 forces, 1 axe de progression)
+Dizaine 2 – Questions difficiles ("Pourquoi vous ?", "Pourquoi pas vous ?")
+Dizaine 3 – Argumentaire de vente (script de pitch final)
+Dizaine 4 – Négociation (salaire, avantages) : fourchette + arguments
+Dizaine 5 – Questions au recruteur (3-5 questions intelligentes)
 
-Chaque dizaine doit suivre le format :
+### JOUR 4 – Simulation d'entretien (sera traitée séparément)
 
-**DIZAINE X : [titre]**
-A) **Méditation** : 8 phrases (définition, importance en entretien, exemple concret issu du CV ou de l’offre).
-B) **Notre Père** : une question centrale (RÉPÈTE 3 fois).
-C) **Je vous salue Marie** : 6 phrases numérotées (RÉPÈTE 10 fois) – conseils pratiques, exemples.
-D) **Gloire au Père** : "Le concept [titre] est consolidé." (RÉPÈTE 3 fois)
+Formate la réponse ainsi :
 
-Soigne la personnalisation : utilise le CV et l’offre pour adapter chaque exemple.  
-Ne dépasse pas 3500 tokens au total.
+## JOUR {jour_num} – DIZAINE {dizaine_num} : [TITRE]
+
+**Méditation** : 8 phrases (définition, importance en entretien, exemple concret issu du CV ou de l'offre).
+
+**Notre Père** : une question centrale (RÉPÈTE 3 fois).
+
+**Je vous salue Marie** : 6 phrases numérotées (RÉPÈTE 10 fois) – conseils pratiques, exemples.
+
+**Gloire au Père** : "Le concept [titre] est consolidé." (RÉPÈTE 3 fois)
+
+Soigne la personnalisation (utilise le CV et l'offre). Ne dépasse pas 800 tokens.
 """
 
-@app.route('/generer_entretien', methods=['POST'])
-def generer_entretien_route():
+@app.route('/generer_dizaine_entretien', methods=['POST'])
+def generer_dizaine_entretien_route():
     try:
         data = request.get_json()
         cv = data.get('cv')
         offre = data.get('offre')
-        if not cv or not offre:
-            return jsonify({'error': 'CV et offre requis'}), 400
-        prompt = PROMPT_ENTRETIEN.format(cv=cv, offre=offre)
-        contenu = call_deepseek(prompt, max_tokens=3500)
+        jour = data.get('jour')
+        dizaine = data.get('dizaine')
+        if not cv or not offre or not jour or not dizaine:
+            return jsonify({'error': 'CV, offre, jour et dizaine requis'}), 400
+        prompt = PROMPT_ENTRETIEN_DIZAINE.format(cv=cv, offre=offre, jour_num=jour, dizaine_num=dizaine)
+        contenu = call_deepseek(prompt, max_tokens=1000)
         contenu = clean_markdown(contenu)
         contenu = remove_markdown_chars(contenu)
-        # Découper le contenu en 4 jours (on suppose que l'API génère les 4 jours à la suite)
-        # Pour simplifier, on retourne le texte complet ; l'interface le découpera (on peut aussi découper ici)
         return jsonify({'contenu': contenu})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
