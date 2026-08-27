@@ -56,6 +56,8 @@
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
         .mode-panel { display: none; animation: fadeIn 0.3s ease; }
         .mode-panel.active-panel { display: block; }
+        .cours-panel { margin-top: 15px; }
+        .chapitres-container { display: block; }
         input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 14px; border: none; background: #f0f0f0; font-size: 1rem; }
         button { background: #e67e22; border: none; color: white; padding: 12px 24px; border-radius: 40px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.2s; }
         button:hover { background: #d35400; transform: scale(0.98); }
@@ -242,28 +244,9 @@
             margin-top: 15px;
             border-left: 5px solid #aa55ff;
         }
-        .simulation-question {
-            font-weight: bold;
-            color: #aa55ff;
-            margin-bottom: 10px;
-        }
-        .simulation-answer {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 14px;
-            border: none;
-            background: #1e2b3c;
-            color: white;
-        }
-        .mic-btn {
-            background: #2c3e4e;
-            padding: 8px 15px;
-            font-size: 0.8rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .simulation-question { font-weight: bold; color: #aa55ff; margin-bottom: 10px; }
+        .simulation-answer { width: 100%; padding: 10px; margin: 10px 0; border-radius: 14px; border: none; background: #1e2b3c; color: white; }
+        .mic-btn { background: #2c3e4e; padding: 8px 15px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 8px; }
         .mic-btn.recording { background: #e67e22; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
         .footer { text-align: center; margin-top: 25px; font-size: 0.7rem; opacity: 0.7; }
@@ -337,62 +320,21 @@
             cursor: pointer;
             user-select: none;
         }
-        .chapitre-header strong {
-            font-size: 1.2rem;
-            color: #f1c40f;
-            flex: 1;
-        }
-        .toggle-chapitre {
-            font-size: 1.2rem;
-            transition: transform 0.2s;
-            background: none;
-            border: none;
-            color: #e67e22;
-            width: 30px;
-            cursor: pointer;
-            margin: 0;
-            padding: 0;
-        }
+        .chapitre-header strong { font-size: 1.2rem; color: #f1c40f; flex: 1; }
+        .toggle-chapitre { font-size: 1.2rem; transition: transform 0.2s; background: none; border: none; color: #e67e22; width: 30px; cursor: pointer; margin: 0; padding: 0; }
         .toggle-chapitre:hover { background: none; transform: scale(1.1); }
         .chapitre-body { margin-top: 10px; }
         .chapitre-body.collapsed { display: none; }
-        .chapitre-status {
-            font-size: 0.8rem;
-            margin-top: 8px;
-            color: #2ecc71;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        .chapitre-status { font-size: 0.8rem; margin-top: 8px; color: #2ecc71; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .error-status { color: #ff5555; animation: blinkError 0.8s infinite; font-weight: bold; }
         @keyframes blinkError { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-        .save-chapitre-btn, .refresh-chapitre-btn {
-            background: #2c3e4e;
-            padding: 5px 15px;
-            margin-top: 5px;
-            margin-right: 8px;
-            font-size: 0.8rem;
-            display: inline-block;
-        }
+        .save-chapitre-btn, .refresh-chapitre-btn { background: #2c3e4e; padding: 5px 15px; margin-top: 5px; margin-right: 8px; font-size: 0.8rem; display: inline-block; }
         .refresh-chapitre-btn { background: #8e44ad; font-size: 1.2rem; padding: 5px 10px; }
-        .warning-limit {
-            background: rgba(230,126,34,0.2);
-            border-left: 3px solid #e67e22;
-            padding: 5px 10px;
-            margin: 10px 0;
-            font-size: 0.8rem;
-            border-radius: 6px;
-        }
+        .warning-limit { background: rgba(230,126,34,0.2); border-left: 3px solid #e67e22; padding: 5px 10px; margin: 10px 0; font-size: 0.8rem; border-radius: 6px; }
         .custom-progress { width: 100%; background-color: #2c3e4e; border-radius: 20px; overflow: hidden; margin-top: 5px; }
         .custom-progress-bar { width: 0%; height: 6px; background-color: #3498db; transition: width 0.3s; }
         .progress-percent-text { font-size: 0.7rem; margin-left: 10px; }
-        .btn-toggle-chapitres {
-            background: #8a2be2;
-            margin-left: 10px;
-            padding: 6px 15px;
-            font-size: 0.8rem;
-        }
+        .btn-toggle-chapitres { background: #8a2be2; margin-left: 10px; padding: 6px 15px; font-size: 0.8rem; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -481,7 +423,7 @@
                 <div id="coursResult" class="result" style="display:none;"></div>
             </div>
 
-            <!-- Panneau Entretien d'embauche -->
+            <!-- Panneau Entretien -->
             <div id="entretienPanel" class="mode-panel">
                 <div class="warning-limit">
                     💼 Préparez votre entretien d'embauche en 4 jours.<br>
@@ -1163,7 +1105,7 @@
                 statusDiv.style.display = 'none';
             });
 
-            // ================= MODE ENTRETIEN (génération dizaine par dizaine) =================
+            // ================= MODE ENTRETIEN =================
             let entretienSavedCV = null;
             let entretienSavedOffre = null;
 
@@ -1375,7 +1317,6 @@
                     }
                     joursComplets[jour] = jourContent;
                 }
-                // Jour 4 : simulation (contenu fixe, généré ici)
                 joursComplets[4] = "Simulation d'entretien (voir onglet simulation)";
 
                 const titre = prompt("Nom de votre préparation (ex: Entretien Poste X) :", "Préparation entretien");
@@ -1451,13 +1392,15 @@
             showExpertise();
             createChapitresUI();
 
-            // Historique
+            // ---------- HISTORIQUE (CORRIGÉ) ----------
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
             function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
+
             function supprimerEntree(index) {
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                if (confirm('Supprimer définitivement ?')) {
+                if (index < 0 || index >= historique.length) return;
+                if (confirm('Supprimer définitivement cette formation ?')) {
                     const item = historique[index];
                     if (item.progression && item.progression.filter(v=>v).length === item.nbJours) {
                         let badges = JSON.parse(localStorage.getItem('badges')) || [];
@@ -1468,22 +1411,71 @@
                     let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
                     delete joursParDomaine[item.domaine];
                     localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
-                    historique.splice(index,1);
+                    historique.splice(index, 1);
                     localStorage.setItem('historique', JSON.stringify(historique));
                     afficherHistorique();
                 }
             }
-            function toggleCat(catId) { document.getElementById(catId)?.classList.toggle('collapsed'); }
+
+            function toggleCat(catId) {
+                const el = document.getElementById(catId);
+                if (el) el.classList.toggle('collapsed');
+            }
+
             function afficherHistorique() {
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 const expertises = historique.filter(h => h.type === 'expertise');
                 const cours = historique.filter(h => h.type === 'cours');
                 const entretiens = historique.filter(h => h.type === 'entretien');
                 historyList.innerHTML = '';
-                // ... (gestion historique identique à avant)
-                if (!historique.length) historyList.innerHTML = '<p>Aucune formation.</p>';
+
+                function creerCategorie(titre, items, type) {
+                    if (items.length === 0) return null;
+                    const divCat = document.createElement('div');
+                    divCat.className = 'history-category';
+                    const catId = `hist-${type}`;
+                    divCat.innerHTML = `<h4 onclick="toggleCat('${catId}')">${titre} (${items.length})</h4><div id="${catId}" class="history-list">`;
+                    const listDiv = divCat.querySelector(`#${catId}`);
+                    items.forEach((item, idx) => {
+                        const globalIdx = historique.indexOf(item);
+                        const completed = item.progression.filter(v=>v).length;
+                        const total = item.nbJours || (type === 'expertise' ? 7 : (type === 'cours' ? 6 : 4));
+                        const div = document.createElement('div');
+                        div.className = 'history-item';
+                        div.innerHTML = `
+                            <div class="history-item-text">
+                                <strong>${item.domaine}</strong> (${completed}/${total}) – Début: ${formatDate(item.dateDebut)}
+                                ${completed===total ? `<div class="badge-text">🏅 Expert en ${item.domaine}</div>` : ''}
+                            </div>
+                            <button class="delete-history-item" data-globalidx="${globalIdx}">🗑️</button>
+                        `;
+                        div.querySelector('.history-item-text').onclick = () => {
+                            let saved = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
+                            chargerFormation(item.domaine, item.progression.slice(), saved[item.domaine] || {}, total);
+                            historyModal.style.display = 'none';
+                            document.getElementById('btnExpertise').click();
+                        };
+                        div.querySelector('.delete-history-item').onclick = (e) => {
+                            e.stopPropagation();
+                            const idx = parseInt(e.target.dataset.globalidx);
+                            supprimerEntree(idx);
+                        };
+                        listDiv.appendChild(div);
+                    });
+                    return divCat;
+                }
+
+                const catExpertise = creerCategorie('📚 Expertises', expertises, 'expertise');
+                if (catExpertise) historyList.appendChild(catExpertise);
+                const catCours = creerCategorie('📘 Cours', cours, 'cours');
+                if (catCours) historyList.appendChild(catCours);
+                const catEntretien = creerCategorie('💼 Entretiens', entretiens, 'entretien');
+                if (catEntretien) historyList.appendChild(catEntretien);
+
+                if (historique.length === 0) historyList.innerHTML = '<p>Aucune formation enregistrée.</p>';
                 window.toggleCat = toggleCat;
             }
+
             document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display = 'flex'; });
             document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
             window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
@@ -1557,11 +1549,13 @@
             function updateBadgeCounters() {
                 let badges = JSON.parse(localStorage.getItem('badges')) || [];
                 let count = badges.length;
-                ['badgeCountExpertise', 'badgeCountCours', 'badgeCountEntretien'].forEach(id => { const el = document.getElementById(id); if (el) { if (count > 0) { el.style.display = 'inline-block'; el.innerText = count + '🏅'; } else el.style.display = 'none'; } });
+                ['badgeCountExpertise', 'badgeCountCours', 'badgeCountEntretien'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) { if (count > 0) { el.style.display = 'inline-block'; el.innerText = count + '🏅'; } else el.style.display = 'none'; }
+                });
             }
             updateBadgeCounters();
         })();
     </script>
 </body>
 </html>
-  
