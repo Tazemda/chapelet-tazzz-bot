@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Chapelet Tazzz Bot</title>
     <style>
-        /* ... (tous les styles précédents, inchangés) ... */
         * { box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -49,38 +48,9 @@
         }
         h1 { text-align: center; font-size: 1.5rem; margin-bottom: 0px; letter-spacing: 1px; }
         .subtitle { text-align: center; font-size: 0.9rem; opacity: 0.8; margin-bottom: 30px; margin-top: 5px; }
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .top-bar-left {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .top-bar-right {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .history-link, .home-header, .review-btn {
-            background: #2c3e4e;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            transition: 0.2s;
-            white-space: nowrap;
-            border: none;
-            color: white;
-        }
-        .history-link:hover, .home-header:hover, .review-btn:hover { background: #e67e22; }
-        .review-btn { background: #8a2be2; }
-        .review-btn:hover { background: #aa55ff; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .history-link, .home-header { background: #2c3e4e; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+        .history-link:hover, .home-header:hover { background: #e67e22; }
         .mode-selector { display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
         .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
@@ -284,8 +254,10 @@
         .modal {
             display: none;
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: rgba(0,0,0,0.85);
             z-index: 1000;
             justify-content: center;
@@ -297,7 +269,7 @@
             width: 90%;
             border-radius: 24px;
             padding: 20px;
-            text-align: center;
+            text-align: left;
             max-height: 80%;
             overflow-y: auto;
         }
@@ -320,6 +292,18 @@
         }
         .history-item:hover { background: #e67e22; }
         .history-item-text { flex: 1; text-align: left; }
+        .instructions-btn {
+            background: #2c3e4e;
+            padding: 2px 10px;
+            font-size: 0.8rem;
+            border-radius: 20px;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-right: 5px;
+        }
+        .instructions-btn:hover { background: #aa55ff; }
         .delete-history-item {
             background: #aa2e1e;
             border: none;
@@ -328,7 +312,7 @@
             padding: 4px 12px;
             font-size: 0.7rem;
             cursor: pointer;
-            margin-left: 10px;
+            margin-left: 5px;
             transition: 0.1s;
         }
         .delete-history-item:hover { background: #ff5c33; transform: scale(0.95); }
@@ -366,18 +350,6 @@
         .progress-percent-text { font-size: 0.7rem; margin-left: 10px; }
         .btn-toggle-chapitres { background: #8a2be2; margin-left: 10px; padding: 6px 15px; font-size: 0.8rem; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .review-instructions-btn {
-            background: #8a2be2;
-            border: none;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            cursor: pointer;
-            transition: 0.2s;
-            white-space: nowrap;
-        }
-        .review-instructions-btn:hover { background: #aa55ff; }
     </style>
 </head>
 <body>
@@ -396,13 +368,8 @@
             <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
             <div class="subtitle">Transformez votre structure mentale</div>
             <div class="top-bar">
-                <div class="top-bar-left">
-                    <span class="history-link" id="historyLink">📜 Historique</span>
-                    <span class="home-header" id="homeHeader">🏠 Accueil</span>
-                </div>
-                <div class="top-bar-right">
-                    <button class="review-instructions-btn" id="reviewInstructionsBtn" style="display:none;">📝 Revoir les instructions</button>
-                </div>
+                <span class="history-link" id="historyLink">📜 Historique</span>
+                <span class="home-header" id="homeHeader">🏠 Accueil</span>
             </div>
             <div class="mode-selector">
                 <button id="btnExpertise" class="mode-btn active">📚 Expertise en 7 jours</button>
@@ -528,6 +495,15 @@
         </div>
     </div>
 
+    <!-- Modale pour les instructions -->
+    <div id="instructionsModal" class="modal">
+        <div class="modal-content" id="instructionsContent">
+            <h3>📋 Instructions</h3>
+            <div id="instructionsBody"></div>
+            <button id="closeInstructionsModal" style="margin-top:15px;">Fermer</button>
+        </div>
+    </div>
+
     <script>
         (function() {
             // ---------- ÉCRAN DE CHARGEMENT ----------
@@ -602,70 +578,6 @@
             let touchStartX = 0, touchEndX = 0;
             let currentNbJours = 7;
 
-            // ---------- GESTION DES INSTRUCTIONS ----------
-            function getInstructions(domaine) {
-                const all = JSON.parse(localStorage.getItem('instructionsParDomaine')) || {};
-                return all[domaine] || null;
-            }
-
-            function saveInstructions(domaine, instructions) {
-                const all = JSON.parse(localStorage.getItem('instructionsParDomaine')) || {};
-                all[domaine] = instructions;
-                localStorage.setItem('instructionsParDomaine', JSON.stringify(all));
-            }
-
-            // Fonction pour afficher les instructions (appelée par le bouton)
-            function afficherInstructions() {
-                if (!currentDomaine) return;
-                const instructions = getInstructions(currentDomaine);
-                if (!instructions) {
-                    alert('Aucune instruction sauvegardée pour cette formation.');
-                    return;
-                }
-                const type = instructions.type;
-                // Masquer le conteneur des jours pour éviter la confusion
-                document.getElementById('jourContainer').style.display = 'none';
-                // Basculer vers le bon panneau
-                if (type === 'expertise') {
-                    document.getElementById('btnExpertise').click();
-                    document.getElementById('domaine').value = instructions.texte || currentDomaine;
-                } else if (type === 'cours') {
-                    document.getElementById('btnCoursToggle').click();
-                    const chapitres = instructions.chapitres || [];
-                    const textareas = document.querySelectorAll('.chapitre-text');
-                    chapitres.forEach((txt, idx) => {
-                        if (textareas[idx]) textareas[idx].value = txt || '';
-                    });
-                    // Réinitialiser les statuts
-                    document.querySelectorAll('.chapitre-status').forEach(el => el.innerHTML = '');
-                    // Réinitialiser les sauvegardes locales pour cette session
-                    chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
-                    localStorage.removeItem('cours_temp');
-                } else if (type === 'entretien') {
-                    document.getElementById('btnEntretienToggle').click();
-                    document.getElementById('cvInput').value = instructions.cv || '';
-                    document.getElementById('offreInput').value = instructions.offre || '';
-                    entretienSavedCV = instructions.cv || '';
-                    entretienSavedOffre = instructions.offre || '';
-                    localStorage.setItem('entretien_cv', entretienSavedCV);
-                    localStorage.setItem('entretien_offre', entretienSavedOffre);
-                }
-                // On garde le bouton "Revoir les instructions" visible (il reste)
-                // On pourrait aussi cacher le bouton mais on le laisse pour pouvoir revenir aux jours.
-                // L'utilisateur pourra cliquer sur "Accueil" ou sur l'onglet pour revenir.
-            }
-
-            // Afficher/masquer le bouton "Revoir les instructions"
-            function updateReviewButton() {
-                const btn = document.getElementById('reviewInstructionsBtn');
-                if (currentDomaine && getInstructions(currentDomaine)) {
-                    btn.style.display = 'inline-block';
-                } else {
-                    btn.style.display = 'none';
-                }
-            }
-
-            // ---------- FONCTIONS EXISTANTES (inchangées) ----------
             function arreterClignotement() {
                 if (blinkInterval) clearInterval(blinkInterval);
                 blinkInterval = null;
@@ -823,7 +735,6 @@
                 document.getElementById('jourContainer').style.display = 'block';
                 document.getElementById('startExpertise').style.display = 'none';
                 afficherBarreSegments();
-                updateReviewButton();
                 setTimeout(() => {
                     const intro = document.getElementById('jourContent').innerText;
                     if (intro) playAudioChunks(intro, true);
@@ -882,7 +793,6 @@
                     }
                 }
                 updateValidationMessage();
-                updateReviewButton();
             }
 
             function chargerJour(jourNum) {
@@ -945,15 +855,22 @@
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 let entry = historique.find(h => h.domaine === domaine);
                 if (!entry) {
-                    entry = { domaine, dateDebut: new Date().toISOString(), dateFin: null, progression: Array(7).fill(false), shared: false, type: 'expertise', nbJours: 7 };
+                    entry = {
+                        domaine: domaine,
+                        dateDebut: new Date().toISOString(),
+                        dateFin: null,
+                        progression: Array(7).fill(false),
+                        shared: false,
+                        type: 'expertise',
+                        nbJours: 7,
+                        instructions: { domaine: domaine }   // <-- stockage des instructions
+                    };
                     historique.push(entry);
                     localStorage.setItem('historique', JSON.stringify(historique));
                 }
                 let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
                 joursParDomaine[domaine] = {};
                 localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
-                // Sauvegarder les instructions
-                saveInstructions(domaine, { type: 'expertise', texte: domaine });
                 chargerFormation(domaine, entry.progression.slice(), {}, 7);
             });
 
@@ -1026,7 +943,6 @@
                 stopAudio();
                 arreterClignotement();
                 document.getElementById('btnExpertise').click();
-                updateReviewButton();
             });
 
             function genererLienPartage() { const base = window.location.href.split('?')[0]; if (currentDomaine) return `${base}?expertise=${encodeURIComponent(currentDomaine)}`; return base; }
@@ -1203,19 +1119,29 @@
                 const statusDiv = document.getElementById('coursResult');
                 statusDiv.innerHTML = '<div class="progress-container"><div class="progress-fill" style="width:0%"></div><div class="progress-percent">Génération...</div></div>';
                 statusDiv.style.display = 'block';
-                let joursComplets = {};
-                // Sauvegarder les chapitres originaux pour les instructions
+
+                // Récupérer les textes originaux des chapitres pour les instructions
                 const chapitresOriginaux = [];
                 for (let i=1;i<=6;i++) {
-                    chapitresOriginaux.push(document.getElementById(`chapitre-card-${i}`).querySelector('.chapitre-text').value.trim());
+                    const textarea = document.querySelector(`.chapitre-text[data-chapitre="${i}"]`);
+                    if (textarea) chapitresOriginaux.push(textarea.value.trim());
                 }
-                saveInstructions(titre, { type: 'cours', chapitres: chapitresOriginaux });
 
+                let joursComplets = {};
                 for (let i=1;i<=6;i++) joursComplets[i] = chapitresSauvegardes[i];
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 let entry = historique.find(h => h.domaine === titre);
                 if (!entry) {
-                    entry = { domaine: titre, dateDebut: new Date().toISOString(), dateFin: null, progression: Array(6).fill(false), shared: false, type: 'cours', nbJours: 6 };
+                    entry = {
+                        domaine: titre,
+                        dateDebut: new Date().toISOString(),
+                        dateFin: null,
+                        progression: Array(6).fill(false),
+                        shared: false,
+                        type: 'cours',
+                        nbJours: 6,
+                        instructions: { chapitres: chapitresOriginaux }  // <-- stockage
+                    };
                     historique.push(entry);
                     localStorage.setItem('historique', JSON.stringify(historique));
                 }
@@ -1401,7 +1327,7 @@
                 resultDiv.style.display = 'block';
                 resultDiv.innerHTML = '<em>Génération en cours...</em>';
 
-                const totalDizaines = 3 * 5;
+                const totalDizaines = 3 * 5; // 3 jours × 5 dizaines
                 let currentDizaine = 0;
                 const entretienJours = {1:{},2:{},3:{}};
 
@@ -1445,13 +1371,19 @@
                 const titre = prompt("Nom de votre préparation (ex: Entretien Poste X) :", "Préparation entretien");
                 if (!titre) return;
 
-                // Sauvegarder les instructions
-                saveInstructions(titre, { type: 'entretien', cv: cv, offre: offre });
-
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 let entry = historique.find(h => h.domaine === titre);
                 if (!entry) {
-                    entry = { domaine: titre, dateDebut: new Date().toISOString(), dateFin: null, progression: Array(4).fill(false), shared: false, type: 'entretien', nbJours: 4 };
+                    entry = {
+                        domaine: titre,
+                        dateDebut: new Date().toISOString(),
+                        dateFin: null,
+                        progression: Array(4).fill(false),
+                        shared: false,
+                        type: 'entretien',
+                        nbJours: 4,
+                        instructions: { cv: entretienSavedCV, offre: entretienSavedOffre }  // <-- stockage
+                    };
                     historique.push(entry);
                     localStorage.setItem('historique', JSON.stringify(historique));
                 }
@@ -1471,9 +1403,6 @@
             }
 
             document.getElementById('generateEntretienBtn').addEventListener('click', genererEntretien);
-
-            // Bouton "Revoir les instructions"
-            document.getElementById('reviewInstructionsBtn').addEventListener('click', afficherInstructions);
 
             // Gestion des onglets
             const btnExpertise = document.getElementById('btnExpertise');
@@ -1521,9 +1450,12 @@
             showExpertise();
             createChapitresUI();
 
-            // ---------- HISTORIQUE ----------
+            // ---------- HISTORIQUE (CORRIGÉ + BOUTON INSTRUCTIONS) ----------
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
+            const instructionsModal = document.getElementById('instructionsModal');
+            const instructionsBody = document.getElementById('instructionsBody');
+
             function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
 
             function supprimerEntree(index) {
@@ -1540,20 +1472,46 @@
                     let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
                     delete joursParDomaine[item.domaine];
                     localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
-                    // Supprimer aussi les instructions
-                    let instructionsParDomaine = JSON.parse(localStorage.getItem('instructionsParDomaine')) || {};
-                    delete instructionsParDomaine[item.domaine];
-                    localStorage.setItem('instructionsParDomaine', JSON.stringify(instructionsParDomaine));
                     historique.splice(index, 1);
                     localStorage.setItem('historique', JSON.stringify(historique));
                     afficherHistorique();
-                    updateReviewButton();
                 }
             }
 
             function toggleCat(catId) {
                 const el = document.getElementById(catId);
                 if (el) el.classList.toggle('collapsed');
+            }
+
+            function afficherInstructions(item) {
+                if (!item || !item.instructions) {
+                    instructionsBody.innerHTML = '<p>Aucune instruction enregistrée pour cette formation.</p>';
+                    instructionsModal.style.display = 'flex';
+                    return;
+                }
+                let content = `<h3>📋 Instructions pour « ${item.domaine} »</h3>`;
+                const instr = item.instructions;
+                if (instr.domaine) {
+                    content += `<p><strong>Domaine :</strong> ${instr.domaine}</p>`;
+                }
+                if (instr.chapitres && Array.isArray(instr.chapitres)) {
+                    content += `<p><strong>Chapitres (${instr.chapitres.length}) :</strong></p>`;
+                    instr.chapitres.forEach((chap, i) => {
+                        const preview = chap.length > 200 ? chap.substring(0, 200) + '…' : chap;
+                        content += `<div style="background:#1e2b3c; padding:8px; margin:5px 0; border-radius:8px; font-size:0.8rem;"><strong>Chapitre ${i+1}</strong><br>${preview}</div>`;
+                    });
+                }
+                if (instr.cv) {
+                    content += `<p><strong>CV :</strong><br><div style="background:#1e2b3c; padding:8px; border-radius:8px; font-size:0.8rem; max-height:150px; overflow-y:auto;">${instr.cv}</div></p>`;
+                }
+                if (instr.offre) {
+                    content += `<p><strong>Offre :</strong><br><div style="background:#1e2b3c; padding:8px; border-radius:8px; font-size:0.8rem; max-height:150px; overflow-y:auto;">${instr.offre}</div></p>`;
+                }
+                if (!instr.domaine && !instr.chapitres && !instr.cv && !instr.offre) {
+                    content += '<p>Aucune instruction détaillée.</p>';
+                }
+                instructionsBody.innerHTML = content;
+                instructionsModal.style.display = 'flex';
             }
 
             function afficherHistorique() {
@@ -1581,13 +1539,22 @@
                                 <strong>${item.domaine}</strong> (${completed}/${total}) – Début: ${formatDate(item.dateDebut)}
                                 ${completed===total ? `<div class="badge-text">🏅 Expert en ${item.domaine}</div>` : ''}
                             </div>
-                            <button class="delete-history-item" data-globalidx="${globalIdx}">🗑️</button>
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <button class="instructions-btn" data-globalidx="${globalIdx}">📋</button>
+                                <button class="delete-history-item" data-globalidx="${globalIdx}">🗑️</button>
+                            </div>
                         `;
                         div.querySelector('.history-item-text').onclick = () => {
                             let saved = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
                             chargerFormation(item.domaine, item.progression.slice(), saved[item.domaine] || {}, total);
                             historyModal.style.display = 'none';
                             document.getElementById('btnExpertise').click();
+                        };
+                        div.querySelector('.instructions-btn').onclick = (e) => {
+                            e.stopPropagation();
+                            const idx = parseInt(e.target.dataset.globalidx);
+                            const item = historique[idx];
+                            afficherInstructions(item);
                         };
                         div.querySelector('.delete-history-item').onclick = (e) => {
                             e.stopPropagation();
@@ -1612,7 +1579,13 @@
 
             document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display = 'flex'; });
             document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
-            window.addEventListener('click', (e) => { if (e.target === historyModal) historyModal.style.display = 'none'; });
+
+            document.getElementById('closeInstructionsModal').addEventListener('click', () => instructionsModal.style.display = 'none');
+            window.addEventListener('click', (e) => {
+                if (e.target === instructionsModal) instructionsModal.style.display = 'none';
+                if (e.target === historyModal) historyModal.style.display = 'none';
+            });
+
             document.getElementById('subscribeButton').addEventListener('click', () => alert("🔒 Abonnement à venir."));
 
             let currentExpertiseInterval = null;
