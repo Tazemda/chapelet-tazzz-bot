@@ -46,22 +46,16 @@ def call_deepseek(prompt, max_tokens=2000, temperature=0.7):
 # -------------------------------------------------------------------
 def clean_markdown(text):
     """Supprime les blocs de code markdown et les backticks."""
-    # Supprime les éventuels ``` ... ```
     text = re.sub(r'```[\s\S]*?```', '', text)
-    # Supprime les backticks simples
     text = text.replace('`', '')
     return text.strip()
 
 def remove_markdown_chars(text):
     """Retire les caractères markdown de base pour un affichage propre."""
-    # Supprime les astérisques de mise en gras / italique
     text = re.sub(r'\*\*', '', text)
     text = re.sub(r'\*', '', text)
-    # Supprime les dièses de titre
     text = re.sub(r'#', '', text)
-    # Supprime les underscores
     text = re.sub(r'_', '', text)
-    # Supprime les liens [texte](url) -> texte
     text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
     return text
 
