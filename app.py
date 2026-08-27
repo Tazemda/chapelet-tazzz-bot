@@ -101,26 +101,32 @@ Soigne la qualité, sois précis et adapté au domaine. Ne dépasse pas 2500 tok
 """
 
 # ---------- Cours (6 chapitres -> 6 jours) ----------
+# PROMPT RENFORCÉ POUR UNE FIDÉLITÉ DE 85% AU TEXTE SOURCE
 PROMPT_CHAPITRE_JOUR = """
 Tu es un expert pédagogique. Tu reçois le texte d'un chapitre.
-Transforme ce chapitre en contenu structuré pour une journée d'étude (5 dizaines).
+Tu dois transformer ce chapitre en contenu structuré pour une journée d'étude (5 dizaines) en suivant EXACTEMENT le format ci-dessous.
+CONTRAINTE MAJEURE : Ta synthèse doit être composée à 85% de phrases issues directement du chapitre fourni (copiées ou très légèrement reformulées). Tu ne dois pas ajouter d'informations qui ne figurent pas dans le texte source, pas d'exemples extérieurs, pas de contenu créatif. Ton rôle est UNIQUEMENT de réorganiser et mettre en forme le contenu existant pour faciliter la mémorisation. La génération personnelle (questions, consignes de répétition) ne doit représenter que 15% du texte final.
 
 Voici le texte du chapitre :
 {texte_chapitre}
 
 Génère le contenu du Jour {jour_num} (5 dizaines) selon le format exact suivant :
 
-JOUR {jour_num} : [TITRE ADAPTÉ AU CHAPITRE]
+JOUR {jour_num} : [TITRE ADAPTÉ AU CHAPITRE – reprend les mots-clés du chapitre]
 
-DIZAINE 1 : CONCEPT : [nom]
-A) Méditation : 8 phrases (définition, rôle, exemple court).
-B) Notre Père : une question centrale (RÉPÈTE 3 fois).
-C) Je vous salue Marie : 6 phrases numérotées (RÉPÈTE 10 fois).
+DIZAINE 1 : CONCEPT : [nom du premier concept majeur du chapitre]
+A) Méditation : 8 phrases (définition, rôle, exemple court). Ces 8 phrases doivent être extraites ou très fidèlement reformulées à partir du chapitre.
+B) Notre Père : une question centrale basée sur le contenu du chapitre (RÉPÈTE 3 fois).
+C) Je vous salue Marie : 6 phrases numérotées, synthétiques, issues du chapitre (RÉPÈTE 10 fois).
 D) Gloire au Père : "Le concept [nom] est consolidé." (RÉPÈTE 3 fois)
 
-(Même structure pour DIZAINE 2 à 5)
+(Même structure pour DIZAINE 2 à 5, en répartissant le contenu du chapitre de manière équilibrée, chaque dizaine couvrant une partie logique du texte)
 
-Soigne la qualité, reste fidèle au texte source, et ne dépasse pas 2800 tokens.
+IMPORTANT :
+- Utilise les phrases du chapitre telles quelles ou avec une reformulation minimale (changement d'ordre des mots, simplification syntaxique).
+- Ne résume pas au point de perdre les détails importants ; garde les chiffres, dates, définitions, exemples.
+- Ne dépasse pas 2800 tokens au total.
+- Reste fidèle au texte source à 85% minimum.
 """
 
 # ---------- Entretien d'embauche (3 jours + simulation) ----------
