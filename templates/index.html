@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Chapelet Tazzz Bot</title>
     <style>
+        /* ... (styles identiques à avant) ... */
         * { box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -863,7 +864,7 @@
                         shared: false,
                         type: 'expertise',
                         nbJours: 7,
-                        instructions: { domaine: domaine }   // <-- stockage des instructions
+                        instructions: { domaine: domaine }
                     };
                     historique.push(entry);
                     localStorage.setItem('historique', JSON.stringify(historique));
@@ -1021,7 +1022,11 @@
                 const pct = progDiv.querySelector('.progress-percent-text');
                 const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
                 try {
-                    const res = await fetch('/generer_chapitre', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ texte, num }) });
+                    const res = await fetch('/generer_chapitre', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ texte: texte, num: num })
+                    });
                     const data = await res.json();
                     if (data.error) throw new Error(data.error);
                     chapitresSauvegardes[num] = data.contenu;
@@ -1050,7 +1055,11 @@
                 const pct = progDiv.querySelector('.progress-percent-text');
                 const interval = setInterval(() => { if (percent < 90) { percent += 10; bar.style.width = percent+'%'; pct.innerText = percent+'%'; } }, 300);
                 try {
-                    const res = await fetch('/generer_chapitre', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ texte, num }) });
+                    const res = await fetch('/generer_chapitre', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ texte: texte, num: num })
+                    });
                     const data = await res.json();
                     if (data.error) throw new Error(data.error);
                     chapitresSauvegardes[num] = data.contenu;
@@ -1140,7 +1149,7 @@
                         shared: false,
                         type: 'cours',
                         nbJours: 6,
-                        instructions: { chapitres: chapitresOriginaux }  // <-- stockage
+                        instructions: { chapitres: chapitresOriginaux }
                     };
                     historique.push(entry);
                     localStorage.setItem('historique', JSON.stringify(historique));
@@ -1327,7 +1336,7 @@
                 resultDiv.style.display = 'block';
                 resultDiv.innerHTML = '<em>Génération en cours...</em>';
 
-                const totalDizaines = 3 * 5; // 3 jours × 5 dizaines
+                const totalDizaines = 3 * 5;
                 let currentDizaine = 0;
                 const entretienJours = {1:{},2:{},3:{}};
 
@@ -1382,7 +1391,7 @@
                         shared: false,
                         type: 'entretien',
                         nbJours: 4,
-                        instructions: { cv: entretienSavedCV, offre: entretienSavedOffre }  // <-- stockage
+                        instructions: { cv: entretienSavedCV, offre: entretienSavedOffre }
                     };
                     historique.push(entry);
                     localStorage.setItem('historique', JSON.stringify(historique));
@@ -1450,7 +1459,7 @@
             showExpertise();
             createChapitresUI();
 
-            // ---------- HISTORIQUE (CORRIGÉ + BOUTON INSTRUCTIONS) ----------
+            // ---------- HISTORIQUE AVEC BOUTON INSTRUCTIONS ----------
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
             const instructionsModal = document.getElementById('instructionsModal');
@@ -1579,7 +1588,6 @@
 
             document.getElementById('historyLink').addEventListener('click', () => { afficherHistorique(); historyModal.style.display = 'flex'; });
             document.getElementById('closeHistoryModal').addEventListener('click', () => historyModal.style.display = 'none');
-
             document.getElementById('closeInstructionsModal').addEventListener('click', () => instructionsModal.style.display = 'none');
             window.addEventListener('click', (e) => {
                 if (e.target === instructionsModal) instructionsModal.style.display = 'none';
