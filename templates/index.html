@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Chapelet Tazzz Bot</title>
     <style>
+        /* ... (tous les styles précédents, inchangés) ... */
         * { box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -48,9 +49,38 @@
         }
         h1 { text-align: center; font-size: 1.5rem; margin-bottom: 0px; letter-spacing: 1px; }
         .subtitle { text-align: center; font-size: 0.9rem; opacity: 0.8; margin-bottom: 30px; margin-top: 5px; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .history-link, .home-header { background: #2c3e4e; padding: 4px 12px; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
-        .history-link:hover, .home-header:hover { background: #e67e22; }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .top-bar-left {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .top-bar-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .history-link, .home-header, .review-btn {
+            background: #2c3e4e;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+            border: none;
+            color: white;
+        }
+        .history-link:hover, .home-header:hover, .review-btn:hover { background: #e67e22; }
+        .review-btn { background: #8a2be2; }
+        .review-btn:hover { background: #aa55ff; }
         .mode-selector { display: flex; gap: 20px; justify-content: center; margin-bottom: 25px; flex-wrap: wrap; }
         .mode-btn { background: #2c3e4e; border: none; color: white; padding: 10px 22px; border-radius: 40px; cursor: pointer; font-weight: bold; font-size: 0.9rem; }
         .mode-btn.active { background: #e67e22; box-shadow: 0 0 12px rgba(230,126,34,0.5); }
@@ -216,29 +246,8 @@
         .segment.completed { background-color: #8a2be2; box-shadow: 0 0 8px #aa55ff; }
         .segment.completed .day-label { color: white; text-shadow: none; }
         .segment.disabled { cursor: not-allowed; opacity: 0.4; pointer-events: none; }
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-        .action-buttons button {
-            background: #2c3e4e;
-            margin-top: 0;
-            padding: 6px 18px;
-            font-size: 0.8rem;
-        }
-        .action-buttons button.refresh-all {
-            background: #8e44ad;
-        }
-        .action-buttons button.export {
-            background: #27ae60;
-        }
-        .action-buttons button.import {
-            background: #2980b9;
-        }
-        .action-buttons button:hover { filter: brightness(1.3); }
+        .action-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .action-buttons button { background: #2c3e4e; margin-top: 0; padding: 6px 18px; font-size: 0.8rem; }
         .audio-player-bar {
             position: fixed;
             bottom: 80px;
@@ -357,6 +366,18 @@
         .progress-percent-text { font-size: 0.7rem; margin-left: 10px; }
         .btn-toggle-chapitres { background: #8a2be2; margin-left: 10px; padding: 6px 15px; font-size: 0.8rem; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .review-instructions-btn {
+            background: #8a2be2;
+            border: none;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .review-instructions-btn:hover { background: #aa55ff; }
     </style>
 </head>
 <body>
@@ -375,8 +396,13 @@
             <h1>🧠 CHAPELET TAZZZ BOT 📿</h1>
             <div class="subtitle">Transformez votre structure mentale</div>
             <div class="top-bar">
-                <span class="history-link" id="historyLink">📜 Historique</span>
-                <span class="home-header" id="homeHeader">🏠 Accueil</span>
+                <div class="top-bar-left">
+                    <span class="history-link" id="historyLink">📜 Historique</span>
+                    <span class="home-header" id="homeHeader">🏠 Accueil</span>
+                </div>
+                <div class="top-bar-right">
+                    <button class="review-instructions-btn" id="reviewInstructionsBtn" style="display:none;">📝 Revoir les instructions</button>
+                </div>
             </div>
             <div class="mode-selector">
                 <button id="btnExpertise" class="mode-btn active">📚 Expertise en 7 jours</button>
@@ -478,11 +504,7 @@
                 </div>
             </div>
 
-            <!-- Action buttons (avec les nouvelles fonctionnalités) -->
             <div class="action-buttons">
-                <button id="refreshAllBtn" class="refresh-all">🔄 Régénérer tout (expertise)</button>
-                <button id="exportChapeletBtn" class="export">📤 Exporter .chapelet</button>
-                <button id="importChapeletBtn" class="import">📥 Importer .chapelet</button>
                 <button id="shareButton">📤 Partager</button>
                 <button id="subscribeButton">🔒 S'abonner</button>
             </div>
@@ -491,9 +513,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Hidden file input for import -->
-    <input type="file" id="importFileInput" accept=".chapelet" style="display:none;">
 
     <div id="audioPlayerBar" class="audio-player-bar" style="display: none;">
         <button id="audioPlayPauseBtn">▶</button>
@@ -582,8 +601,71 @@
             let blinkInterval = null;
             let touchStartX = 0, touchEndX = 0;
             let currentNbJours = 7;
-            let currentType = 'expertise'; // 'expertise' | 'cours' | 'entretien'
 
+            // ---------- GESTION DES INSTRUCTIONS ----------
+            function getInstructions(domaine) {
+                const all = JSON.parse(localStorage.getItem('instructionsParDomaine')) || {};
+                return all[domaine] || null;
+            }
+
+            function saveInstructions(domaine, instructions) {
+                const all = JSON.parse(localStorage.getItem('instructionsParDomaine')) || {};
+                all[domaine] = instructions;
+                localStorage.setItem('instructionsParDomaine', JSON.stringify(all));
+            }
+
+            // Fonction pour afficher les instructions (appelée par le bouton)
+            function afficherInstructions() {
+                if (!currentDomaine) return;
+                const instructions = getInstructions(currentDomaine);
+                if (!instructions) {
+                    alert('Aucune instruction sauvegardée pour cette formation.');
+                    return;
+                }
+                const type = instructions.type;
+                // Masquer le conteneur des jours pour éviter la confusion
+                document.getElementById('jourContainer').style.display = 'none';
+                // Basculer vers le bon panneau
+                if (type === 'expertise') {
+                    document.getElementById('btnExpertise').click();
+                    document.getElementById('domaine').value = instructions.texte || currentDomaine;
+                } else if (type === 'cours') {
+                    document.getElementById('btnCoursToggle').click();
+                    const chapitres = instructions.chapitres || [];
+                    const textareas = document.querySelectorAll('.chapitre-text');
+                    chapitres.forEach((txt, idx) => {
+                        if (textareas[idx]) textareas[idx].value = txt || '';
+                    });
+                    // Réinitialiser les statuts
+                    document.querySelectorAll('.chapitre-status').forEach(el => el.innerHTML = '');
+                    // Réinitialiser les sauvegardes locales pour cette session
+                    chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
+                    localStorage.removeItem('cours_temp');
+                } else if (type === 'entretien') {
+                    document.getElementById('btnEntretienToggle').click();
+                    document.getElementById('cvInput').value = instructions.cv || '';
+                    document.getElementById('offreInput').value = instructions.offre || '';
+                    entretienSavedCV = instructions.cv || '';
+                    entretienSavedOffre = instructions.offre || '';
+                    localStorage.setItem('entretien_cv', entretienSavedCV);
+                    localStorage.setItem('entretien_offre', entretienSavedOffre);
+                }
+                // On garde le bouton "Revoir les instructions" visible (il reste)
+                // On pourrait aussi cacher le bouton mais on le laisse pour pouvoir revenir aux jours.
+                // L'utilisateur pourra cliquer sur "Accueil" ou sur l'onglet pour revenir.
+            }
+
+            // Afficher/masquer le bouton "Revoir les instructions"
+            function updateReviewButton() {
+                const btn = document.getElementById('reviewInstructionsBtn');
+                if (currentDomaine && getInstructions(currentDomaine)) {
+                    btn.style.display = 'inline-block';
+                } else {
+                    btn.style.display = 'none';
+                }
+            }
+
+            // ---------- FONCTIONS EXISTANTES (inchangées) ----------
             function arreterClignotement() {
                 if (blinkInterval) clearInterval(blinkInterval);
                 blinkInterval = null;
@@ -730,11 +812,10 @@
                 if (entry) { entry.progression = currentProgression.slice(); entry.nbJours = currentNbJours; localStorage.setItem('historique', JSON.stringify(historique)); }
             }
 
-            function chargerFormation(domaine, progression, jours, nbJours = 7, type = 'expertise') {
+            function chargerFormation(domaine, progression, jours, nbJours = 7) {
                 arreterClignotement();
                 currentDomaine = domaine;
                 currentNbJours = nbJours;
-                currentType = type;
                 currentProgression = progression.length === nbJours ? progression.slice() : Array(nbJours).fill(false);
                 currentJours = JSON.parse(JSON.stringify(jours));
                 currentPage = 0;
@@ -742,6 +823,7 @@
                 document.getElementById('jourContainer').style.display = 'block';
                 document.getElementById('startExpertise').style.display = 'none';
                 afficherBarreSegments();
+                updateReviewButton();
                 setTimeout(() => {
                     const intro = document.getElementById('jourContent').innerText;
                     if (intro) playAudioChunks(intro, true);
@@ -800,6 +882,7 @@
                     }
                 }
                 updateValidationMessage();
+                updateReviewButton();
             }
 
             function chargerJour(jourNum) {
@@ -869,7 +952,9 @@
                 let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
                 joursParDomaine[domaine] = {};
                 localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
-                chargerFormation(domaine, entry.progression.slice(), {}, 7, 'expertise');
+                // Sauvegarder les instructions
+                saveInstructions(domaine, { type: 'expertise', texte: domaine });
+                chargerFormation(domaine, entry.progression.slice(), {}, 7);
             });
 
             document.getElementById('prevDay').addEventListener('click', () => { if (currentPage > 1) { currentPage--; afficherPage(); } });
@@ -941,128 +1026,28 @@
                 stopAudio();
                 arreterClignotement();
                 document.getElementById('btnExpertise').click();
+                updateReviewButton();
             });
 
-            // ================= EXPORT / IMPORT / REFRESH ALL =================
+            function genererLienPartage() { const base = window.location.href.split('?')[0]; if (currentDomaine) return `${base}?expertise=${encodeURIComponent(currentDomaine)}`; return base; }
+            document.getElementById('shareButton').addEventListener('click', async () => {
+                const url = genererLienPartage();
+                let text = `🧠 Découvrez "${currentDomaine}" sur Chapelet Tazzz Bot !`;
+                if (navigator.share) { try { await navigator.share({ title: 'Chapelet Tazzz Bot', text, url }); } catch(e) {} }
+                else { try { await navigator.clipboard.writeText(text + ' ' + url); alert('Lien copié'); } catch(e) { alert('Erreur'); } }
+            });
 
-            // --- Export .chapelet ---
-            document.getElementById('exportChapeletBtn').addEventListener('click', () => {
-                if (!currentDomaine || Object.keys(currentJours).length === 0) {
-                    alert('Aucun contenu à exporter. Générez d’abord une formation.');
-                    return;
+            function initFromUrl() {
+                const params = new URLSearchParams(window.location.search);
+                const expertise = params.get('expertise');
+                if (expertise) {
+                    document.getElementById('domaine').value = decodeURIComponent(expertise);
+                    setTimeout(() => { const btn = document.getElementById('startExpertise'); if (btn && btn.style.display !== 'none') btn.click(); }, 500);
                 }
-                const data = {
-                    domaine: currentDomaine,
-                    type: currentType || 'expertise',
-                    nbJours: currentNbJours,
-                    progression: currentProgression,
-                    joursComplets: currentJours
-                };
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${currentDomaine.replace(/[^a-z0-9]/gi, '_')}.chapelet`;
-                a.click();
-                URL.revokeObjectURL(url);
-                alert('✅ Fichier exporté !');
-            });
+            }
+            initFromUrl();
 
-            // --- Import .chapelet ---
-            document.getElementById('importChapeletBtn').addEventListener('click', () => {
-                document.getElementById('importFileInput').click();
-            });
-
-            document.getElementById('importFileInput').addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    try {
-                        const data = JSON.parse(ev.target.result);
-                        if (!data.domaine || !data.joursComplets) {
-                            alert('Fichier invalide (domaine ou joursComplets manquant).');
-                            return;
-                        }
-                        // Sauvegarder les jours
-                        let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
-                        joursParDomaine[data.domaine] = data.joursComplets;
-                        localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
-
-                        // Mettre à jour l'historique
-                        let historique = JSON.parse(localStorage.getItem('historique')) || [];
-                        let entry = historique.find(h => h.domaine === data.domaine);
-                        if (!entry) {
-                            entry = {
-                                domaine: data.domaine,
-                                dateDebut: new Date().toISOString(),
-                                dateFin: null,
-                                progression: data.progression || Array(data.nbJours || 7).fill(false),
-                                shared: true,
-                                type: data.type || 'expertise',
-                                nbJours: data.nbJours || 7
-                            };
-                            historique.push(entry);
-                            localStorage.setItem('historique', JSON.stringify(historique));
-                        } else {
-                            entry.progression = data.progression || entry.progression;
-                            entry.nbJours = data.nbJours || entry.nbJours;
-                            entry.type = data.type || entry.type;
-                            localStorage.setItem('historique', JSON.stringify(historique));
-                        }
-
-                        // Charger la formation
-                        chargerFormation(data.domaine, entry.progression, data.joursComplets, data.nbJours || 7, data.type || 'expertise');
-                        alert('✅ Import réussi ! La formation a été chargée.');
-                    } catch (err) {
-                        alert('Erreur lors de l\'import : ' + err.message);
-                    }
-                };
-                reader.readAsText(file);
-                e.target.value = ''; // reset
-            });
-
-            // --- Refresh All (uniquement pour l'expertise) ---
-            document.getElementById('refreshAllBtn').addEventListener('click', async () => {
-                if (!currentDomaine || currentType !== 'expertise') {
-                    alert('Le "Régénérer tout" ne fonctionne que pour les expertises (domaine libre). Pour les cours et entretiens, utilisez l\'import/export.');
-                    return;
-                }
-                if (!confirm('⚠️ Voulez-vous vraiment régénérer TOUS les jours de cette expertise ? Les contenus actuels seront écrasés.')) return;
-
-                const btn = document.getElementById('refreshAllBtn');
-                btn.textContent = '⏳ Régénération...';
-                btn.disabled = true;
-
-                // Vider les jours actuels pour éviter la confusion
-                currentJours = {};
-                sauvegarderFormationCourante();
-
-                try {
-                    for (let jour = 1; jour <= currentNbJours; jour++) {
-                        const res = await fetch('/generer_jour_expertise', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ domaine: currentDomaine, jour })
-                        });
-                        const data = await res.json();
-                        if (data.error) throw new Error(data.error);
-                        currentJours[jour] = data.contenu;
-                        // Mise à jour progressive de l'affichage (optionnelle)
-                        sauvegarderFormationCourante();
-                    }
-                    afficherPage();
-                    afficherBarreSegments();
-                    alert('✅ Régénération terminée.');
-                } catch (err) {
-                    alert('❌ Erreur : ' + err.message);
-                } finally {
-                    btn.textContent = '🔄 Régénérer tout (expertise)';
-                    btn.disabled = false;
-                }
-            });
-
-            // ================= MODE COURS (inchangé) =================
+            // ================= MODE COURS =================
             let chapitresSauvegardes = {1:null,2:null,3:null,4:null,5:null,6:null};
             let coursTemp = JSON.parse(localStorage.getItem('cours_temp')) || {};
             for (let i=1;i<=6;i++) if (coursTemp[i]) chapitresSauvegardes[i] = coursTemp[i];
@@ -1219,6 +1204,13 @@
                 statusDiv.innerHTML = '<div class="progress-container"><div class="progress-fill" style="width:0%"></div><div class="progress-percent">Génération...</div></div>';
                 statusDiv.style.display = 'block';
                 let joursComplets = {};
+                // Sauvegarder les chapitres originaux pour les instructions
+                const chapitresOriginaux = [];
+                for (let i=1;i<=6;i++) {
+                    chapitresOriginaux.push(document.getElementById(`chapitre-card-${i}`).querySelector('.chapitre-text').value.trim());
+                }
+                saveInstructions(titre, { type: 'cours', chapitres: chapitresOriginaux });
+
                 for (let i=1;i<=6;i++) joursComplets[i] = chapitresSauvegardes[i];
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 let entry = historique.find(h => h.domaine === titre);
@@ -1231,12 +1223,12 @@
                 joursParDomaine[titre] = joursComplets;
                 localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
                 localStorage.removeItem('cours_temp');
-                chargerFormation(titre, entry.progression.slice(), joursComplets, 6, 'cours');
+                chargerFormation(titre, entry.progression.slice(), joursComplets, 6);
                 document.getElementById('btnExpertise').click();
                 statusDiv.style.display = 'none';
             });
 
-            // ================= MODE ENTRETIEN (inchangé) =================
+            // ================= MODE ENTRETIEN =================
             let entretienSavedCV = null;
             let entretienSavedOffre = null;
 
@@ -1409,7 +1401,7 @@
                 resultDiv.style.display = 'block';
                 resultDiv.innerHTML = '<em>Génération en cours...</em>';
 
-                const totalDizaines = 3 * 5; // 3 jours × 5 dizaines
+                const totalDizaines = 3 * 5;
                 let currentDizaine = 0;
                 const entretienJours = {1:{},2:{},3:{}};
 
@@ -1453,6 +1445,9 @@
                 const titre = prompt("Nom de votre préparation (ex: Entretien Poste X) :", "Préparation entretien");
                 if (!titre) return;
 
+                // Sauvegarder les instructions
+                saveInstructions(titre, { type: 'entretien', cv: cv, offre: offre });
+
                 let historique = JSON.parse(localStorage.getItem('historique')) || [];
                 let entry = historique.find(h => h.domaine === titre);
                 if (!entry) {
@@ -1468,7 +1463,7 @@
                 resultDiv.innerHTML = '<div class="progress-container"><div class="progress-fill" style="width:100%"></div><div class="progress-percent">100%</div></div>';
                 setTimeout(() => {
                     resultDiv.style.display = 'none';
-                    chargerFormation(titre, entry.progression.slice(), joursComplets, 4, 'entretien');
+                    chargerFormation(titre, entry.progression.slice(), joursComplets, 4);
                     document.getElementById('btnExpertise').click();
                     currentEntretienJours = joursComplets;
                     setTimeout(() => displaySimulation(), 500);
@@ -1476,6 +1471,9 @@
             }
 
             document.getElementById('generateEntretienBtn').addEventListener('click', genererEntretien);
+
+            // Bouton "Revoir les instructions"
+            document.getElementById('reviewInstructionsBtn').addEventListener('click', afficherInstructions);
 
             // Gestion des onglets
             const btnExpertise = document.getElementById('btnExpertise');
@@ -1523,7 +1521,7 @@
             showExpertise();
             createChapitresUI();
 
-            // ---------- HISTORIQUE (corrigé) ----------
+            // ---------- HISTORIQUE ----------
             const historyModal = document.getElementById('historyModal');
             const historyList = document.getElementById('historyList');
             function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString() : 'en cours'; }
@@ -1542,9 +1540,14 @@
                     let joursParDomaine = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
                     delete joursParDomaine[item.domaine];
                     localStorage.setItem('joursParDomaine', JSON.stringify(joursParDomaine));
+                    // Supprimer aussi les instructions
+                    let instructionsParDomaine = JSON.parse(localStorage.getItem('instructionsParDomaine')) || {};
+                    delete instructionsParDomaine[item.domaine];
+                    localStorage.setItem('instructionsParDomaine', JSON.stringify(instructionsParDomaine));
                     historique.splice(index, 1);
                     localStorage.setItem('historique', JSON.stringify(historique));
                     afficherHistorique();
+                    updateReviewButton();
                 }
             }
 
@@ -1582,7 +1585,7 @@
                         `;
                         div.querySelector('.history-item-text').onclick = () => {
                             let saved = JSON.parse(localStorage.getItem('joursParDomaine')) || {};
-                            chargerFormation(item.domaine, item.progression.slice(), saved[item.domaine] || {}, total, item.type || 'expertise');
+                            chargerFormation(item.domaine, item.progression.slice(), saved[item.domaine] || {}, total);
                             historyModal.style.display = 'none';
                             document.getElementById('btnExpertise').click();
                         };
